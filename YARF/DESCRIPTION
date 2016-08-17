@@ -1,0 +1,12 @@
+Package: YARF
+Type: Package
+Title: Yet Another Random Forests
+Version: 1.0
+Date: 2016-08-16
+Author: Adam Kapelner, Suzanne Adlof (R package)
+Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
+Description: A fully customizable Random Forests implementation
+License: GPL-3
+Depends: R (>= 2.14.0), rJava (>= 0.9-8)
+Imports: graphics, grDevices, stats
+SystemRequirements: Java (>= 1.8.0)
