@@ -2,18 +2,27 @@ YARF_MAX_MEM_MB_DEFAULT = 1100 #1.1GB is the most a 32bit machine can give witho
 YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
 
 ##build a BART model
-YARF = function(X = NULL, y = NULL, Xy = NULL, 
-		num_trees = 500, #found many times to not get better after this value... so let it be the default, it's faster too 
+YARF = function(
+		#data arguments
+		X = NULL, y = NULL, Xy = NULL,
+		mtry = "
+			function(X_node, y_node, n, p, is_classification){
+				
+				if (is_classification)
+			}
+		",
+		num_trees = 500, 
 		oob_estimates = TRUE,
+		#everything that has to do with possible missing values
 		use_missing_data = FALSE,
 		covariates_to_permute = NULL, #PRIVATE
 		use_missing_data_dummies_as_covars = FALSE,
 		impute_missingness_with_x_j_bar_for_lm = TRUE,
+		#other arguments
 		mem_cache_for_speed = TRUE,
 		serialize = FALSE,
 		seed = NULL,
 		verbose = TRUE){
-
 	if (verbose){
 		cat("YARF initializing with", num_trees, "trees...\n")	
 	}	
@@ -46,17 +55,28 @@ YARF = function(X = NULL, y = NULL, Xy = NULL,
 	if (class(X) != "data.frame"){
 		stop(paste("The training data X must be a data frame."), call. = FALSE)	
 	}
+	#make sure it's a well-formed data frame
+	if (ncol(X) == 0){
+		stop("Your data matrix must have at least one attribute.")
+	}
+	if (nrow(X) == 0){
+		stop("Your data matrix must have at least one observation.")
+	}
+	if (length(y) != nrow(X)){
+		stop("The number of responses must be equal to the number of observations in the training data.")
+	}	
 	if (verbose){
-		cat("YARF vars checked...\n")
+		cat("YARF data input checked...\n")
 	}	
 	#we are about to construct a YARF object. First, let R garbage collect
-	#to clean up previous bartMachine objects that are no longer in use. This is important
+	#to clean up previous YARF objects that are no longer in use. This is important
 	#because R's garbage collection system does not "see" the size of Java objects. Thus,
 	#you are at risk of running out of memory without this invocation. 
 	gc() #Delete at your own risk!	
 
 	#now take care of classification or regression
 	y_levels = levels(y)
+	num_levels = length(y_levels)
 	if (class(y) == "numeric" || class(y) == "integer"){ #if y is numeric, then it's a regression problem
 		#java expects doubles, not ints, so we need to cast this now to avoid errors later
 		if (class(y) == "integer"){
@@ -68,25 +88,14 @@ YARF = function(X = NULL, y = NULL, Xy = NULL,
 		if (class(y) == "integer"){
 			cat("Warning: The response y is integer, bartMachine will run regression.\n")
 		}
-	} else if (class(y) == "factor" & length(y_levels) == 2){ #if y is a factor and binary
+	} else if (class(y) == "factor"){ #if y is a factor and binary
 		java_YARF = .jnew("bartMachine.bartMachineClassificationMultThread")
 		y_remaining = ifelse(y == y_levels[1], 1, 0)
 		pred_type = "classification"
 	} else { #otherwise throw an error
-		stop("Your response must be either numeric, an integer or a factor with two levels.\n")
+		stop("Your response must be either numeric, an integer or a factor.\n")
 	}
-	
-	num_gibbs = num_burn_in + num_iterations_after_burn_in
-	
-	if (ncol(X) == 0){
-		stop("Your data matrix must have at least one attribute.")
-	}
-	if (nrow(X) == 0){
-		stop("Your data matrix must have at least one observation.")
-	}
-	if (length(y) != nrow(X)){
-		stop("The number of responses must be equal to the number of observations in the training data.")
-	}
+
 	if (verbose){
 		cat("YARF java init...\n")
 	}
@@ -127,7 +136,7 @@ YARF = function(X = NULL, y = NULL, Xy = NULL,
 		cat("YARF before preprocess...\n")
 	}
 	
-	pre_process_obj = pre_process_training_data(X, use_missing_data_dummies_as_covars, rf_imputations_for_missing)
+	pre_process_obj = pre_process_training_data(X, use_missing_data_dummies_as_covars)
 	model_matrix_training_data = cbind(pre_process_obj$data, y_remaining)
 	p = ncol(model_matrix_training_data) - 1 # we subtract one because we tacked on the response as the last column
 	factor_lengths = pre_process_obj$factor_lengths
@@ -203,83 +212,55 @@ YARF = function(X = NULL, y = NULL, Xy = NULL,
 	
 	l = as.list(match.call())
 	l[[1]] = NULL
-	c(l, 
+	yarf_mod = c(l, 
 			time_to_build = Sys.time() - t0,
+			y_levels = y_levels,			
+			n = nrow(model_matrix_training_data),
+			p = p,
+			model_matrix_training_data = model_matrix_training_data,
 			training_data_features = colnames(model_matrix_training_data)[1 : ifelse(use_missing_data && use_missing_data_dummies_as_covars, (p / 2), p)],
 			training_data_features_with_missing_features = colnames(model_matrix_training_data)[1 : p], #always return this even if there's no missing features
 			
-	)
-
-
-	bart_machine = list(java_bart_machine = java_YARF,
-			training_data_features = colnames(model_matrix_training_data)[1 : ifelse(use_missing_data && use_missing_data_dummies_as_covars, (p / 2), p)],
-			training_data_features_with_missing_features = colnames(model_matrix_training_data)[1 : p], #always return this even if there's no missing features
-			X = X,
-			y = y,
-			y_levels = y_levels,
-			pred_type = pred_type,
-			model_matrix_training_data = model_matrix_training_data,
-			n = nrow(model_matrix_training_data),
-			p = p,
-			num_cores = num_cores,
-			num_trees = num_trees,
-			time_to_build = Sys.time() - t0,
-			use_missing_data = use_missing_data,
-			use_missing_data_dummies_as_covars = use_missing_data_dummies_as_covars,
-			replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
-			impute_missingness_with_x_j_bar_for_lm = impute_missingness_with_x_j_bar_for_lm,			
-			verbose = verbose,
-			serialize = serialize,
-			mem_cache_for_speed = mem_cache_for_speed,
-			debug_log = debug_log,
-			seed = seed,
-			num_rand_samps_in_library = num_rand_samps_in_library
 	)
 	
 	#once its done gibbs sampling, see how the training data does if user wants
-	if (run_in_sample){
+	if (oob_estimates){
 		if (verbose){
-			cat("evaluating in sample data...")
+			cat("evaluating in sample data oob...")
 		}
-		if (pred_type == "regression"){
-			y_hat_posterior_samples = 
-					t(sapply(.jcall(bart_machine$java_bart_machine, "[[D", "getGibbsSamplesForPrediction", .jarray(model_matrix_training_data, dispatch = TRUE), as.integer(num_cores)), .jevalArray))
+#			y_hat_train = t(sapply(.jcall(bart_machine$java_bart_machine, "[[D", "getGibbsSamplesForPrediction", .jarray(model_matrix_training_data, dispatch = TRUE), as.integer(num_cores)), .jevalArray))
+		
+		#return a bunch more stuff
+		yarf_mod$y_hat_train = y_hat_train
+		yarf_mod$residuals = y_remaining - y_hat_train
+		yarf_mod$L1_err_train = sum(abs(yarf_mod$residuals))
+		yarf_mod$L2_err_train = sum(yarf_mod$residuals^2)
+		yarf_mod$PseudoRsq = 1 - yarf_mod$L2_err_train / sum((y_remaining - mean(y_remaining))^2) #pseudo R^2 acc'd to our dicussion with Ed and Shane
+		yarf_mod$rmse_train = sqrt(yarf_mod$L2_err_train / yarf_mod$n)
+		yarf_mod$mae = yarf_mod$L1_err_train / yarf_mod$n
+		
+		if (pred_type == "classification"){
+#			p_hat_train =	t(sapply(.jcall(yarf_mod$java_bart_machine, "[[D", "getGibbsSamplesForPrediction", .jarray(model_matrix_training_data, dispatch = TRUE), as.integer(num_cores)), .jevalArray))
+			yarf_mod$y_hat_train = labels_to_y_levels(y_hat_train)
 			
-			#to get y_hat.. just take straight mean of posterior samples
-			y_hat_train = rowMeans(y_hat_posterior_samples)
 			#return a bunch more stuff
-			bart_machine$y_hat_train = y_hat_train
-			bart_machine$residuals = y_remaining - bart_machine$y_hat_train
-			bart_machine$L1_err_train = sum(abs(bart_machine$residuals))
-			bart_machine$L2_err_train = sum(bart_machine$residuals^2)
-			bart_machine$PseudoRsq = 1 - bart_machine$L2_err_train / sum((y_remaining - mean(y_remaining))^2) #pseudo R^2 acc'd to our dicussion with Ed and Shane
-			bart_machine$rmse_train = sqrt(bart_machine$L2_err_train / bart_machine$n)
-		} else if (pred_type == "classification"){
-			p_hat_posterior_samples = 
-					t(sapply(.jcall(bart_machine$java_bart_machine, "[[D", "getGibbsSamplesForPrediction", .jarray(model_matrix_training_data, dispatch = TRUE), as.integer(num_cores)), .jevalArray))
-			
-			#to get y_hat.. just take straight mean of posterior samples
-			p_hat_train = rowMeans(p_hat_posterior_samples)
-			y_hat_train = labels_to_y_levels(bart_machine, p_hat_train > prob_rule_class)
-			#return a bunch more stuff
-			bart_machine$p_hat_train = p_hat_train
-			bart_machine$y_hat_train = y_hat_train
+			yarf_mod$p_hat_train = p_hat_train
 			
 			#calculate confusion matrix
 			confusion_matrix = as.data.frame(matrix(NA, nrow = 3, ncol = 3))
 			rownames(confusion_matrix) = c(paste("actual", y_levels), "use errors")
 			colnames(confusion_matrix) = c(paste("predicted", y_levels), "model errors")
 			
-			confusion_matrix[1 : 2, 1 : 2] = as.integer(table(y, y_hat_train)) 
+			confusion_matrix[1 : 2, 1 : 2] = as.integer(table(y_remaining, y_hat_train)) 
 			confusion_matrix[3, 1] = round(confusion_matrix[2, 1] / (confusion_matrix[1, 1] + confusion_matrix[2, 1]), 3)
 			confusion_matrix[3, 2] = round(confusion_matrix[1, 2] / (confusion_matrix[1, 2] + confusion_matrix[2, 2]), 3)
 			confusion_matrix[1, 3] = round(confusion_matrix[1, 2] / (confusion_matrix[1, 1] + confusion_matrix[1, 2]), 3)
 			confusion_matrix[2, 3] = round(confusion_matrix[2, 1] / (confusion_matrix[2, 1] + confusion_matrix[2, 2]), 3)
 			confusion_matrix[3, 3] = round((confusion_matrix[1, 2] + confusion_matrix[2, 1]) / sum(confusion_matrix[1 : 2, 1 : 2]), 3)
 			
-			bart_machine$confusion_matrix = confusion_matrix
+			yarf_mod$confusion_matrix = confusion_matrix
 #			bart_machine$num_classification_errors = confusion_matrix[1, 2] + confusion_matrix[2, 1]
-			bart_machine$misclassification_error = confusion_matrix[3, 3]
+			yarf_mod$misclassification_error = confusion_matrix[3, 3]
 		}
 		if (verbose){
 			cat("done\n")
@@ -290,13 +271,13 @@ YARF = function(X = NULL, y = NULL, Xy = NULL,
 	#Let's serialize the object if the user wishes
 	if (serialize){
 		cat("serializing in order to be saved for future R sessions...")
-		.jcache(bart_machine$java_bart_machine)
+		.jcache(yarf_mod$java_YARF)
 		cat("done\n")
 	}
 	
 	#use R's S3 object orientation
-	class(bart_machine) = "bartMachine"
-	bart_machine
+	class(yarf_mod) = "YARF"
+	yarf_mod
 }
 
 ##private function that creates a duplicate of an existing bartMachine object.

@@ -18,7 +18,7 @@ import CustomLogging.*;
  * The base class for all machine learning / statistical-learning
  * algorithms. Extend this class to add your own implementation.
  * 
- * @author Adam Kapelner and Justin Bleich
+ * @author Adam Kapelner
  */
 public abstract class Classifier implements Serializable{
 	private static final long serialVersionUID = 2471771656791064460L;
@@ -44,18 +44,14 @@ public abstract class Classifier implements Serializable{
 	protected transient ArrayList<double[]> X_y_by_col;
 	/** the raw responses */
 	protected transient double[] y_orig;
-	/** the responses transformed (only if necessary) */
-	protected transient double[] y_trans;
 	/** the number of records in the training set */
 	protected int n;
 	/** the number of features / predictors in the training set */
 	protected int p;
-	
+	/** in sample evaluation */
+	protected double[] residuals;
 	/** the name of this classifier (useful for debugging) */
-	protected String unique_name = "unnamed";
-
-	/** the in sample residuals [e1, ..., en] of this classifier after it has been built and evaluated */
-	private transient double[] in_sample_residuals;		
+	protected String unique_name = "unnamed";	
 
 	
 	/** A dummy constructor which keeps <code>Serializable</code> happy */
@@ -135,27 +131,6 @@ public abstract class Classifier implements Serializable{
 		 }
 		 return X_y_by_col;
 	 }
-
-	/** 
-	 * This function tacks on the original index of each observation to a training data set
-	 * tacked on at the end of the observations' vectors.
-	 * 
-	 * @param X_y_old	The original training data set
-	 * @return			The training data set with indices tacked on.
-	 */
-	private ArrayList<double[]> addIndicesToDataMatrix(ArrayList<double[]> X_y_old) {
-		ArrayList<double[]> X_y_new = new ArrayList<double[]>(n);
-		for (int i = 0; i < n; i++){
-			double[] x = new double[p + 2];
-			for (int j = 0; j < p + 1; j++){
-				x[j] = X_y_old.get(i)[j];
-			}
-			x[p + 1] = i;
-			X_y_new.add(x);
-//			System.out.println("row " + i + ": " + Tools.StringJoin(x));
-		}
-		return X_y_new;
-	}
 
 	/**
 	 * This provides a vector of responses from the training data set
@@ -298,13 +273,13 @@ public abstract class Classifier implements Serializable{
 	private void calculateInSampleResiduals(int num_cores_evaluate){
 		long t0 = System.currentTimeMillis();
 		System.out.print("calculating in-sample residuals...");
-		in_sample_residuals = new double[n];
+		residuals = new double[n];
 		for (int i = 0; i < n; i++){
 			double[] record = X_y.get(i);
 			double y = getResponseFromRecord(record);
 			double yhat = Evaluate(record, num_cores_evaluate);
 //			System.out.println("y: " + y + " yhat: " + yhat);
-			in_sample_residuals[i] = y - yhat;
+			residuals[i] = y - yhat;
 		}
 		long t1 = System.currentTimeMillis();
 		System.out.print("done in " + ((t1 - t0) / 1000.0) + " sec \n");
@@ -318,7 +293,7 @@ public abstract class Classifier implements Serializable{
 	 * @return						The in-sample loss as a sum total across all training observations
 	 */
 	public double calculateInSampleLoss(ErrorTypes type_of_error_rate, int num_cores_evaluate){	
-		if (in_sample_residuals == null){
+		if (residuals == null){
 			calculateInSampleResiduals(num_cores_evaluate);
 		}
 		
@@ -327,13 +302,13 @@ public abstract class Classifier implements Serializable{
 		for (int i = 0; i < n; i++){
 			switch (type_of_error_rate){
 				case L1:
-					loss += Math.abs(in_sample_residuals[i]);
+					loss += Math.abs(residuals[i]);
 					break;
 				case L2:
-					loss += in_sample_residuals[i] * in_sample_residuals[i];
+					loss += residuals[i] * residuals[i];
 					break;
 				case MISCLASSIFICATION:
-					loss += (in_sample_residuals[i] == 0 ? 0 : 1);
+					loss += (residuals[i] == 0 ? 0 : 1);
 					break;
 			}
 		}
@@ -343,16 +318,10 @@ public abstract class Classifier implements Serializable{
 	}
 	
 	/**
-	 * Transforms the response variable (implemented by a daughter class).
+	 * Transforms the response variable (implemented by a daughter class if need be).
 	 * The default here is to just save the original response.
 	 */
-	protected void transformResponseVariable() {
-		y_trans = new double[y_orig.length];
-		//default is to do nothing... ie just copy the y's into y_trans's
-		for (int i = 0; i < n; i++){
-			y_trans[i] = y_orig[i];
-		}		
-	}	
+	protected void transformResponseVariable() {}	
 
 	/**
 	 * Untransforms a response value (implemented by a daughter class).
@@ -365,9 +334,7 @@ public abstract class Classifier implements Serializable{
 		return y_i;
 	}		
 	
-	public Classifier clone(){
-		return null;
-	}
+	public abstract Classifier clone();
 	
 	public void setUniqueName(String unique_name) {
 		this.unique_name = unique_name;

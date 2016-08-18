@@ -15,11 +15,7 @@ public abstract class ClassificationAndRegressionTree extends Classifier {
 	
 	/** serializable happy */
 	public ClassificationAndRegressionTree(){}
-	
-	public ClassificationAndRegressionTree(DatumSetupForEntireRun datumSetupForEntireRun, JProgressBarAndLabel buildProgress){
-		super(datumSetupForEntireRun, buildProgress);
-	}
-	
+		
 	/** deletes all records from the tree. Usually a wrapper for a recursive function */
 	public abstract void FlushData();
 
