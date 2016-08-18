@@ -7,6 +7,12 @@ Author: Adam Kapelner, Suzanne Adlof (R package)
 Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
 Description: A fully customizable Random Forests implementation
 License: GPL-3
-Depends: R (>= 2.14.0), rJava (>= 0.9-8)
-Imports: graphics, grDevices, stats
+Depends:
+    R (>= 2.14.0),
+    rJava (>= 0.9-8)
+Imports:
+    graphics,
+    grDevices,
+    stats
 SystemRequirements: Java (>= 1.8.0)
+RoxygenNote: 5.0.1

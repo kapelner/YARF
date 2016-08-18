@@ -1,0 +1,27 @@
+<project name="YARF" basedir="." default="clean">
+    <description>
+        This script builds the bartMachine code into the YARF.jar file which gets called from R in the R package
+    </description>	
+	
+	<path id="master-classpath">
+	  <fileset dir="YARFJARs/inst/java">
+	    <include name="*.jar" />
+	  </fileset>
+	</path>	
+	
+    <target name="compile" description="compile the source code">
+      <mkdir dir="class_files"/>
+      <javac srcdir="src" destdir="class_files" includeantruntime="false" target="1.8" source="1.8">
+      	<exclude name="**/package-info.java"/>
+      	<classpath refid="master-classpath" />	
+      </javac>
+    </target>	
+	
+	<target name="dist" depends="compile" description="generate the jar file" >
+	    <jar destfile="YARF/inst/java/YARF.jar" basedir="class_files" />
+	</target>	
+	
+	<target name="clean" description="Clean up" depends="dist">
+		<delete dir="class_files" />
+	</target>
+</project>

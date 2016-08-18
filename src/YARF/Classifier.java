@@ -39,19 +39,20 @@ public abstract class Classifier implements Serializable{
 	}
 	
 	/** an array of the raw training data by ROW i.e. consisting of xi = [xi1, ..., xiM, yi] */
-	protected transient ArrayList<double[]> X_y;
-	/** an array of the raw training data by COLUMN i.e. consisting of xj = [x1j, ..., xnj] with the last entry being [y1, ..., yn] */ 
-	protected transient ArrayList<double[]> X_y_by_col;
-	/** the raw responses */
-	protected transient double[] y_orig;
+	protected transient ArrayList<double[]> X;
+	protected transient ArrayList<double[]> Xother;
+	protected transient double[] y;
 	/** the number of records in the training set */
-	protected int n;
+	public int n;
 	/** the number of features / predictors in the training set */
-	protected int p;
+	public int p;
 	/** in sample evaluation */
 	protected double[] residuals;
-	/** the name of this classifier (useful for debugging) */
-	protected String unique_name = "unnamed";	
+
+	protected String[] feature_names;
+	protected String[] other_data_names;
+
+	private String unique_name;	
 
 	
 	/** A dummy constructor which keeps <code>Serializable</code> happy */
@@ -66,8 +67,8 @@ public abstract class Classifier implements Serializable{
 	 */
 	public void addTrainingDataRow(String[] x_i){
 		//initialize data matrix if it hasn't been initialized already
-		if (X_y == null){
-			X_y = new ArrayList<double[]>();
+		if (X == null){
+			X = new ArrayList<double[]>();
 		}
 		
 		//now add the new record
@@ -81,36 +82,25 @@ public abstract class Classifier implements Serializable{
 //				System.out.println("missing value at record #" + X_y.size() + " attribute #" + i);
 			}
 		}				
-		X_y.add(record);		
+		X.add(record);		
 	}
+	
+	public void setTrainingDataNames(String[] feature_names){
+		this.feature_names = feature_names;
+	}
+	
+	public void setOtherDataNames(String[] other_data_names){
+		this.other_data_names = other_data_names;
+	}
+	
 	
 	/**
 	 * This method finalizes the training data after all
 	 * records have been added via the method {@link #addTrainingDataRow}.	
 	 */
 	public void finalizeTrainingData(){
-		setData(X_y);
-	}
-	
-	/**
-	 * This method sets the training data of this machine learning classifier.
-	 * It also populates many essential fields such as <code>n</code>, <code>p</code>,
-	 * <code>y_orig</code>, <code>X_y</code> and <code>X_y_by_col</code>.
-	 * 
-	 * @param X_y	The list of double vectors to be set as the training data.
-	 */
-	public void setData(ArrayList<double[]> X_y){
-		n = X_y.size();
-		p = X_y.get(0).length - 1;
-//		System.out.println("setData n:" + n + " p:" + p);
-		y_orig = extractResponseFromRawData(X_y);
-//		for (int i = 0; i < n; i++){
-//			System.out.println("i:" + i + " yi:" + y[i]);
-//		}
-		transformResponseVariable();
-//		X = extractDesignMatrixFromRawData(X_y);
-		this.X_y = addIndicesToDataMatrix(X_y);
-		this.X_y_by_col = getDataMatrixByCol(X_y);
+		n = X.size();
+		p = X.get(0).length;
 	}
 	
 	/**
@@ -218,23 +208,6 @@ public abstract class Classifier implements Serializable{
 	/** Stop the classifier during its building phase */
 	public abstract void StopBuilding();
 
-	/**
-	 * How many features are in the training data set?
-	 * 
-	 * @return	The number of features in the training data set
-	 */
-	public int getP() {
-		return p;
-	}
-	
-	/**
-	 * How many observations are in the training data set?
-	 * 
-	 * @return	The number of observations in the training data set
-	 */
-	public int getN() {
-		return n;
-	}	
 	
 	/** Useful for debugging. Undocumented */
 	public void dumpDataToFile(String optional_title){
@@ -253,10 +226,11 @@ public abstract class Classifier implements Serializable{
 		out.print("\n");
 		//now print the data
 		for (int i = 0; i < n; i++){
-			double[] record = X_y.get(i);
+			double[] record = X.get(i);
 			for (int j = 0; j <= p; j++){
 				out.print("," + record[j]);
 			}
+			out.print("," + y[i]);
 			out.print("\n");
 		}
 		out.close();		
@@ -275,11 +249,10 @@ public abstract class Classifier implements Serializable{
 		System.out.print("calculating in-sample residuals...");
 		residuals = new double[n];
 		for (int i = 0; i < n; i++){
-			double[] record = X_y.get(i);
-			double y = getResponseFromRecord(record);
+			double[] record = X.get(i);
 			double yhat = Evaluate(record, num_cores_evaluate);
+			residuals[i] = y[i] - yhat;
 //			System.out.println("y: " + y + " yhat: " + yhat);
-			residuals[i] = y - yhat;
 		}
 		long t1 = System.currentTimeMillis();
 		System.out.print("done in " + ((t1 - t0) / 1000.0) + " sec \n");
@@ -305,7 +278,7 @@ public abstract class Classifier implements Serializable{
 					loss += Math.abs(residuals[i]);
 					break;
 				case L2:
-					loss += residuals[i] * residuals[i];
+					loss += Math.pow(residuals[i], 2);
 					break;
 				case MISCLASSIFICATION:
 					loss += (residuals[i] == 0 ? 0 : 1);
@@ -313,28 +286,9 @@ public abstract class Classifier implements Serializable{
 			}
 		}
 		System.out.print("done\n");
-//		System.out.println("in_sample_residuals: " + Tools.StringJoin(in_sample_residuals));
+//		System.out.println("in_sample_residuals: " + Tools.StringJoin(residuals));
 		return loss;
 	}
-	
-	/**
-	 * Transforms the response variable (implemented by a daughter class if need be).
-	 * The default here is to just save the original response.
-	 */
-	protected void transformResponseVariable() {}	
-
-	/**
-	 * Untransforms a response value (implemented by a daughter class).
-	 * The default here is to just return the original response.
-	 * 
-	 * @param y_i	The value to untransform
-	 * @return		The untransformed value
-	 */
-	protected double un_transform_y(double y_i) {
-		return y_i;
-	}		
-	
-	public abstract Classifier clone();
 	
 	public void setUniqueName(String unique_name) {
 		this.unique_name = unique_name;

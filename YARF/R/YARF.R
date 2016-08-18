@@ -1,3 +1,5 @@
+VERSION = "1.0"
+
 #' Software which helps practitioners optimally design experiments that measure the slope divided by the intercept.
 #'
 #' @name 		YARF
@@ -7,6 +9,6 @@
 #' @references 	TK
 #' @keywords 	Experimental Design, Slope divided by intercept
 #' @import      stats graphics rJava
-##### Run "library(YARF); roxygenise("YARF", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file
+##### Run "library(roxygen2); roxygenise("YARF", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file
 ##### but make sure you are in the root directory of the project
 NULL

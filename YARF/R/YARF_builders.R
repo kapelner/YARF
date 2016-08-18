@@ -1,28 +1,58 @@
 YARF_MAX_MEM_MB_DEFAULT = 1100 #1.1GB is the most a 32bit machine can give without throwing an error or crashing
 YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
 
-##build a BART model
+#' Builds a YARF Model
+#' @param X 
+#' @param y 
+#' @param Xy 
+#' @param Xother 
+#' @param num_trees 
+#' @param boostrap_indices_fun 
+#' @param bootstrap_indicies_fun_data 
+#' @param oob_estimates 
+#' @param mtry 
+#' @param cost_calc 
+#' @param node_assign 
+#' @param shared_functions 
+#' @param use_missing_data 
+#' @param covariates_to_permute 
+#' @param use_missing_data_dummies_as_covars 
+#' @param impute_missingness_with_x_j_bar_for_lm 
+#' @param mem_cache_for_speed 
+#' @param serialize 
+#' @param seed 
+#' @param verbose 
+#' 
+#' @return												A list of all arguments passed in plus.. 
+#' 
+#' @author Adam Kapelner
+#' @export
 YARF = function(
 		#data arguments
-		X = NULL, y = NULL, Xy = NULL,
-		mtry = "
-			function(X_node, y_node, n, p, is_classification){
-				
-				if (is_classification)
-			}
-		",
-		num_trees = 500, 
-		oob_estimates = TRUE,
+		X = NULL, y = NULL, Xy = NULL, Xother = NULL,
+		#pick the trees		
+		num_trees = 500,
+		#customizable bootstrap
+		boostrap_indices_fun = NULL, #if you want to write your own bootstrapper for the trees, form: function(X, y, n, p, b, bootstrap_indicies_fun_data)
+		bootstrap_indicies_fun_data = NULL, #optional data you wish to pass to that function
+		#whether you want oob_estimates
+		oob_estimates = TRUE,		
+		#all custom functions as strings of javascript code
+		mtry = NULL,
+		cost_calc = NULL,
+		node_assign = NULL,
+		shared_functions = NULL, #any helper code which will be accessible to code above
 		#everything that has to do with possible missing values
 		use_missing_data = FALSE,
 		covariates_to_permute = NULL, #PRIVATE
 		use_missing_data_dummies_as_covars = FALSE,
-		impute_missingness_with_x_j_bar_for_lm = TRUE,
+		impute_missingness_with_x_j_bar = TRUE,
 		#other arguments
 		mem_cache_for_speed = TRUE,
 		serialize = FALSE,
 		seed = NULL,
 		verbose = TRUE){
+	
 	if (verbose){
 		cat("YARF initializing with", num_trees, "trees...\n")	
 	}	
@@ -65,6 +95,23 @@ YARF = function(
 	if (length(y) != nrow(X)){
 		stop("The number of responses must be equal to the number of observations in the training data.")
 	}	
+	
+	if (sum(is.na(y)) > 0 || sum(is.null(y)) > 0 || sum(is.nan(y)) > 0){
+		stop("You cannot have any missing data in your response vector.")
+	}
+	
+	#convenient to keep around
+	n = nrow(X)
+	
+	#now take a look at the "other" data
+	if (!is.null(Xother)){
+		if (class(Xother) != "data.frame"){
+			stop(paste("The other data, Xother, must be a data frame."), call. = FALSE)	
+		}
+		if (nrow(X) != n){
+			stop("The other data, Xother, must have the same number of rows as X.")
+		}
+	}
 	if (verbose){
 		cat("YARF data input checked...\n")
 	}	
@@ -73,28 +120,29 @@ YARF = function(
 	#because R's garbage collection system does not "see" the size of Java objects. Thus,
 	#you are at risk of running out of memory without this invocation. 
 	gc() #Delete at your own risk!	
+	
+	#init the java object
+	java_YARF = .jnew("YARF.YARF")
 
 	#now take care of classification or regression
 	y_levels = levels(y)
 	num_levels = length(y_levels)
 	if (class(y) == "numeric" || class(y) == "integer"){ #if y is numeric, then it's a regression problem
-		#java expects doubles, not ints, so we need to cast this now to avoid errors later
-		if (class(y) == "integer"){
-			y = as.numeric(y)
-		}		
-		java_YARF = .jnew("bartMachine.bartMachineRegressionMultThread")
-		y_remaining = y
 		pred_type = "regression"
 		if (class(y) == "integer"){
-			cat("Warning: The response y is integer, bartMachine will run regression.\n")
+			cat("Warning: The response y is integer, YARF will default to regression.\n")
 		}
 	} else if (class(y) == "factor"){ #if y is a factor and binary
-		java_YARF = .jnew("bartMachine.bartMachineClassificationMultThread")
-		y_remaining = ifelse(y == y_levels[1], 1, 0)
+		if (num_levels > 8){
+			cat("Warning: You are doing classificaiton with more than 8 classes. Cast y to numeric if you wish to do regression.")
+		}		
 		pred_type = "classification"
 	} else { #otherwise throw an error
-		stop("Your response must be either numeric, an integer or a factor.\n")
+		stop("Your response must be either numeric or a factor.\n")
 	}
+	
+	#java expects doubles
+	y = as.numeric(y)
 
 	if (verbose){
 		cat("YARF java init...\n")
@@ -114,17 +162,13 @@ YARF = function(
 		cat("YARF factors created...\n")
 	}
 	
-	if (sum(is.na(y_remaining)) > 0){
-		stop("You cannot have any missing data in your response vector.")
-	}
-	
 	#if we're not using missing data, go on and get rid of it
 	if (!use_missing_data && !replace_missing_data_with_x_j_bar){
 		rows_before = nrow(X)
 		X = na.omit(X)
 		rows_after = nrow(X)
 		if (rows_before - rows_after > 0){
-			stop("You have ", rows_before - rows_after, " observations with missing data. \nYou must either omit your missing data using \"na.omit()\" or turn on the\n\"use_missing_data\" or \"replace_missing_data_with_x_j_bar\" feature in order to use bartMachine.\n")
+			stop("You have ", rows_before - rows_after, " observations with missing data. \nYou must either omit your missing data using \"na.omit()\" or turn on the\n\"use_missing_data\" or \"replace_missing_data_with_x_j_bar\" feature in order to use YARF.\n")
 		}
 	} else if (replace_missing_data_with_x_j_bar){
 		X = imputeMatrixByXbarjContinuousOrModalForBinary(X, X)
@@ -137,24 +181,24 @@ YARF = function(
 	}
 	
 	pre_process_obj = pre_process_training_data(X, use_missing_data_dummies_as_covars)
-	model_matrix_training_data = cbind(pre_process_obj$data, y_remaining)
+	model_matrix_training_data = pre_process_obj$data
 	p = ncol(model_matrix_training_data) - 1 # we subtract one because we tacked on the response as the last column
-	factor_lengths = pre_process_obj$factor_lengths
+#	factor_lengths = pre_process_obj$factor_lengths
 	if (verbose){
 		cat("YARF after preprocess...", ncol(model_matrix_training_data), "total features...\n")
 	}
 
-	#this is a private parameter ONLY called by cov_importance_test
-	if (!is.null(covariates_to_permute)){
-		#first check if these covariates are even in the matrix to begin with
-		for (cov in covariates_to_permute){
-			if (!(cov %in% colnames(model_matrix_training_data)) && class(cov) == "character"){
-				stop("Covariate \"", cov, "\" not found in design matrix.")
-			}
-		}
-		permuted_order = sample(1 : nrow(model_matrix_training_data), nrow(model_matrix_training_data))
-		model_matrix_training_data[, covariates_to_permute] = model_matrix_training_data[permuted_order, covariates_to_permute]
-	}
+#	#this is a private parameter ONLY called by cov_importance_test
+#	if (!is.null(covariates_to_permute)){
+#		#first check if these covariates are even in the matrix to begin with
+#		for (cov in covariates_to_permute){
+#			if (!(cov %in% colnames(model_matrix_training_data)) && class(cov) == "character"){
+#				stop("Covariate \"", cov, "\" not found in design matrix.")
+#			}
+#		}
+#		permuted_order = sample(1 : nrow(model_matrix_training_data), nrow(model_matrix_training_data))
+#		model_matrix_training_data[, covariates_to_permute] = model_matrix_training_data[permuted_order, covariates_to_permute]
+#	}
 	
 	#now set whether we want the program to log to a file
 	if (debug_log & verbose){
@@ -162,8 +206,18 @@ YARF = function(
 		.jcall(java_YARF, "V", "writeStdOutToLogFile")
 	}
 	
+#	//init
+#	//set num cores, seed, verbose, etc
+#	//add data
+#	//set data feature names
+#	//add "other" data
+#	//set "other" data feature names
+#	//set num trees
+#	//init trees
+#	//give bootstrap samples (indices)
+#	//load all custom functions
+#	//BUILD
 
-	
 	#if the user hasn't set a number of cores, set it here
 	if (!exists("YARF_NUM_CORES", envir = bartMachine_globals)){
 		assign("YARF_NUM_CORES", YARF_NUM_CORES_DEFAULT, bartMachine_globals)
@@ -184,16 +238,31 @@ YARF = function(
 		.jcall(java_YARF, "V", "setSeed", as.integer(seed))
 	}
 	
-	#now load the training data into BART
-	for (i in 1 : nrow(model_matrix_training_data)){
+	#now load the training data into YARF
+	for (i in 1 : n){
 		row_as_char = as.character(model_matrix_training_data[i, ])
 		row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
 		.jcall(java_YARF, "V", "addTrainingDataRow", row_as_char)
 	}
+	.jcall(java_YARF, "V", "addTrainingDataResponse", y)
 	.jcall(java_YARF, "V", "finalizeTrainingData")
 	if (verbose){
 		cat("YARF training data finalized...\n")
 	}
+	
+	.jcall(java_YARF, "V", "setTrainingDataNames", colnames(model_matrix_training_data))
+	
+	.jcall(java_YARF, "V", "setOtherDataNames", colnames(Xother))
+	#now load the "other" data into YARF
+	for (i in 1 : n){
+		row_as_char = as.character(Xother[i, ])
+		row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
+		.jcall(java_YARF, "V", "addOtherDataRow", row_as_char)
+	}
+	if (verbose){
+		cat("YARF 'other' data finalized...\n")
+	}
+	
 	
 	#build the bart machine and let the user know what type of BART this is
 	if (verbose){
@@ -210,12 +279,13 @@ YARF = function(
 	
 	#now once it's done, let's extract things that are related to diagnosing the build of the BART model
 	
-	l = as.list(match.call())
-	l[[1]] = NULL
-	yarf_mod = c(l, 
+	all_arguments = as.list(match.call())
+	all_arguments[[1]] = NULL
+	yarf_mod = c(
+			all_arguments, 
 			time_to_build = Sys.time() - t0,
 			y_levels = y_levels,			
-			n = nrow(model_matrix_training_data),
+			n = n,
 			p = p,
 			model_matrix_training_data = model_matrix_training_data,
 			training_data_features = colnames(model_matrix_training_data)[1 : ifelse(use_missing_data && use_missing_data_dummies_as_covars, (p / 2), p)],
@@ -232,10 +302,10 @@ YARF = function(
 		
 		#return a bunch more stuff
 		yarf_mod$y_hat_train = y_hat_train
-		yarf_mod$residuals = y_remaining - y_hat_train
+		yarf_mod$residuals = y - y_hat_train
 		yarf_mod$L1_err_train = sum(abs(yarf_mod$residuals))
 		yarf_mod$L2_err_train = sum(yarf_mod$residuals^2)
-		yarf_mod$PseudoRsq = 1 - yarf_mod$L2_err_train / sum((y_remaining - mean(y_remaining))^2) #pseudo R^2 acc'd to our dicussion with Ed and Shane
+		yarf_mod$PseudoRsq = 1 - yarf_mod$L2_err_train / sum((y - mean(y))^2) #pseudo R^2 acc'd to our dicussion with Ed and Shane
 		yarf_mod$rmse_train = sqrt(yarf_mod$L2_err_train / yarf_mod$n)
 		yarf_mod$mae = yarf_mod$L1_err_train / yarf_mod$n
 		
@@ -251,7 +321,7 @@ YARF = function(
 			rownames(confusion_matrix) = c(paste("actual", y_levels), "use errors")
 			colnames(confusion_matrix) = c(paste("predicted", y_levels), "model errors")
 			
-			confusion_matrix[1 : 2, 1 : 2] = as.integer(table(y_remaining, y_hat_train)) 
+			confusion_matrix[1 : 2, 1 : 2] = as.integer(table(y, y_hat_train)) 
 			confusion_matrix[3, 1] = round(confusion_matrix[2, 1] / (confusion_matrix[1, 1] + confusion_matrix[2, 1]), 3)
 			confusion_matrix[3, 2] = round(confusion_matrix[1, 2] / (confusion_matrix[1, 2] + confusion_matrix[2, 2]), 3)
 			confusion_matrix[1, 3] = round(confusion_matrix[1, 2] / (confusion_matrix[1, 1] + confusion_matrix[1, 2]), 3)
