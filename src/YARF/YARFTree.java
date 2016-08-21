@@ -5,9 +5,10 @@ import gnu.trove.set.hash.TIntHashSet;
 
 public class YARFTree extends Classifier {
 	
-	private YARF yarf;
-	private int[] bootstrap_indices;
-	private TIntHashSet oob_indices;
+	protected YARF yarf;
+	protected YARFNode root;
+	protected int[] bootstrap_indices;
+	protected TIntHashSet oob_indices;
 
 	public YARFTree(YARF yarf) {
 		this.yarf = yarf;
@@ -18,13 +19,12 @@ public class YARFTree extends Classifier {
 	}
 
 	public void Build() {
-		// TODO Auto-generated method stub
-		
+		root = new YARFNode(this);
+		new YarfTreeBuilder(this);
 	}
 
 	public void FlushData() {
-		// TODO Auto-generated method stub
-		
+		root.flushNodeData();
 	}
 
 	public void setTrainingIndices(int[] bootstrap_indices) {
@@ -37,9 +37,7 @@ public class YARFTree extends Classifier {
 
 	@Override
 	public double Evaluate(double[] record, int num_cores) {
-		//we ignore num_cores here
-		
-		return 0;
+		return root.Evaluate(record);
 	}
 
 	@Override

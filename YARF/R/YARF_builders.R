@@ -18,20 +18,27 @@ YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
 #' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
 #' 											the out-of-box RF default which is floor(p / 3) for regression and for classification,
 #' 											floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter. 
-#' @param mtry_function						If you wish to create a custom number of mtry, pass in javascript code here as a string.
-#' @param cost_calc 
-#' @param node_assign 
-#' @param shared_functions 
-#' @param use_missing_data 
-#' @param covariates_to_permute 
-#' @param use_missing_data_dummies_as_covars 
-#' @param impute_missingness_with_x_j_bar_for_lm 
+#' @param mtry_fun							If you wish to create a custom number of mtry, pass in javascript code here as a string.
+#' @param nodesize							The minimum number of observations in a node. YARF will stop splitting at this point.
+#' 											If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
+#' 											will be used.
+#' @param nodesize_fun						A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
+#' 											nodesize will be calculated as a static constant (see the \code{nodesize} argument).				
+#' @param cost_calc_fun						A custom cost calculation for node splits in Javascript. The default is \code{NULL}
+#' 											which defaults to sum of squared error for regression or sum of entropy for classification.							 
+#' @param node_assign_fun					A custom node assignment function in Javascript. This function is run after RF greedily finds the 
+#' 											"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
+#' 											in regression or the modal class during classification. 
+#' @param shared_functions					Custom Javascript functions that are always around. The default is \code{NULL} for no shared functions. 
+#' @param use_missing_data					Use the "missing-in-attributes" to fit data with missingness. 	
+#' @param covariates_to_permute 			Indices of features to randomly permute when creating a YARF. The default is \code{NULL}
+#' 											indicating no features are permuted. This is an argument used mostly by other YARF functions.
 #' @param mem_cache_for_speed 
-#' @param serialize 
-#' @param seed 
-#' @param verbose 
+#' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing time and memory.
+#' @param seed								Set a random seed for reproducibility. 
+#' @param verbose 							Should we print out messages verbosely during construction. Default is \code{FALSE}.
 #' 
-#' @return												A list of all arguments passed in plus.. 
+#' @return									A list of all arguments passed in plus... 
 #' 
 #' @author Adam Kapelner
 #' @export
@@ -45,22 +52,70 @@ YARF = function(
 		#whether you want oob_estimates
 		oob_estimates = TRUE,	
 		oob_metric = NULL,
-		#all custom functions as strings of javascript code
+		#mtry or a custom function
 		mtry = NULL,
-		mtry_function = NULL,
-		cost_calc = NULL,
-		node_assign = NULL,
-		shared_functions = NULL, #any helper code which will be accessible to code above
-		#everything that has to do with possible missing values
+		mtry_fun = NULL,
+		#nodesize or a custom function
+		nodesize = NULL,
+		nodesize_fun = NULL,
+		#a custom fuction for the cost calculation
+		cost_calc_fun = NULL,
+		#a custom function for the cost calculation
+		node_assign_fun = NULL,
+		#any helper code which will be accessible to code above
+		shared_funs = NULL, 
+		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = FALSE,
-		covariates_to_permute = NULL, #PRIVATE
 		use_missing_data_dummies_as_covars = FALSE,
 		replace_missing_data_with_x_j_bar = TRUE,
 		#other arguments
 		mem_cache_for_speed = TRUE,
+		covariates_to_permute = NULL, #PRIVATE
 		serialize = FALSE,
 		seed = NULL,
 		verbose = TRUE){
+	
+	if ((as.integer(num_trees) != num_trees) || num_trees < 1){
+		stop("The 'num_trees' argument is not a positive integer.")
+	}
+	
+	if ((is.null(mtry) && is.null(mtry_fun)) || (!is.null(mtry) && !is.null(mtry_fun))){
+		stop("You have to specify EITHER 'mtry' OR 'mtry_function' but not both (or none)")
+	}
+	if (is.null(mtry)){
+		if (class(mtry_fun) != "chracter"){
+			stop("'mtry_function' must be a character string of Javascript code")
+		}
+	}
+	
+	if ((is.null(nodesize) && is.null(nodesize_fun)) || (!is.null(nodesize) && !is.null(nodesize_fun))){
+		stop("You have to specify EITHER 'nodesize' OR 'nodesize_function' but not both (or none)")
+	}
+	if (is.null(nodesize)){
+		if (class(nodesize_fun) != "chracter"){
+			stop("'nodesize' must be a character string of Javascript code")
+		}
+	}
+	
+	if (!is.null(cost_calc_fun)){
+		if (class(cost_calc_fun) != "chracter"){
+			stop("'cost_calc_fun' must be a character string of Javascript code")
+		}
+	}
+	
+	if (!is.null(node_assign_fun)){
+		if (class(node_assign_fun) != "chracter"){
+			stop("'node_assign_fun' must be a character string of Javascript code")
+		}
+	}
+	
+	if (!is.null(shared_funs)){
+		if (class(shared_funs) != "chracter"){
+			stop("'shared_funs' must be a character string of Javascript code")
+		}
+	}
+	
+	
 	
 	if (verbose){
 		cat("YARF initializing with", num_trees, "trees...\n")	
@@ -263,6 +318,32 @@ YARF = function(
 	.jcall(java_YARF, "V", "setVerbose", verbose)
 	.jcall(java_YARF, "V", "setMemCacheForSpeed", mem_cache_for_speed)
 	
+	#now load data and/or scripts
+	if (!is.null(mtry)){
+		.jcall(java_YARF, "V", "setMTry", as.integer(mtry))
+	} else {
+		.jcall(java_YARF, "V", "setMTryFunction", mtry_fun)
+	}
+	if (!is.null(nodesize)){
+		.jcall(java_YARF, "V", "setNodesize", as.integer(nodesize))
+	} else {
+		.jcall(java_YARF, "V", "setNodesizeFunction", nodesize_fun)
+	}
+	
+	if (!is.null(cost_calc_fun)){
+		.jcall(java_YARF, "V", "setCostCalcFunction", cost_calc_fun)
+	}
+	
+	if (!is.null(node_assign_fun)){
+		.jcall(java_YARF, "V", "setNodeAssignmentFunction", node_assign_fun)
+	}
+	
+	if (!is.null(shared_funs)){
+		.jcall(java_YARF, "V", "setSharedFunctions", shared_funs)
+	}
+	
+	
+	
 	if (!is.null(seed)){
 		#set the seed in R
 		set.seed(seed)
@@ -317,8 +398,14 @@ YARF = function(
 	
 	#now once it's done, let's extract things that are related to diagnosing the build of the BART model
 	
+	#return all arguments
 	all_arguments = as.list(match.call())
 	all_arguments[[1]] = NULL
+	#except the data itself - that's a waste of RAM
+	all_arguments$X = NULL
+	all_arguments$y = NULL
+	all_arguments$Xy = NULL
+	
 	yarf_mod = c(
 			all_arguments, 
 			time_to_build = Sys.time() - t0,

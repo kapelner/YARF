@@ -270,9 +270,13 @@ public class StatToolbox {
 	/** 
 	 * A convenience method for a random object
 	 * 
-	 * @return	A random number drawn from a uniform distirbution bounded between 0 and 1.
+	 * @return	A random number drawn from a uniform distribution bounded between 0 and 1.
 	 */
 	public static double rand(){
 		return R.nextDouble();
 	}	
+	
+	public static int randInt(int i){
+		return R.nextInt(i);
+	}
 }

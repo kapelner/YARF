@@ -19,29 +19,30 @@ public class TestScriptingStrategies {
 		ScriptEngine nashorn_js_engine = new ScriptEngineManager().getEngineByName("nashorn");
         Compilable compilingEngine;
         CompiledScript cscript;
+        Invocable invocable;
         long t0;
         long tf;         
-        
-        t0 = System.currentTimeMillis(); 
-        compilingEngine = (Compilable) nashorn_js_engine; 
-        cscript = compilingEngine.compile("function foo(a, b){return a+b}"); 
-        Invocable invocable = (Invocable) cscript.getEngine();
-        for (int i = 0; i < 1000000; i++){
-            benchmarkInvokeFunctionSettingContext(invocable, cscript, nashorn_js_engine);
-        }
-        tf = System.currentTimeMillis();        
-        System.out.println("time benchmarkInvokeFunctionSettingContext = " + (tf - t0));
-        
+
         t0 = System.currentTimeMillis();
         compilingEngine = (Compilable) nashorn_js_engine;
-        cscript = compilingEngine.compile(new FileReader("script.js")); 
-        invocable = (Invocable) cscript.getEngine();
+        cscript = compilingEngine.compile("function foo(a,b){return a+b}"); 
         cscript.eval(nashorn_js_engine.getBindings(ScriptContext.ENGINE_SCOPE));
+        invocable = (Invocable) cscript.getEngine();
         for (int i = 0; i < 1000000; i++){
         	benchmarkInvokeFunctionContextPreset(invocable);
         }
         tf = System.currentTimeMillis();
         System.out.println("time benchmarkInvokeFunctionContextPreset = " + (tf - t0));
+        
+        t0 = System.currentTimeMillis(); 
+        compilingEngine = (Compilable) nashorn_js_engine; 
+        cscript = compilingEngine.compile("function foo(a, b){return a+b}"); 
+        invocable = (Invocable) cscript.getEngine();
+        for (int i = 0; i < 1000000; i++){
+            benchmarkInvokeFunctionSettingContext(invocable, cscript, nashorn_js_engine);
+        }
+        tf = System.currentTimeMillis();        
+        System.out.println("time benchmarkInvokeFunctionSettingContext = " + (tf - t0));
         
         t0 = System.currentTimeMillis();
         for (int i = 0; i < 1000000; i++){

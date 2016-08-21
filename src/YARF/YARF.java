@@ -1,13 +1,25 @@
 package YARF;
 
 
+import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import javax.script.Compilable;
+import javax.script.CompiledScript;
+import javax.script.Invocable;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 
 /**
@@ -28,9 +40,21 @@ public class YARF extends Classifier implements Serializable {
 	private YARFTree[] yarf_trees;
 	private int[][] bootstrap_indices;
 	private TIntHashSet indicies_one_to_n;
-
+	private int mtry;
+	private int nodesize;
 	
-	/** the default constructor sets the number of total iterations each Gibbs chain is charged with sampling */
+	protected TIntObjectHashMap<int[]> all_attribute_sorts;
+
+	protected ArrayList<Integer> indicies_one_to_p;
+	
+	private ScriptEngine nashorn_js_engine;
+    private Compilable compilingEngine;
+	private String shared_funs;
+	private Invocable mtry_fun;
+	private Invocable nodesize_fun;
+	private Invocable cost_calc_fun;
+	private Invocable node_assign_fun;
+	
 	public YARF(){}
 	
 	//init
@@ -54,6 +78,54 @@ public class YARF extends Classifier implements Serializable {
 		this.num_trees = num_trees;
 	}
 	
+	public void setMTry(int mtry){
+		this.mtry = mtry;
+	}
+	
+	public void setNodesize(int nodesize){
+		this.nodesize = nodesize;
+	}
+	
+	//all JS functions stuff --- shared must be set FIRST!!!!
+	public void setSharedFunctions(String shared_funs) throws ScriptException{
+		this.shared_funs = shared_funs;
+	}
+	
+	private Invocable stringToInvokableCompiledFunction(String fun) throws ScriptException{
+        //lazy load for this stuff
+		if (nashorn_js_engine == null){
+			nashorn_js_engine = new ScriptEngineManager().getEngineByName("nashorn");
+		}
+		if (compilingEngine == null){
+			compilingEngine = (Compilable) nashorn_js_engine;
+		}
+		
+		String fun_and_shared_libraries = fun + "\n\n" + shared_funs;
+		CompiledScript cscript = compilingEngine.compile(fun_and_shared_libraries); 
+        cscript.eval(nashorn_js_engine.getBindings(ScriptContext.ENGINE_SCOPE));
+        return (Invocable)cscript.getEngine();
+	}
+	
+	public void setMTryFunction(String mtry_fun) throws ScriptException{
+        this.mtry_fun = stringToInvokableCompiledFunction(mtry_fun);
+	}
+	
+	public void setNodesizeFunction(String nodesize_fun) throws ScriptException{
+		this.nodesize_fun = stringToInvokableCompiledFunction(nodesize_fun);
+	}
+	
+	public void setCostCalcFunction(String cost_calc_fun) throws ScriptException{
+		this.cost_calc_fun = stringToInvokableCompiledFunction(cost_calc_fun);
+	}
+	
+	public void setNodeAssignFunction(String node_assign_fun) throws ScriptException{
+		this.node_assign_fun = stringToInvokableCompiledFunction(node_assign_fun);
+	}
+	
+	public boolean customFunctionMtry(){
+		return mtry_fun != null;
+	}
+	
 	public void initTrees(){
 		yarf_trees = new YARFTree[num_trees];
 		for (int t = 0; t < num_trees; t++){
@@ -71,9 +143,24 @@ public class YARF extends Classifier implements Serializable {
 		oob_indices.removeAll(bootstrap_indices[t]);
 		yarf_trees[t].setOutOfBagIndices(oob_indices);
 	}
+	
+//	public int[] getSortedIndicesAtAttribute(int j, int sub_indices){
+//		synchronized(all_attribute_sorts){
+//			int[] all_indices = all_attribute_sorts.get(j);
+//			if (all_indices == null){ //lazy create for this attribute
+//				double[] xj = new double[n];
+//				for (int i = 0; i < n; i++){
+//					xj[i] = X.get(i)[j];
+//				}
+//			}			
+//		}
+//
+//	}
 
 	/** This function builds the forest by building all the trees */
 	public void Build() {
+
+		all_attribute_sorts = new TIntObjectHashMap<int[]>(p);
 		initTrees();
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
@@ -225,12 +312,28 @@ public class YARF extends Classifier implements Serializable {
 		bootstrap_indices[tree] = indices_t;
 	}
 	
+	public static <E> List<E> pickNRandomElements(List<E> list, int subset_size) {
+	    int length = list.size();
+
+	    if (length < subset_size) return null;
+
+	    //We don't need to shuffle the whole list
+	    for (int i = length - 1; i >= length - subset_size; --i){
+	        Collections.swap(list, i , StatToolbox.randInt(i + 1));
+	    }
+	    return list.subList(length - subset_size, length);
+	}
+	
 	public void finalizeTrainingData(){
 		super.finalizeTrainingData();
 		bootstrap_indices = new int[num_trees][n];
 		indicies_one_to_n = new TIntHashSet();
 		for (int i = 0; i < n; i++){
 			indicies_one_to_n.add(i);
+		}
+		indicies_one_to_p = new ArrayList<Integer>();
+		for (int j = 0; j < p; j++){
+			indicies_one_to_p.add(j);
 		}
 	}
 	
