@@ -1,7 +1,10 @@
 package YARF;
 
 
+import gnu.trove.set.hash.TIntHashSet;
+
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -20,13 +23,11 @@ public class YARF extends Classifier implements Serializable {
 	protected int num_cores = 1; //default
 	/** the number of trees in this RF model on all Gibbs chains */
 	protected int num_trees = 500; //default
-	
-	/** should we print select messages to the screen */
-	protected boolean verbose = true;
-	/** ? */
-	protected boolean mem_cache_for_speed = true;
+
 
 	private YARFTree[] yarf_trees;
+	private int[][] bootstrap_indices;
+	private TIntHashSet indicies_one_to_n;
 
 	
 	/** the default constructor sets the number of total iterations each Gibbs chain is charged with sampling */
@@ -57,15 +58,23 @@ public class YARF extends Classifier implements Serializable {
 		yarf_trees = new YARFTree[num_trees];
 		for (int t = 0; t < num_trees; t++){
 			yarf_trees[t] = new YARFTree(this);
+			setBootstrapAndOutOfBagIndices(t);
 		}
 	}
 	
-	public void setBootstrapIndices(int[] bootstrap_indices, int t){
-		yarf_trees[t].setBoostrapIndices(bootstrap_indices);
+	public void setBootstrapAndOutOfBagIndices(int t){
+		//make a copy
+		yarf_trees[t].setTrainingIndices(bootstrap_indices[t]);
+		//now get oob indices - it begins as the full thing then we subtract 
+		//out the bootstrap indices of the tree
+		TIntHashSet oob_indices = new TIntHashSet(indicies_one_to_n);
+		oob_indices.removeAll(bootstrap_indices[t]);
+		yarf_trees[t].setOutOfBagIndices(oob_indices);
 	}
 
 	/** This function builds the forest by building all the trees */
 	public void Build() {
+		initTrees();
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
 		if (verbose){
@@ -212,17 +221,17 @@ public class YARF extends Classifier implements Serializable {
 		return null;
 	}
 	
-
-	public void setVerbose(boolean verbose){
-		this.verbose = verbose;
-	}
-
-	public void setSeed(int seed){
-		StatToolbox.setSeed(seed);
+	public void addBootstrapIndices(int[] indices_t, int tree){
+		bootstrap_indices[tree] = indices_t;
 	}
 	
-	public void setMemCacheForSpeed(boolean mem_cache_for_speed){
-		this.mem_cache_for_speed = mem_cache_for_speed;
+	public void finalizeTrainingData(){
+		super.finalizeTrainingData();
+		bootstrap_indices = new int[num_trees][n];
+		indicies_one_to_n = new TIntHashSet();
+		for (int i = 0; i < n; i++){
+			indicies_one_to_n.add(i);
+		}
 	}
 	
 	/** Must be implemented, but does nothing */

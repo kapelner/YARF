@@ -27,7 +27,12 @@ public abstract class Classifier implements Serializable{
 	public static final boolean ON_WINDOWS = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
 	
 	/** The way we represent missing values from within our implementation */
-	public static final double MISSING_VALUE = Double.NaN;
+	public static final double MISSING_VALUE = Double.NaN;	
+	
+	/** should we print select messages to the screen */
+	protected boolean verbose = true;
+	/** ? */
+	protected boolean mem_cache_for_speed = true;
 	/**
 	 * Is this value missing?
 	 * 
@@ -292,6 +297,19 @@ public abstract class Classifier implements Serializable{
 	
 	public void setUniqueName(String unique_name) {
 		this.unique_name = unique_name;
+	}
+	
+
+	public void setVerbose(boolean verbose){
+		this.verbose = verbose;
+	}
+
+	public void setSeed(int seed){
+		StatToolbox.setSeed(seed);
+	}
+	
+	public void setMemCacheForSpeed(boolean mem_cache_for_speed){
+		this.mem_cache_for_speed = mem_cache_for_speed;
 	}
 	
 	public void writeStdOutToLogFile(){

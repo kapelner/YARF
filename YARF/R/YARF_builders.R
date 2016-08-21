@@ -2,15 +2,23 @@ YARF_MAX_MEM_MB_DEFAULT = 1100 #1.1GB is the most a 32bit machine can give witho
 YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
 
 #' Builds a YARF Model
-#' @param X 
-#' @param y 
-#' @param Xy 
-#' @param Xother 
-#' @param num_trees 
-#' @param boostrap_indices_fun 
-#' @param bootstrap_indicies_fun_data 
-#' @param oob_estimates 
-#' @param mtry 
+#' @param X 								The data frame of training data
+#' @param y 								The training responses
+#' @param Xy 								The data frame of training data where the last column is responses
+#' @param Xother 							Other data that is used in the training but the RF doesn't split on it
+#' @param num_trees 						The # of trees in the RF. Default is \code{500}.
+#' @param boostrap_indices 					An n x num_trees matrix of indices where each column is the bootstrap indices of the training data.
+#' 											The default is \code{NULL} indicating the default algorithm of sampling {1,...,n} with replacement.	
+#' @param oob_estimates 					After the RF is fit, should we return out of bag estimates? This involves more processing time
+#' 											but it will provide an idea of how good the model is fitting out of sample. Default is \code{TRUE}.
+#' @param oob_metric						If regression, we will return L1, MAE, L2 and RMSE and if classification,
+#' 											we will return the confusion matrix with use/test errors and overall error rates. 
+#' 											If you wish for another metric to be computed, pass the function in here as a string of 
+#' 											javascript code. Default is \code{NULL} for no additional metric to be computed.		
+#' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
+#' 											the out-of-box RF default which is floor(p / 3) for regression and for classification,
+#' 											floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter. 
+#' @param mtry_function						If you wish to create a custom number of mtry, pass in javascript code here as a string.
 #' @param cost_calc 
 #' @param node_assign 
 #' @param shared_functions 
@@ -33,12 +41,13 @@ YARF = function(
 		#pick the trees		
 		num_trees = 500,
 		#customizable bootstrap
-		boostrap_indices_fun = NULL, #if you want to write your own bootstrapper for the trees, form: function(X, y, n, p, b, bootstrap_indicies_fun_data)
-		bootstrap_indicies_fun_data = NULL, #optional data you wish to pass to that function
+		boostrap_indices = NULL, #if you want to write your own bootstrapper for the trees, send a n x T matrix of indices here
 		#whether you want oob_estimates
-		oob_estimates = TRUE,		
+		oob_estimates = TRUE,	
+		oob_metric = NULL,
 		#all custom functions as strings of javascript code
 		mtry = NULL,
+		mtry_function = NULL,
 		cost_calc = NULL,
 		node_assign = NULL,
 		shared_functions = NULL, #any helper code which will be accessible to code above
@@ -110,6 +119,29 @@ YARF = function(
 		}
 		if (nrow(X) != n){
 			stop("The other data, Xother, must have the same number of rows as X.")
+		}
+	}
+	
+	#now take a look at the bootstrap indices data
+	if (is.null(boostrap_indices)){ #the user wants the standard non-parametric bootstrap sampling with replacement
+		bootstrap_indicies = matrix(NA, n, num_trees)
+		one_to_n = seq(1, n)
+		for (t in 1 : num_trees){
+			bootstrap_indicies[, t] = sample(one_to_n)
+		}
+	} else {
+		#ensure the indicies is the correct format
+		if (class(bootstrap_indicies) %notin% c("data.frame", "matrix")){
+			stop("The bootstrap_indicies must be a data.frame or matrix")
+		}
+		if (!all.equal(dim(bootstrap_indicies), c(n, num_trees))){
+			stop("The bootstrap_indicies must be n x num_trees")
+		}
+		if (!(sum(apply(bootstrap_indicies, 1, as.integer) == apply(bootstrap_indicies, 1, function(x){x})) != (n * num_trees))){
+			stop("The bootstrap_indicies must be integers")
+		}
+		if (sum(bootstrap_indicies > n) + sum(bootstrap_indicies < 1) > 0){
+			stop("The bootstrap_indicies elements must all be in {1,...,n}")
 		}
 	}
 	if (verbose){
@@ -259,6 +291,12 @@ YARF = function(
 		row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
 		.jcall(java_YARF, "V", "addOtherDataRow", row_as_char)
 	}
+	
+	#now load the bootstrap indices into YARF
+	for (t in 1 : num_trees){
+		.jcall(java_YARF, "V", "addBootstrapIndices", as.integer(bootstrap_indices[, t]), as.integer(t))
+	}
+	
 	if (verbose){
 		cat("YARF 'other' data finalized...\n")
 	}
