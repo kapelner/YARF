@@ -46,7 +46,7 @@ YARF = function(
 		use_missing_data = FALSE,
 		covariates_to_permute = NULL, #PRIVATE
 		use_missing_data_dummies_as_covars = FALSE,
-		impute_missingness_with_x_j_bar = TRUE,
+		replace_missing_data_with_x_j_bar = TRUE,
 		#other arguments
 		mem_cache_for_speed = TRUE,
 		serialize = FALSE,
