@@ -92,7 +92,6 @@ public class YarfTreeBuilder {
 			//TODO
 		}
 		int mtry = (int)Math.floor(yarf.is_a_regression ? (yarf.p / 3) : Math.sqrt(yarf.p));
-		//http://lemire.me/blog/2013/08/16/picking-n-distinct-numbers-at-random-how-to-do-it-fast/
 		return StatToolbox.pickNRandomElements(node.indices, mtry);
 	}
 
