@@ -19,6 +19,7 @@ public class YARFTree extends Classifier {
 	}
 
 	public void Build() {
+		System.out.println("BUILD TREE");
 		root = new YARFNode(this);
 		new YarfTreeBuilder(this);
 	}

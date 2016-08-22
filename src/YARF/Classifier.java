@@ -213,60 +213,6 @@ public abstract class Classifier implements Serializable{
 		out.close();		
 	}
 	
-//	/** a variable that represents the different error calculation types */
-//	public static enum ErrorTypes {L1, L2, MISCLASSIFICATION};
-//	
-//	/**
-//	 * Calculates the in-sample error using the specified loss function
-//	 * 
-//	 * @param num_cores_evaluate 	The number of processor cores to use
-//	 */		
-//	private void calculateInSampleResiduals(int num_cores_evaluate){
-//		long t0 = System.currentTimeMillis();
-//		System.out.print("calculating in-sample residuals...");
-//		residuals = new double[n];
-//		for (int i = 0; i < n; i++){
-//			double[] record = X.get(i);
-//			double yhat = Evaluate(record, num_cores_evaluate);
-//			residuals[i] = y[i] - yhat;
-////			System.out.println("y: " + y + " yhat: " + yhat);
-//		}
-//		long t1 = System.currentTimeMillis();
-//		System.out.print("done in " + ((t1 - t0) / 1000.0) + " sec \n");
-//	}
-	
-//	/**
-//	 * Calculates the in-sample error based on a specified error metric
-//	 * 
-//	 * @param type_of_error_rate	The error metric to use to compute loss
-//	 * @param num_cores_evaluate	The number of processor cores to use
-//	 * @return						The in-sample loss as a sum total across all training observations
-//	 */
-//	public double calculateInSampleLoss(ErrorTypes type_of_error_rate, int num_cores_evaluate){	
-//		if (residuals == null){
-//			calculateInSampleResiduals(num_cores_evaluate);
-//		}
-//		
-//		double loss = 0;
-//		System.out.print("calculateInSampleLoss for " + type_of_error_rate + "...");
-//		for (int i = 0; i < n; i++){
-//			switch (type_of_error_rate){
-//				case L1:
-//					loss += Math.abs(residuals[i]);
-//					break;
-//				case L2:
-//					loss += Math.pow(residuals[i], 2);
-//					break;
-//				case MISCLASSIFICATION:
-//					loss += (residuals[i] == 0 ? 0 : 1);
-//					break;
-//			}
-//		}
-//		System.out.print("done\n");
-////		System.out.println("in_sample_residuals: " + Tools.StringJoin(residuals));
-//		return loss;
-//	}
-	
 	public void setUniqueName(String unique_name) {
 		this.unique_name = unique_name;
 	}
