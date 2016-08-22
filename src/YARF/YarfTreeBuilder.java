@@ -22,6 +22,7 @@ public class YarfTreeBuilder {
 		}
 		if (nodeTooSmall(node)){
 			node.isLeaf = true;
+			assignYHat(node);
 			return; //ditch... because we're done...
 		}
 		
@@ -60,6 +61,18 @@ public class YarfTreeBuilder {
 		//and now split them up
 		splitNode(left);
 		splitNode(right);
+	}
+
+	private void assignYHat(YARFNode node) {
+		if (yarf.customFunctionNodeAssign()){
+			//TODO
+		}
+		else if (yarf.is_a_regression){//sample average
+			
+		}
+		else { //it's a classification so the modal category
+			//
+		}
 	}
 
 	private double computeCostOfSplitPoint(int[] ordered_indices_j, int i_n) {
