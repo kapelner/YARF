@@ -175,6 +175,9 @@ YARF = function(
 		if (nrow(X) != n){
 			stop("The other data, Xother, must have the same number of rows as X.")
 		}
+		if (verbose && nrow(na.omit(Xother)) < nrow(Xother)){
+			cat("Warning: There is missing data in 'Xother'.\n")
+		}
 	}
 	
 	#now take a look at the bootstrap indices data
@@ -317,6 +320,7 @@ YARF = function(
 	.jcall(java_YARF, "V", "setNumTrees", as.integer(num_trees))
 	.jcall(java_YARF, "V", "setVerbose", verbose)
 	.jcall(java_YARF, "V", "setMemCacheForSpeed", mem_cache_for_speed)
+	.jcall(java_YARF, "V", "setPredType", pred_type)
 	
 	#now load data and/or scripts
 	if (!is.null(mtry)){

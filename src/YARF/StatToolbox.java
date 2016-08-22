@@ -28,6 +28,8 @@ import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -278,5 +280,17 @@ public class StatToolbox {
 	
 	public static int randInt(int i){
 		return R.nextInt(i);
+	}
+	
+	public static <E> List<E> pickNRandomElements(List<E> list, int subset_size) {
+	    int length = list.size();
+
+	    if (length < subset_size) return null;
+
+	    //We don't need to shuffle the whole list
+	    for (int i = length - 1; i >= length - subset_size; --i){
+	        Collections.swap(list, i, randInt(i + 1));
+	    }
+	    return list.subList(length - subset_size, length);
 	}
 }

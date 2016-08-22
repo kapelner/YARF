@@ -7,7 +7,6 @@ import gnu.trove.set.hash.TIntHashSet;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,10 +20,11 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.apache.commons.math3.stat.StatUtils;
+
 
 /**
- * This class handles the parallelization of many Gibbs chains over many CPU cores
- * to create one BART regression model. It also handles all operations on the completed model.
+ * Builds a YARF model in parallel
  * 
  * @author Adam Kapelner
  */
@@ -32,28 +32,41 @@ public class YARF extends Classifier implements Serializable {
 	private static final long serialVersionUID = -6984205353140981153L;
 	
 	/** the number of CPU cores to build many different trees in a YARF model */
-	protected int num_cores = 1; //default
-	/** the number of trees in this RF model on all Gibbs chains */
-	protected int num_trees = 500; //default
+	protected int num_cores;
+	/** the number of trees in this YARF model */
+	protected int num_trees;
+	/** is this a regression problem? (or a classification problem) */
+	protected boolean is_a_regression;
+	
+	/** an array of the raw training data by COLUMN i.e. consisting of xj = [x1j, ..., xnj] with the last entry being [y1, ..., yn] */ 
+	private transient TIntObjectHashMap<double[]> X_by_col;
 
+	/** other data which may be useful for custom functions */
+	protected transient ArrayList<double[]> Xother;
+	/** feature names in other data */
+	protected String[] other_data_names;
 
 	private YARFTree[] yarf_trees;
-	private int[][] bootstrap_indices;
-	private TIntHashSet indicies_one_to_n;
-	private int mtry;
-	private int nodesize;
+	private transient int[][] bootstrap_indices;
 	
-	protected TIntObjectHashMap<int[]> all_attribute_sorts;
+	protected int mtry;
+	protected int nodesize;
+	
 
-	protected ArrayList<Integer> indicies_one_to_p;
+	//convenient pre-computed data to have around
+	protected transient TIntObjectHashMap<int[]> all_attribute_sorts;
+	private transient TIntHashSet indicies_one_to_n;
+	protected transient ArrayList<Integer> indicies_one_to_p;
 	
-	private ScriptEngine nashorn_js_engine;
-    private Compilable compilingEngine;
-	private String shared_funs;
-	private Invocable mtry_fun;
-	private Invocable nodesize_fun;
-	private Invocable cost_calc_fun;
-	private Invocable node_assign_fun;
+	//everything that has to do with scripts
+	private transient ScriptEngine nashorn_js_engine;
+    private transient Compilable compilingEngine;
+	private transient String shared_funs;
+	protected transient Invocable mtry_fun;
+	protected transient Invocable nodesize_fun;
+	protected transient Invocable cost_calc_fun;
+	protected transient Invocable node_assign_fun;
+	
 	
 	public YARF(){}
 	
@@ -68,7 +81,39 @@ public class YARF extends Classifier implements Serializable {
 	//give bootstrap samples (indices)
 	//load all custom functions
 	//BUILD
+
 	
+	
+	/**
+	 * Adds an observation / record to the "other" data array. The
+	 * observation is converted to doubles and the entries that are 
+	 * unrecognized are converted to {@link #MISSING_VALUE}'s.
+	 * 
+	 * @param x_i	The observation / record to be added as a String array.
+	 */
+	public void addOtherDataRow(String[] x_i){
+		//initialize data matrix if it hasn't been initialized already
+		if (Xother == null){
+			Xother = new ArrayList<double[]>();
+		}
+		
+		//now add the new record
+		final double[] record = new double[x_i.length];
+		for (int i = 0; i < x_i.length; i++){
+			try {
+				record[i] = Double.parseDouble(x_i[i]);
+			}
+			catch (NumberFormatException e){
+				record[i] = MISSING_VALUE;
+//				System.out.println("missing value at record #" + X_y.size() + " attribute #" + i);
+			}
+		}				
+		Xother.add(record);		
+	}
+	
+	public void setOtherDataNames(String[] other_data_names){
+		this.other_data_names = other_data_names;
+	}
 	
 	public void setNumCores(int num_cores){
 		this.num_cores = num_cores;
@@ -76,6 +121,12 @@ public class YARF extends Classifier implements Serializable {
 	
 	public void setNumTrees(int num_trees){
 		this.num_trees = num_trees;
+	}
+	
+	public void setPredType(String pred_type){
+		if (pred_type == "regression"){
+			is_a_regression = true;
+		}
 	}
 	
 	public void setMTry(int mtry){
@@ -124,6 +175,18 @@ public class YARF extends Classifier implements Serializable {
 	
 	public boolean customFunctionMtry(){
 		return mtry_fun != null;
+	}
+	
+	public boolean customFunctionNodesize(){
+		return nodesize_fun != null;
+	}
+	
+	public boolean customFunctionCostCalc(){
+		return cost_calc_fun != null;
+	}
+	
+	public boolean customFunctionNodeAssign(){
+		return node_assign_fun != null;
 	}
 	
 	public void initTrees(){
@@ -274,8 +337,48 @@ public class YARF extends Classifier implements Serializable {
 	 * @param record				The observation to be evaluated / predicted
 	 */
 	public double Evaluate(double[] record) {	
-		return 0;
+		return defaultNodeAssignmentAggregation(allNodeAssignments(record));
 	}	
+	
+	private double defaultNodeAssignmentAggregation(double[] y_preds){
+		if (is_a_regression){
+			return StatUtils.mean(y_preds); //the sample average
+		}
+		double[] modes = StatUtils.mode(y_preds); //there could be multiple modes
+		return modes[StatToolbox.randInt(modes.length)]; //return one at random in the spirit of "random forests"		
+	}
+	
+	public double[] allNodeAssignments(double[] record){
+		double[] y_preds = new double[num_trees];
+		for (int t = 0; t < num_trees; t++){
+			y_preds[t] = yarf_trees[t].Evaluate(record);	
+		}
+		return y_preds;		
+	}
+	
+	public double[] allNodeAssignments(double[] record, int num_cores_evaluate){
+		//speedup for the dumb user
+		if (num_cores_evaluate == 1){
+			return allNodeAssignments(record);
+		}
+		
+		final double[] y_preds = new double[num_trees];
+		ExecutorService tree_eval_pool = Executors.newFixedThreadPool(num_cores_evaluate);
+		for (int t = 0; t < num_trees; t++){
+			final int tf = t;
+			tree_eval_pool.execute(new Runnable(){
+				public void run() {
+					y_preds[tf] = yarf_trees[tf].Evaluate(record);
+				}
+			});
+		}
+		tree_eval_pool.shutdown();
+		try {	         
+			tree_eval_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS); //effectively infinity
+	    } catch (InterruptedException ignored){}
+		
+		return y_preds;	
+	}
 	
 	/**
 	 * The default BART evaluation of a new observations is done via sample average of the 
@@ -284,8 +387,8 @@ public class YARF extends Classifier implements Serializable {
 	 * @param record				The observation to be evaluated / predicted
 	 * @param num_cores_evaluate	The number of CPU cores to use during evaluation
 	 */
-	public double Evaluate(double[] record, int num_cores_evaluate) {		
-		return 0;
+	public double Evaluate(double[] record, int num_cores_evaluate) {
+		return defaultNodeAssignmentAggregation(allNodeAssignments(record, num_cores_evaluate));
 	}		
 	
 	/**
@@ -312,20 +415,10 @@ public class YARF extends Classifier implements Serializable {
 		bootstrap_indices[tree] = indices_t;
 	}
 	
-	public static <E> List<E> pickNRandomElements(List<E> list, int subset_size) {
-	    int length = list.size();
-
-	    if (length < subset_size) return null;
-
-	    //We don't need to shuffle the whole list
-	    for (int i = length - 1; i >= length - subset_size; --i){
-	        Collections.swap(list, i , StatToolbox.randInt(i + 1));
-	    }
-	    return list.subList(length - subset_size, length);
-	}
-	
 	public void finalizeTrainingData(){
 		super.finalizeTrainingData();
+		//initialize other data that requires data to be finalized
+		X_by_col = new TIntObjectHashMap<double[]>(p);
 		bootstrap_indices = new int[num_trees][n];
 		indicies_one_to_n = new TIntHashSet();
 		for (int i = 0; i < n; i++){
@@ -337,12 +430,80 @@ public class YARF extends Classifier implements Serializable {
 		}
 	}
 	
-	/** Must be implemented, but does nothing */
-	public void StopBuilding() {}
+	
+	/**
+	 * Given a training data set indexed by row, this produces a training
+	 * data set indexed by column
+	 * 
+	 * @param j		The feature to get
+	 * @return		The nx1 vector of that feature
+	 */
+	protected double[] getXj(int j) {
+		double[] x_dot_j = X_by_col.get(j);
+		if (x_dot_j == null){ //gotta build it
+			synchronized(X_by_col){ //don't wanna build it twice so sync it
+				x_dot_j = new double[n];
+				for (int i = 0; i < n; i++){
+					x_dot_j[i] = X.get(i)[j];
+				}
+				X_by_col.put(j, x_dot_j);
+			}	
+		}
+		return x_dot_j;
+	 }
+	
+	protected int[] sortedIndices(int j, int[] sub_indices){
+		int[] indices_sorted_j = all_attribute_sorts.get(j);
+		if (indices_sorted_j == null){ //we need to build it
+			synchronized(all_attribute_sorts){ //don't want to do this twice so sync it
+				indices_sorted_j = getSortedIndices(j);
+				all_attribute_sorts.put(j, indices_sorted_j);				
+			}
+		}
+		if (sub_indices != null){ //that means we want some of them only
+			int n_sub = sub_indices.length;
+			int[] sorted_sub_indices = new int[n_sub];
+			for (int i_s = 0; i_s < n_sub; i_s++){
+				sorted_sub_indices[i_s] = indices_sorted_j[sub_indices[i_s]];
+			}			
+		}
+		return indices_sorted_j;
+	}
+	
+	
+	private class SortPair implements Comparable<SortPair>{
+	  public int ind;
+	  public double value;
 
-	@Override
-	public Classifier clone() {
-		// TODO Auto-generated method stub
-		return null;
-	}	
+	  public SortPair(int ind, double value){
+		  this.ind = ind;
+		  this.value = value;
+	  }
+
+	  @Override 
+	  public int compareTo(SortPair o){
+	    return Double.compare(value, o.value);
+	  }
+	}
+	
+	//Java is about annoying as they come... why isn't this implemented????
+	private int[] getSortedIndices(int j) {
+		double[] xj = getXj(j);
+		ArrayList<SortPair> temp = new ArrayList<SortPair>(n);
+		for (int i = 0; i < n; i++){
+			temp.add(new SortPair(i, xj[i]));
+		}
+		Collections.sort(temp);
+		int[] indices = new int[n];
+		for (int i = 0; i < n; i++){
+			indices[i] = temp.get(i).ind;
+		}		
+		return indices;
+	}
+
+	public void StopBuilding() {
+		for (int t = 0; t < num_trees; t++){
+			yarf_trees[t].StopBuilding();
+		}
+	}
 }

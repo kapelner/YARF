@@ -23,7 +23,7 @@ public class YARFNode implements Cloneable {
 	/** is this node a terminal node? */
 	public boolean isLeaf;
 	/** the attribute this node makes a decision on */
-	public int splitAttributeM;
+	public int splitAttribute;
 	/** the value this node makes a decision on */
 	public double splitValue;
 	/** send missing data to the right? */ 
@@ -62,7 +62,6 @@ public class YARFNode implements Cloneable {
 		if (parent != null){
 			depth = parent.depth + 1;
 		}
-		isLeaf = true; //default is that it is a leaf
 	}
 
 	/**
@@ -81,10 +80,10 @@ public class YARFNode implements Cloneable {
 			//it's a convention that makes sense - if X_.j is binary, and the split values can only be 0/1
 			//then it MUST be <= so both values can be considered
 			//handle missing data first
-			if (Classifier.isMissing(record[evalNode.splitAttributeM])){
+			if (Classifier.isMissing(record[evalNode.splitAttribute])){
 				evalNode = evalNode.sendMissingDataRight ? evalNode.right : evalNode.left;
 			}			
-			else if (record[evalNode.splitAttributeM] <= evalNode.splitValue){
+			else if (record[evalNode.splitAttribute] <= evalNode.splitValue){
 				evalNode = evalNode.left;
 			}
 			else {

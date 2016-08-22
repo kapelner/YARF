@@ -45,7 +45,6 @@ public abstract class Classifier implements Serializable{
 	
 	/** an array of the raw training data by ROW i.e. consisting of xi = [xi1, ..., xiM, yi] */
 	protected transient ArrayList<double[]> X;
-	protected transient ArrayList<double[]> Xother;
 	protected transient double[] y;
 	/** the number of records in the training set */
 	public int n;
@@ -55,9 +54,10 @@ public abstract class Classifier implements Serializable{
 	protected double[] residuals;
 
 	protected String[] feature_names;
-	protected String[] other_data_names;
 
-	private String unique_name;	
+	private String unique_name;
+
+	protected int[] missingnessAmongFeatures;	
 
 	
 	/** A dummy constructor which keeps <code>Serializable</code> happy */
@@ -89,13 +89,11 @@ public abstract class Classifier implements Serializable{
 		}				
 		X.add(record);		
 	}
+
+	
 	
 	public void setTrainingDataNames(String[] feature_names){
 		this.feature_names = feature_names;
-	}
-	
-	public void setOtherDataNames(String[] other_data_names){
-		this.other_data_names = other_data_names;
 	}
 	
 	
@@ -106,41 +104,22 @@ public abstract class Classifier implements Serializable{
 	public void finalizeTrainingData(){
 		n = X.size();
 		p = X.get(0).length;
-	}
-	
-	/**
-	 * Given a training data set indexed by row, this produces a training
-	 * data set indexed by column
-	 * 
-	 * @param X_y	The training data set indexed by row
-	 * @return		The training data set indexed by column
-	 */
-	private ArrayList<double[]> getDataMatrixByCol(ArrayList<double[]> X_y) {
-		 ArrayList<double[]> X_y_by_col = new ArrayList<double[]>(n);
-		 for (int j = 0; j < p; j++){
-			 double[] x_dot_j = new double[n];
-			 for (int i = 0; i < n; i++){
-				 x_dot_j[i] = X_y.get(i)[j];
-			 }
-			 X_y_by_col.add(x_dot_j);
-		 }
-		 return X_y_by_col;
-	 }
-
-	/**
-	 * This provides a vector of responses from the training data set
-	 * 
-	 * @param X_y	The training data set
-	 * @return		The vector of responses
-	 */
-	private double[] extractResponseFromRawData(ArrayList<double[]> X_y) {
-		double[] y = new double[X_y.size()];
-		for (int i = 0; i < X_y.size(); i++){
-			double[] record = X_y.get(i);
-			y[i] = record[record.length - 1];
+		
+		//reformulate the data by column for convenience
+		
+		//check for missingness
+		missingnessAmongFeatures = new int[p];
+		for (int i = 0; i < n; i++){
+			double[] x_i = X.get(i);
+			for (int j = 0; j < p; j++){
+				if (isMissing(x_i[j])){
+					missingnessAmongFeatures[j]++;
+				}
+			}
 		}
-		return y;
 	}
+
+
 	
 	/** build the machine learning classifier (implemented by a daughter class), you must {@link #setData(ArrayList) set the data} first */
 	public abstract void Build();
@@ -188,7 +167,9 @@ public abstract class Classifier implements Serializable{
 	 * @param num_cores		The number of processor cores to be used during the evaluation / prediction
 	 * @return				The prediction
 	 */
-	public abstract double Evaluate(double[] record, int num_cores);
+	public double Evaluate(double[] record, int num_cores){
+		return Evaluate(record, 1); //single processor defualt
+	}
 	
 	/**
 	 * A wrapper for {@link #Evaluate(double[], int)} where one processor core is used
@@ -196,9 +177,7 @@ public abstract class Classifier implements Serializable{
 	 * @param record		The observation to be evaluated / predicted
 	 * @return				The prediction
 	 */
-	public double Evaluate(double[] record){
-		return Evaluate(record, 1);
-	}
+	public abstract double Evaluate(double[] record);
 	
 	/**
 	 * Given a data record, return the Y (response) value i.e. take the last index
@@ -241,59 +220,59 @@ public abstract class Classifier implements Serializable{
 		out.close();		
 	}
 	
-	/** a variable that represents the different error calculation types */
-	public static enum ErrorTypes {L1, L2, MISCLASSIFICATION};
+//	/** a variable that represents the different error calculation types */
+//	public static enum ErrorTypes {L1, L2, MISCLASSIFICATION};
+//	
+//	/**
+//	 * Calculates the in-sample error using the specified loss function
+//	 * 
+//	 * @param num_cores_evaluate 	The number of processor cores to use
+//	 */		
+//	private void calculateInSampleResiduals(int num_cores_evaluate){
+//		long t0 = System.currentTimeMillis();
+//		System.out.print("calculating in-sample residuals...");
+//		residuals = new double[n];
+//		for (int i = 0; i < n; i++){
+//			double[] record = X.get(i);
+//			double yhat = Evaluate(record, num_cores_evaluate);
+//			residuals[i] = y[i] - yhat;
+////			System.out.println("y: " + y + " yhat: " + yhat);
+//		}
+//		long t1 = System.currentTimeMillis();
+//		System.out.print("done in " + ((t1 - t0) / 1000.0) + " sec \n");
+//	}
 	
-	/**
-	 * Calculates the in-sample error using the specified loss function
-	 * 
-	 * @param num_cores_evaluate 	The number of processor cores to use
-	 */		
-	private void calculateInSampleResiduals(int num_cores_evaluate){
-		long t0 = System.currentTimeMillis();
-		System.out.print("calculating in-sample residuals...");
-		residuals = new double[n];
-		for (int i = 0; i < n; i++){
-			double[] record = X.get(i);
-			double yhat = Evaluate(record, num_cores_evaluate);
-			residuals[i] = y[i] - yhat;
-//			System.out.println("y: " + y + " yhat: " + yhat);
-		}
-		long t1 = System.currentTimeMillis();
-		System.out.print("done in " + ((t1 - t0) / 1000.0) + " sec \n");
-	}
-	
-	/**
-	 * Calculates the in-sample error based on a specified error metric
-	 * 
-	 * @param type_of_error_rate	The error metric to use to compute loss
-	 * @param num_cores_evaluate	The number of processor cores to use
-	 * @return						The in-sample loss as a sum total across all training observations
-	 */
-	public double calculateInSampleLoss(ErrorTypes type_of_error_rate, int num_cores_evaluate){	
-		if (residuals == null){
-			calculateInSampleResiduals(num_cores_evaluate);
-		}
-		
-		double loss = 0;
-		System.out.print("calculateInSampleLoss for " + type_of_error_rate + "...");
-		for (int i = 0; i < n; i++){
-			switch (type_of_error_rate){
-				case L1:
-					loss += Math.abs(residuals[i]);
-					break;
-				case L2:
-					loss += Math.pow(residuals[i], 2);
-					break;
-				case MISCLASSIFICATION:
-					loss += (residuals[i] == 0 ? 0 : 1);
-					break;
-			}
-		}
-		System.out.print("done\n");
-//		System.out.println("in_sample_residuals: " + Tools.StringJoin(residuals));
-		return loss;
-	}
+//	/**
+//	 * Calculates the in-sample error based on a specified error metric
+//	 * 
+//	 * @param type_of_error_rate	The error metric to use to compute loss
+//	 * @param num_cores_evaluate	The number of processor cores to use
+//	 * @return						The in-sample loss as a sum total across all training observations
+//	 */
+//	public double calculateInSampleLoss(ErrorTypes type_of_error_rate, int num_cores_evaluate){	
+//		if (residuals == null){
+//			calculateInSampleResiduals(num_cores_evaluate);
+//		}
+//		
+//		double loss = 0;
+//		System.out.print("calculateInSampleLoss for " + type_of_error_rate + "...");
+//		for (int i = 0; i < n; i++){
+//			switch (type_of_error_rate){
+//				case L1:
+//					loss += Math.abs(residuals[i]);
+//					break;
+//				case L2:
+//					loss += Math.pow(residuals[i], 2);
+//					break;
+//				case MISCLASSIFICATION:
+//					loss += (residuals[i] == 0 ? 0 : 1);
+//					break;
+//			}
+//		}
+//		System.out.print("done\n");
+////		System.out.println("in_sample_residuals: " + Tools.StringJoin(residuals));
+//		return loss;
+//	}
 	
 	public void setUniqueName(String unique_name) {
 		this.unique_name = unique_name;
