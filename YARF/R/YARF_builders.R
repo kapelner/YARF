@@ -9,12 +9,6 @@ YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
 #' @param num_trees 						The # of trees in the RF. Default is \code{500}.
 #' @param boostrap_indices 					An n x num_trees matrix of indices where each column is the bootstrap indices of the training data.
 #' 											The default is \code{NULL} indicating the default algorithm of sampling {1,...,n} with replacement.	
-#' @param oob_estimates 					After the RF is fit, should we return out of bag estimates? This involves more processing time
-#' 											but it will provide an idea of how good the model is fitting out of sample. Default is \code{TRUE}.
-#' @param oob_metric						If regression, we will return L1, MAE, L2 and RMSE and if classification,
-#' 											we will return the confusion matrix with use/test errors and overall error rates. 
-#' 											If you wish for another metric to be computed, pass the function in here as a string of 
-#' 											javascript code. Default is \code{NULL} for no additional metric to be computed.		
 #' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
 #' 											the out-of-box RF default which is floor(p / 3) for regression and for classification,
 #' 											floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter. 
@@ -29,13 +23,18 @@ YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
 #' @param node_assign_fun					A custom node assignment function in Javascript. This function is run after RF greedily finds the 
 #' 											"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
 #' 											in regression or the modal class during classification. 
+#' @param aggregation_fun					A custom javascript function which aggregates the predictions in the trees for one observations 
+#' 											into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
+#' 											regression and the modal category for classification.
 #' @param shared_functions					Custom Javascript functions that are always around. The default is \code{NULL} for no shared functions. 
 #' @param use_missing_data					Use the "missing-in-attributes" to fit data with missingness. 	
 #' @param covariates_to_permute 			Indices of features to randomly permute when creating a YARF. The default is \code{NULL}
 #' 											indicating no features are permuted. This is an argument used mostly by other YARF functions.
 #' @param mem_cache_for_speed 
-#' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing time and memory.
+#' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
+#' 											time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}.
 #' @param seed								Set a random seed for reproducibility. 
+#' @param wait								Should we hang R to wait for the YARF model to complete. The default is \code{TRUE}.
 #' @param verbose 							Should we print out messages verbosely during construction. Default is \code{FALSE}.
 #' 
 #' @return									A list of all arguments passed in plus... 
@@ -49,9 +48,6 @@ YARF = function(
 		num_trees = 500,
 		#customizable bootstrap
 		boostrap_indices = NULL, #if you want to write your own bootstrapper for the trees, send a n x T matrix of indices here
-		#whether you want oob_estimates
-		oob_estimates = TRUE,	
-		oob_metric = NULL,
 		#mtry or a custom function
 		mtry = NULL,
 		mtry_fun = NULL,
@@ -62,6 +58,8 @@ YARF = function(
 		cost_calc_fun = NULL,
 		#a custom function for the cost calculation
 		node_assign_fun = NULL,
+		#a custom function for aggregating results of trees
+		aggregation_fun = NULL,
 		#any helper code which will be accessible to code above
 		shared_funs = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
@@ -73,7 +71,12 @@ YARF = function(
 		covariates_to_permute = NULL, #PRIVATE
 		serialize = FALSE,
 		seed = NULL,
+		wait = TRUE,
 		verbose = TRUE){
+	
+	if (serialize && !wait){
+		stop("'serialize' can only by TRUE if 'wait' is TRUE (you cannot save a model that is not yet fully constructed).")
+	}
 	
 	if ((as.integer(num_trees) != num_trees) || num_trees < 1){
 		stop("The 'num_trees' argument is not a positive integer.")
@@ -92,25 +95,33 @@ YARF = function(
 		stop("You have to specify EITHER 'nodesize' OR 'nodesize_function' but not both (or none)")
 	}
 	if (is.null(nodesize)){
-		if (class(nodesize_fun) != "chracter"){
+		if (class(nodesize_fun) != "character"){
 			stop("'nodesize' must be a character string of Javascript code")
 		}
 	}
 	
 	if (!is.null(cost_calc_fun)){
-		if (class(cost_calc_fun) != "chracter"){
+		if (class(cost_calc_fun) != "character"){
 			stop("'cost_calc_fun' must be a character string of Javascript code")
 		}
 	}
 	
 	if (!is.null(node_assign_fun)){
-		if (class(node_assign_fun) != "chracter"){
+		if (class(node_assign_fun) != "character"){
 			stop("'node_assign_fun' must be a character string of Javascript code")
 		}
 	}
 	
+	if (!is.null(aggregation_fun)){
+		if (class(aggregation_fun) != "character"){
+			stop("'aggregation_fun' must be a character string of Javascript code")
+		}
+	}
+	
+	
+	
 	if (!is.null(shared_funs)){
-		if (class(shared_funs) != "chracter"){
+		if (class(shared_funs) != "character"){
 			stop("'shared_funs' must be a character string of Javascript code")
 		}
 	}
@@ -216,14 +227,14 @@ YARF = function(
 
 	#now take care of classification or regression
 	y_levels = levels(y)
-	num_levels = length(y_levels)
+	num_y_levels = length(y_levels)
 	if (class(y) == "numeric" || class(y) == "integer"){ #if y is numeric, then it's a regression problem
 		pred_type = "regression"
 		if (class(y) == "integer"){
 			cat("Warning: The response y is integer, YARF will default to regression.\n")
 		}
 	} else if (class(y) == "factor"){ #if y is a factor and binary
-		if (num_levels > 8){
+		if (num_y_levels > 8){
 			cat("Warning: You are doing classificaiton with more than 8 classes. Cast y to numeric if you wish to do regression.")
 		}		
 		pred_type = "classification"
@@ -309,18 +320,20 @@ YARF = function(
 #	//BUILD
 
 	#if the user hasn't set a number of cores, set it here
-	if (!exists("YARF_NUM_CORES", envir = bartMachine_globals)){
-		assign("YARF_NUM_CORES", YARF_NUM_CORES_DEFAULT, bartMachine_globals)
+	if (!exists("YARF_NUM_CORES", envir = YARF_globals)){
+		assign("YARF_NUM_CORES", YARF_NUM_CORES_DEFAULT, YARF_globals)
 	}
 	#load the number of cores the user set
-	num_cores = get("YARF_NUM_CORES", bartMachine_globals)
+	num_cores = get("YARF_NUM_CORES", YARF_globals)
 	
-	#build bart to spec with what the user wants
+	#build YARF to spec with what the user wants
 	.jcall(java_YARF, "V", "setNumCores", as.integer(num_cores)) #this must be set FIRST!!!
 	.jcall(java_YARF, "V", "setNumTrees", as.integer(num_trees))
 	.jcall(java_YARF, "V", "setVerbose", verbose)
 	.jcall(java_YARF, "V", "setMemCacheForSpeed", mem_cache_for_speed)
 	.jcall(java_YARF, "V", "setPredType", pred_type)
+	
+	
 	
 	#now load data and/or scripts
 	if (!is.null(mtry)){
@@ -340,6 +353,10 @@ YARF = function(
 	
 	if (!is.null(node_assign_fun)){
 		.jcall(java_YARF, "V", "setNodeAssignmentFunction", node_assign_fun)
+	}
+	
+	if (!is.null(aggregation_fun)){
+		.jcall(java_YARF, "V", "setAggregationFunction", aggregation_fun)
 	}
 	
 	if (!is.null(shared_funs)){
@@ -387,7 +404,7 @@ YARF = function(
 	}
 	
 	
-	#build the bart machine and let the user know what type of BART this is
+	#build the YARF model and let the user know what type of model this is
 	if (verbose){
 		cat("Now building YARF for", pred_type, "...")
 		if (use_missing_data){
@@ -398,11 +415,10 @@ YARF = function(
 		}
 		cat("\n")
 	}
+	.jcall(java_YARF, "V", "setWait", wait)
 	.jcall(java_YARF, "V", "Build")
-	
-	#now once it's done, let's extract things that are related to diagnosing the build of the BART model
-	
-	#return all arguments
+		
+	#return all arguments plus some commonly useful stuff
 	all_arguments = as.list(match.call())
 	all_arguments[[1]] = NULL
 	#except the data itself - that's a waste of RAM
@@ -412,66 +428,25 @@ YARF = function(
 	
 	yarf_mod = c(
 			all_arguments, 
-			time_to_build = Sys.time() - t0,
-			y_levels = y_levels,			
+			y = y,
+			pred_type = pred_type,
+			t0 = t0,
+			java_YARF = java_YARF,
+			y_levels = y_levels,	
+			num_y_levels = num_y_levels,
 			n = n,
 			p = p,
 			model_matrix_training_data = model_matrix_training_data,
 			training_data_features = colnames(model_matrix_training_data)[1 : ifelse(use_missing_data && use_missing_data_dummies_as_covars, (p / 2), p)],
 			training_data_features_with_missing_features = colnames(model_matrix_training_data)[1 : p], #always return this even if there's no missing features
-			
+			predictors_which_are_factors = predictors_which_are_factors
 	)
-	
-	#once its done gibbs sampling, see how the training data does if user wants
-	if (oob_estimates){
-		if (verbose){
-			cat("evaluating in sample data oob...")
-		}
-#			y_hat_train = t(sapply(.jcall(bart_machine$java_bart_machine, "[[D", "getGibbsSamplesForPrediction", .jarray(model_matrix_training_data, dispatch = TRUE), as.integer(num_cores)), .jevalArray))
-		
-		#return a bunch more stuff
-		yarf_mod$y_hat_train = y_hat_train
-		yarf_mod$residuals = y - y_hat_train
-		yarf_mod$L1_err_train = sum(abs(yarf_mod$residuals))
-		yarf_mod$L2_err_train = sum(yarf_mod$residuals^2)
-		yarf_mod$PseudoRsq = 1 - yarf_mod$L2_err_train / sum((y - mean(y))^2) #pseudo R^2 acc'd to our dicussion with Ed and Shane
-		yarf_mod$rmse_train = sqrt(yarf_mod$L2_err_train / yarf_mod$n)
-		yarf_mod$mae = yarf_mod$L1_err_train / yarf_mod$n
-		
-		if (pred_type == "classification"){
-#			p_hat_train =	t(sapply(.jcall(yarf_mod$java_bart_machine, "[[D", "getGibbsSamplesForPrediction", .jarray(model_matrix_training_data, dispatch = TRUE), as.integer(num_cores)), .jevalArray))
-			yarf_mod$y_hat_train = labels_to_y_levels(y_hat_train)
-			
-			#return a bunch more stuff
-			yarf_mod$p_hat_train = p_hat_train
-			
-			#calculate confusion matrix
-			confusion_matrix = as.data.frame(matrix(NA, nrow = 3, ncol = 3))
-			rownames(confusion_matrix) = c(paste("actual", y_levels), "use errors")
-			colnames(confusion_matrix) = c(paste("predicted", y_levels), "model errors")
-			
-			confusion_matrix[1 : 2, 1 : 2] = as.integer(table(y, y_hat_train)) 
-			confusion_matrix[3, 1] = round(confusion_matrix[2, 1] / (confusion_matrix[1, 1] + confusion_matrix[2, 1]), 3)
-			confusion_matrix[3, 2] = round(confusion_matrix[1, 2] / (confusion_matrix[1, 2] + confusion_matrix[2, 2]), 3)
-			confusion_matrix[1, 3] = round(confusion_matrix[1, 2] / (confusion_matrix[1, 1] + confusion_matrix[1, 2]), 3)
-			confusion_matrix[2, 3] = round(confusion_matrix[2, 1] / (confusion_matrix[2, 1] + confusion_matrix[2, 2]), 3)
-			confusion_matrix[3, 3] = round((confusion_matrix[1, 2] + confusion_matrix[2, 1]) / sum(confusion_matrix[1 : 2, 1 : 2]), 3)
-			
-			yarf_mod$confusion_matrix = confusion_matrix
-#			bart_machine$num_classification_errors = confusion_matrix[1, 2] + confusion_matrix[2, 1]
-			yarf_mod$misclassification_error = confusion_matrix[3, 3]
-		}
-		if (verbose){
-			cat("done\n")
-		}
-	}
+
 	
 	
 	#Let's serialize the object if the user wishes
 	if (serialize){
-		cat("serializing in order to be saved for future R sessions...")
-		.jcache(yarf_mod$java_YARF)
-		cat("done\n")
+		YARF_serialize(yarf_mod)
 	}
 	
 	#use R's S3 object orientation
@@ -479,197 +454,154 @@ YARF = function(
 	yarf_mod
 }
 
-##private function that creates a duplicate of an existing bartMachine object.
-bart_machine_duplicate = function(bart_machine, X = NULL, y = NULL, cov_prior_vec = NULL, num_trees = NULL, run_in_sample = NULL, covariates_to_permute = NULL, verbose = NULL, ...){	
-	if (is.null(X)){
-		X = bart_machine$X
-	}
-	if (is.null(y)){
-		y = bart_machine$y
-	}
-	if (is.null(cov_prior_vec)){
-		cov_prior_vec = bart_machine$cov_prior_vec
-	}
-	if (is.null(num_trees)){
-		num_trees = bart_machine$num_trees
-	}	
-	if (is.null(run_in_sample)){
-		run_in_sample = FALSE
-	}
-	if (is.null(covariates_to_permute)){
-		covariates_to_permute = bart_machine$covariates_to_permute
-	}
-	if (is.null(verbose)){
-		verbose = FALSE
-	}	
-	build_bart_machine(X, y,
-		num_trees = num_trees, #found many times to not get better after this value... so let it be the default, it's faster too 
-		num_burn_in = bart_machine$num_burn_in, 
-		num_iterations_after_burn_in = bart_machine$num_iterations_after_burn_in, 
-		alpha = bart_machine$alpha,
-		beta = bart_machine$beta,
-		k = bart_machine$k,
-		q = bart_machine$q,
-		nu = bart_machine$nu,
-		prob_rule_class = bart_machine$prob_rule_class,
-		mh_prob_steps = bart_machine$mh_prob_steps, #only the first two matter
-		run_in_sample = run_in_sample,
-		s_sq_y =  bart_machine$s_sq_y, # "mse" or "var"
-		cov_prior_vec = cov_prior_vec,
-		use_missing_data = bart_machine$use_missing_data,
-		covariates_to_permute = covariates_to_permute, #PRIVATE
-		num_rand_samps_in_library = bart_machine$num_rand_samps_in_library, #give the user the option to make a bigger library of random samples of normals and inv-gammas
-		use_missing_data_dummies_as_covars = bart_machine$use_missing_data_dummies_as_covars,
-		replace_missing_data_with_x_j_bar = bart_machine$replace_missing_data_with_x_j_bar,
-		impute_missingness_with_rf_impute = bart_machine$impute_missingness_with_rf_impute,
-		impute_missingness_with_x_j_bar_for_lm = bart_machine$impute_missingness_with_x_j_bar_for_lm,
-		mem_cache_for_speed = bart_machine$mem_cache_for_speed,
-		serialize = FALSE, #we do not want to waste CPU time here since these are created internally by us
-		verbose = verbose)
+#' 
+#' @param yarf_mod 							The yarf model object
+#' @param oob_metric						If regression, we will return L1, MAE, L2 and RMSE and if classification,
+#' 											we will return the confusion matrix with use/test errors and overall error rates. 
+#' 											If you wish for another metric to be computed, pass the function in here as a string of 
+#' 											javascript code. Default is \code{NULL} for no additional metric to be computed.		
+#' @return 									The OOB results
+#' 
+#' @author Adam Kapelner
+#' @export
+YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
+		y = yarf_mod$y
+		n = yarf_mod$n
+		#get it from java multithreaded
+		num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
+		y_oob = t(sapply(.jcall(yarf_mod$java_YARF, "[[D", "evaluateOutOfBagEstimates", num_cores), .jevalArray))
+		
+		if (is.null(y_oob)){
+			stop("OOB estimates cannot be computed since not every observation existed out of bag. Use more trees next time.")
+		}
+		
+		#return a bunch more stuff
+		if (yarf_mod$pred_type == "regression"){
+			yarf_mod$y_oob = y_oob
+			yarf_mod$residuals = y - y_oob
+			yarf_mod$L1_err_oob = sum(abs(yarf_mod$residuals))
+			yarf_mod$L2_err_oob = sum(yarf_mod$residuals^2)
+			yarf_mod$PseudoRsqoob = 1 - yarf_mod$L2_err_oob / sum((y - mean(y))^2)
+			yarf_mod$rmse_oob = sqrt(yarf_mod$L2_err_oob / n)
+			yarf_mod$mae_oob = yarf_mod$L1_err_oob / n
+		} else {		
+			#convert results to factor
+			yarf_mod$y_oob = factor(y_oob, levels = yarf_mod$y_levels)
+			
+			#calculate confusion matrix
+			n_levels = yarf_mod$num_y_levels
+			
+			confusion_matrix = as.data.frame(matrix(NA, nrow = n_levels + 1, ncol = n_levels + 1))
+			rownames(confusion_matrix) = c(paste("actual", yarf_mod$y_levels), "use errors")
+			colnames(confusion_matrix) = c(paste("predicted", yarf_mod$y_levels), "model errors")
+			
+			#set the confusion counts
+			confusion_matrix[1 : n_levels, 1 : n_levels] = as.integer(table(y, y_oob))
+			#set all test errors
+			for (k in 1 : n_levels){
+				confusion_matrix[k, n_levels + 1] = 1 - confusion_matrix[k, k] / sum(confusion_matrix[k, 1 : n_levels])
+			}
+			#set all use errors
+			for (k in 1 : n_levels){
+				confusion_matrix[n_levels + 1, k] = 1 - confusion_matrix[k, k] / sum(confusion_matrix[1 : n_levels, k])
+			}
+			#set overall error
+			yarf_mod$misclassification_error = (sum(confusion_matrix[1 : n_levels, 1 : n_levels]) - diag(confusion_matrix[1 : n_levels, 1 : n_levels])) / n
+			confusion_matrix[n_levels + 1, n_levels + 1] = yarf_mod$misclassification_error
+			#return the whole thing
+			yarf_mod$confusion_matrix = confusion_matrix
+		}
+		#send it back
+		yarf_mod
 }
 
-#build a BART-cv model
-build_bart_machine_cv = function(X = NULL, y = NULL, Xy = NULL, 
-		num_tree_cvs = c(50, 200),
-		k_cvs = c(2, 3, 5),
-		nu_q_cvs = list(c(3, 0.9), c(3, 0.99), c(10, 0.75)),
-		k_folds = 5, 
-		verbose = FALSE,
-		...){
-	
-	if ((is.null(X) && is.null(Xy)) || is.null(y) && is.null(Xy)){
-		stop("You need to give bartMachine a training set either by specifying X and y or by specifying a matrix Xy which contains the response named \"y.\"\n")
-	} else if (!is.null(X) && !is.null(y) && !is.null(Xy)){
-		stop("You cannot specify both X,y and Xy simultaneously.")	
-	} else if (is.null(X) && is.null(y)){ #they specified Xy, so now just pull out X,y
-		if (class(Xy) != "data.frame"){
-			stop(paste("The training data Xy must be a data frame."), call. = FALSE)	
-		}
-		y = Xy$y
-		Xy$y = NULL
-		X = Xy
+#' Prints out a message reflecting the progress of the YARF model construction
+#' 
+#' @param yarf_mod 							The yarf model object
+#' @param console_message					Should we print a message to console? Default is \code{TRUE}.
+#' @return 									The number of trees and the proportion completed.
+#' 
+#' @author Kapelner
+#' @export
+YARF_progress = function(yarf_mod, console_message = TRUE){
+	if (.jcall(yarf_mod$java_YARF, "Z", "stopped")){
+		stop("Construction of this model was halted.")
 	}
 	
-	y_levels = levels(y)
-	if (class(y) == "numeric" || class(y) == "integer"){ #if y is numeric, then it's a regression problem
-		pred_type = "regression"
-	} else if (class(y) == "factor" & length(y_levels) == 2){ #if y is a factor and and binary, then it's a classification problem
-		pred_type = "classification"
-	} else { #otherwise throw an error
-		stop("Your response must be either numeric, an integer or a factor with two levels.\n")
-	}
+	num_trees_completed = .jcall(yarf_mod$java_YARF, "V", "progress")
+	progress = num_trees_completed / yarf_mod$num_trees 
 	
-	if (pred_type == "classification"){
-		nu_q_cvs = list(c(3, 0.9)) #ensure we only do this once, the 3 and the 0.9 don't actually matter, they just need to be valid numbers for the hyperparameters
-	}
+	time_remaining_estimate = NULL
 	
-	min_rmse_num_tree = NULL
-	min_rmse_k = NULL
-	min_rmse_nu_q = NULL
-	min_oos_rmse = Inf
-	min_oos_misclassification_error = Inf
-	
-	cv_stats = matrix(NA, nrow = length(k_cvs) * length(nu_q_cvs) * length(num_tree_cvs), ncol = 6)
-	colnames(cv_stats) = c("k", "nu", "q", "num_trees", "oos_error", "% diff with lowest")
-	
-  ##generate a single set of folds to keep using
-	temp = rnorm(length(y))
-	folds_vec = cut(temp, breaks = quantile(temp, seq(0, 1, length.out = k_folds + 1)), 
-	                include.lowest= T, labels = F)
-  
-    #cross-validate
-	run_counter = 1
-	for (k in k_cvs){
-		for (nu_q in nu_q_cvs){
-			for (num_trees in num_tree_cvs){
-				
-				if (pred_type == "regression"){
-					cat(paste("  bartMachine CV try: k:", k, "nu, q:", paste(as.numeric(nu_q), collapse = ", "), "m:", num_trees, "\n"))	
-				} else {
-					cat(paste("  bartMachine CV try: k:", k, "m:", num_trees, "\n"))
-				}
-				
-				k_fold_results = k_fold_cv(X, y, 
-          			k_folds = k_folds,
-					folds_vec = folds_vec, ##will hold the cv folds constant 
-					num_trees = num_trees,
-					k = k,
-					nu = nu_q[1],
-					q = nu_q[2], 
-					verbose = verbose,
-					...)
-				
-				if (pred_type == "regression" && k_fold_results$rmse < min_oos_rmse){
-					min_oos_rmse = k_fold_results$rmse					
-					min_rmse_k = k
-					min_rmse_nu_q = nu_q
-					min_rmse_num_tree = num_trees
-				} else if (pred_type == "classification" && k_fold_results$misclassification_error < min_oos_misclassification_error){
-					min_oos_misclassification_error = k_fold_results$misclassification_error					
-					min_rmse_k = k
-					min_rmse_nu_q = nu_q
-					min_rmse_num_tree = num_trees					
-				}
-				
-				cv_stats[run_counter, 1 : 5] = c(k, nu_q[1], nu_q[2], num_trees, 
-					ifelse(pred_type == "regression", k_fold_results$rmse, k_fold_results$misclassification_error))
-				run_counter = run_counter + 1
-			}
-		}
-	}
-	if (pred_type == "regression"){
-		cat(paste("  bartMachine CV win: k:", min_rmse_k, "nu, q:", paste(as.numeric(min_rmse_nu_q), collapse = ", "), "m:", min_rmse_num_tree, "\n"))
+	if (progress < 1){
+		time_elapsed_in_min = (Sys.time() - as.numeric(yarf_mod$t0)) / 60
 	} else {
-		cat(paste("  bartMachine CV win: k:", min_rmse_k, "m:", min_rmse_num_tree, "\n"))
+		time_elapsed_in_min = (.jcall(yarf_mod$java_YARF, "J", "getCompletionTime") - as.numeric(yarf_mod$t0)) / 60
 	}
-	#now that we've found the best settings, return that bart machine. It would be faster to have kept this around, but doing it this way saves RAM for speed.
-	bart_machine_cv = build_bart_machine(X, y,
-			num_trees = min_rmse_num_tree,
-			k = min_rmse_k,
-			nu = min_rmse_nu_q[1],
-			q = min_rmse_nu_q[2], ...)
 	
-	#give the user some cv_stats ordered by the best (ie lowest) oosrmse
-	cv_stats = cv_stats[order(cv_stats[, "oos_error"]), ]
-	cv_stats[, 6] = (cv_stats[, 5] - cv_stats[1, 5]) / cv_stats[1, 5] * 100
-	bart_machine_cv$cv_stats = cv_stats
-  	bart_machine_cv$folds = folds_vec
-	bart_machine_cv
-}
-
-##private function for filling in missing data with averages for cont. vars and modes for cat. vars
-imputeMatrixByXbarjContinuousOrModalForBinary = function(X_with_missing, X_for_calculating_avgs){
-	for (i in 1 : nrow(X_with_missing)){
-		for (j in 1 : ncol(X_with_missing)){
-			if (is.na(X_with_missing[i, j])){
-				#mode for factors, otherwise average
-				if (class(X_with_missing[, j]) == "factor"){
-					X_with_missing[i, j] = names(which.max(table(X_for_calculating_avgs[, j])))
-				} else {
-					X_with_missing[i, j] = mean(X_for_calculating_avgs[, j], na.rm = TRUE)
-				}
-			}
-		}
+	#now estimate how long it will take to complete
+	if (num_trees_completed >= 1 & progress < 1){
+		total_time_estimate = time_elapsed_in_min / progress
+		time_remaining_estimate = total_time_estimate - time_elapsed_in_min
 	}
-	#now we have to go through and drop columns that are all NaN's if need be
-	bad_cols = c()
-	for (j in colnames(X_with_missing)){
-		if (sum(is.nan(X_with_missing[, j])) == nrow(X_with_missing)){
-			bad_cols = c(bad_cols, j)
-		}
-	}
-	for (j in bad_cols){
-		X_with_missing[, j] = NULL
-	}
-	X_with_missing
-}
-
-
-
-testfun = function(a, b, c){
-	sum = a+b+c
 	
-	l = as.list(match.call())
-	l[[1]] = NULL
-	c(l, sum = sum)
+	if (console_message){
+		cat(num_trees_completed, " / ", yarf_mod$num_trees, " trees completed (", round(progress * 100, 1), "% done in ", round(time_elapsed_in_min, 1), " minutes)", sep = "")	
+		
+		if (num_trees_completed >= 1 && progress < 1){
+			total_time_estimate = time_elapsed_in_min / progress
+			time_remaining_estimate = total_time_estimate - time_elapsed_in_min
+			cat("We estimate the YARF model will complete in ", round(time_elapsed_in_min, 1), " minutes)", sep = "")
+		} else if (progress < 1) {
+			cat("No time estimate for completion until the first tree is constructed.\n")
+		}
+	}	
+	invisible(list(
+		num_trees_completed = num_trees_completed, 
+		progress = progress,
+		done = (progress == 1),
+		time_elapsed_in_min = time_elapsed_in_min,
+		time_remaining_estimate = time_remaining_estimate
+	))
 }
+
+#' Prints out a messages reflecting the progress of the YARF model construction until completion
+#' 
+#' @param yarf_mod 							The yarf model object
+#' @param time_delay_in_seconds				Frequency of messages in seconds. Default is \code{10} seconds.
+#' 
+#' @author Kapelner
+#' @export
+YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10){
+	while (TRUE){
+		if (YARF_progress(yarf_mod)$done){
+			break
+		}
+		Sys.sleep(time_delay_in_seconds)
+	}
+}
+
+#' Halts the model building
+#' 
+#' @param yarf_mod 								The yarf model object
+#' 
+#' @author Adam Kapelner
+#' @export
+YARF_stop = function(yarf_mod){
+	yarf_mod$stopped = TRUE
+	.jcall(yarf_mod$java_YARF, "V", "StopBuilding")
+}
+
+#' Serializes the model so the user can use \code{save} and \code{save.image}
+#' to write it to a file that can be then loaded into another and/or future R session.
+#' 
+#' @param yarf_mod 								The yarf model object
+#' 
+#' @author Adam Kapelner
+#' @export
+YARF_serialize = function(yarf_mod){
+	cat("serializing in order to be saved for future R sessions...")
+	.jcache(yarf_mod$java_YARF)
+	cat("done\n")	
+}
+

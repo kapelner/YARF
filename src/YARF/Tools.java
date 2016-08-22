@@ -231,6 +231,19 @@ public class Tools {
     	}
     	return sum;
     }
+    /**
+     * Sums an array
+     * 
+     * @param arr	The values of interest
+     * @return		The sum of those values
+     */
+    public static int sum_array(int[] arr){
+    	int sum = 0;
+    	for (int i = 0; i < arr.length; i++){
+    		sum += arr[i];
+    	}
+    	return sum;
+    }
     
     /**
      * Sums the inverse values of an array
@@ -244,18 +257,20 @@ public class Tools {
     		sum += 1 / arr[i];
     	}
     	return sum;
-	}	    
- 
+	}	
+    
 	/**
 	 * Normalizes an array by dividing each value by the array's sum
 	 * 
 	 * @param arr	The values of interest
 	 */
-    public static void normalize_array(double[] arr){
-    	double weight = sum_array(arr);
+    public static double[] normalize_array(int[] arr){
+    	double weight = (double)sum_array(arr);
+    	double[] normalized_arr = new double[arr.length];
     	for (int i = 0; i < arr.length; i++){
-    		arr[i] = arr[i] / weight;
+    		normalized_arr[i] = arr[i] / weight;
     	}
+    	return normalized_arr;
     }
     	
 	/**
@@ -351,4 +366,12 @@ public class Tools {
 		return sum;
 	}
 
+	
+	public static double[] subArr(double[] arr, int[] sub_indices){
+		double[] sub_array = new double[sub_indices.length];
+		for (int i = 0; i < sub_indices.length; i++){
+			sub_array[i] = arr[sub_indices[i]];
+		}
+		return sub_array;
+	}
 }

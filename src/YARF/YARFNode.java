@@ -1,6 +1,8 @@
 package YARF;
 
+import java.util.HashSet;
 
+import OpenSourceExtensions.UnorderedPair;
 
 public class YARFNode implements Cloneable {
 	
@@ -34,6 +36,8 @@ public class YARFNode implements Cloneable {
 	public int[] indices;
 
 	private YARFTree tree;
+
+	private double[] node_ys;
 	
 	/**
 	 * Picks a random direction for missing data to flow down the tree from this node. As of
@@ -95,6 +99,7 @@ public class YARFNode implements Cloneable {
 	/** Remove all the data in this node and its children recursively to save memory */
 	public void flushNodeData() {
 		indices = null;
+		node_ys = null;
 		
 		if (this.left != null)
 			this.left.flushNodeData();
@@ -154,5 +159,64 @@ public class YARFNode implements Cloneable {
 		}
 	}
 	
+	public double[] node_ys(){
+		if (node_ys == null){
+			node_ys = Tools.subArr(tree.yarf.y, indices);
+		}
+		return node_ys;
+	}
 
+	public int[] attributeSplitCounts() {
+		int[] attribute_split_counts = new int[tree.yarf.p];
+		attributeSplitCountsInner(attribute_split_counts);
+		return attribute_split_counts;
+	}
+	
+	public void attributeSplitCountsInner(int[] counts) {
+		if (this.isLeaf){
+			return;
+		}
+		counts[this.splitAttribute]++;
+		left.attributeSplitCountsInner(counts);
+		right.attributeSplitCountsInner(counts);
+	}
+	
+	/**
+	 * A wrapper to find all interactions recursively by checking all splits underneath this node
+	 *  
+	 * @param set_of_interaction_pairs	A running list of interaction pairs
+	 */
+	public void findInteractions(HashSet<UnorderedPair<Integer>> set_of_interaction_pairs) {		
+		if (this.isLeaf){
+			return;
+		}
+		//add all pairs for which this split at this node interacts
+		findSplitAttributesUsedUnderneath(this.splitAttribute, set_of_interaction_pairs);
+		//recurse further to all the children
+		this.left.findInteractions(set_of_interaction_pairs);
+		this.right.findInteractions(set_of_interaction_pairs);
+		
+	}
+
+	/**
+	 * Finds interactions recursively for one node's attribute by checking all splits underneath this node
+	 * 
+	 * @param interacted_attribute			The attribute in the top node that is being interacted with split rules in the daughter nodes
+	 * @param set_of_interaction_pairs		A running list of interaction pairs
+	 */
+	private void findSplitAttributesUsedUnderneath(int interacted_attribute, HashSet<UnorderedPair<Integer>> set_of_interaction_pairs) {
+		if (this.isLeaf){
+			return;
+		}
+		//add new pair
+		if (!this.left.isLeaf){
+			set_of_interaction_pairs.add(new UnorderedPair<Integer>(interacted_attribute, this.left.splitAttribute));
+		}
+		if (!this.right.isLeaf){
+			set_of_interaction_pairs.add(new UnorderedPair<Integer>(interacted_attribute, this.right.splitAttribute));
+		}
+		//now recurse
+		this.left.findSplitAttributesUsedUnderneath(interacted_attribute, set_of_interaction_pairs);
+		this.right.findSplitAttributesUsedUnderneath(interacted_attribute, set_of_interaction_pairs);
+	}	
 }

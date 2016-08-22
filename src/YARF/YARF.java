@@ -7,7 +7,8 @@ import gnu.trove.set.hash.TIntHashSet;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -21,6 +22,8 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import org.apache.commons.math3.stat.StatUtils;
+
+import OpenSourceExtensions.UnorderedPair;
 
 
 /**
@@ -37,6 +40,10 @@ public class YARF extends Classifier implements Serializable {
 	protected int num_trees;
 	/** is this a regression problem? (or a classification problem) */
 	protected boolean is_a_regression;
+	/** time of completion */
+	protected long tf;
+	
+	private boolean stopped;
 	
 	/** an array of the raw training data by COLUMN i.e. consisting of xj = [x1j, ..., xnj] with the last entry being [y1, ..., yn] */ 
 	private transient TIntObjectHashMap<double[]> X_by_col;
@@ -48,9 +55,6 @@ public class YARF extends Classifier implements Serializable {
 
 	private YARFTree[] yarf_trees;
 	private transient int[][] bootstrap_indices;
-	
-	protected int mtry;
-	protected int nodesize;
 	
 
 	//convenient pre-computed data to have around
@@ -65,8 +69,16 @@ public class YARF extends Classifier implements Serializable {
 	protected transient Invocable mtry_fun;
 	protected transient Invocable nodesize_fun;
 	protected transient Invocable cost_calc_fun;
-	protected transient Invocable node_assign_fun;
+	protected transient Invocable node_assignment_fun;
+	protected transient Invocable aggregation_fun;
 	
+	//if we use RF algorithm defaults, here they are
+	protected int mtry;
+	protected int nodesize;
+
+	/** should we hang the system until the model is fully constructed? */
+	private boolean wait;
+
 	
 	public YARF(){}
 	
@@ -169,8 +181,12 @@ public class YARF extends Classifier implements Serializable {
 		this.cost_calc_fun = stringToInvokableCompiledFunction(cost_calc_fun);
 	}
 	
-	public void setNodeAssignFunction(String node_assign_fun) throws ScriptException{
-		this.node_assign_fun = stringToInvokableCompiledFunction(node_assign_fun);
+	public void setNodeAssignmentFunction(String node_assignment_fun) throws ScriptException{
+		this.node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_fun);
+	}
+	
+	public void setAggregationFunction(String aggregation_fun) throws ScriptException{
+		this.aggregation_fun = stringToInvokableCompiledFunction(aggregation_fun);
 	}
 	
 	public boolean customFunctionMtry(){
@@ -185,8 +201,12 @@ public class YARF extends Classifier implements Serializable {
 		return cost_calc_fun != null;
 	}
 	
-	public boolean customFunctionNodeAssign(){
-		return node_assign_fun != null;
+	public boolean customFunctionNodeAssignment(){
+		return node_assignment_fun != null;
+	}
+	
+	public boolean customFunctionAggregation(){
+		return aggregation_fun != null;
 	}
 	
 	public void initTrees(){
@@ -205,6 +225,51 @@ public class YARF extends Classifier implements Serializable {
 		TIntHashSet oob_indices = new TIntHashSet(indicies_one_to_n);
 		oob_indices.removeAll(bootstrap_indices[t]);
 		yarf_trees[t].setOutOfBagIndices(oob_indices);
+	}
+	
+	public double[] evaluateOutOfBagEstimates(int num_cores){
+		//first get the trees that have this observation out of bag
+		
+		final HashMap<Integer, ArrayList<Integer>> index_to_oob_on_trees = new HashMap<Integer, ArrayList<Integer>>(n);
+		for (int i = 0; i < n; i++){
+			ArrayList<Integer> trees_oob = new ArrayList<Integer>();
+			for (int t = 0; t < num_trees; t++){
+				if (yarf_trees[t].oob_indices.contains(i)){
+					trees_oob.add(t);
+				}
+			}
+			if (trees_oob.isEmpty()){
+				return null; //we have to have values for all of them otherwise too messy in R
+			}
+			index_to_oob_on_trees.put(i, trees_oob);
+		}	
+		
+		final double[] y_hat_oobs = new double[n];
+		
+		
+		ExecutorService evaluator_pool = Executors.newFixedThreadPool(num_cores);
+		for (int i = 0; i < n; i++){
+			final int i_f = i;
+	    	evaluator_pool.execute(new Runnable(){
+				public void run() {
+					ArrayList<Integer> trees_oob = index_to_oob_on_trees.get(i_f);
+					double[] y_preds_trees_oob_only = new double[trees_oob.size()];
+					double[] x_i = X.get(i_f);
+					for (int t = 0; t < trees_oob.size(); t++){
+						y_preds_trees_oob_only[t] = yarf_trees[trees_oob.get(t)].Evaluate(x_i);
+					}
+					y_hat_oobs[i_f] = nodeAssignmentAggregation(y_preds_trees_oob_only);
+				}
+			});
+		}
+		evaluator_pool.shutdown();
+		try {
+			evaluator_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS); //infinity
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		return y_hat_oobs;
 	}
 	
 //	public int[] getSortedIndicesAtAttribute(int j, int sub_indices){
@@ -241,9 +306,24 @@ public class YARF extends Classifier implements Serializable {
 			});
 		}
 		tree_grow_pool.shutdown();
-		try {	         
-	         tree_grow_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS); //effectively infinity
-	    } catch (InterruptedException ignored){}	
+		Thread await_completion = new Thread(){
+			public void run(){
+				try {
+					tree_grow_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS); //infinity
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				tf = System.currentTimeMillis();
+			}
+		};
+		await_completion.start();
+		//only halt if user wishes
+		if (wait){
+			try {
+				await_completion.join();
+			} catch (InterruptedException e) {}
+		}
+
 		
 		if (verbose){
 			System.out.println("done building YARF in " + ((System.currentTimeMillis() - t0) / 1000.0) + " sec \n");
@@ -252,31 +332,25 @@ public class YARF extends Classifier implements Serializable {
 
 
 	/**
-	 * Return the number of times each of the attributes were used during the construction of the sum-of-trees
-	 * by Gibbs sample.
+	 * Return the number of times each of the attributes were used during the construction of the trees
 	 * 
 	 * @param type	Either "splits" or "trees" ("splits" means total number and "trees" means sum of binary values of whether or not it has appeared in the tree)
 	 * @return		The counts for all Gibbs samples further indexed by the attribute 1, ..., p
 	 */
-//	public int[][] getCountsForAllAttribute(final String type) {
-//		final int[][] variable_counts_all_gibbs = new int[num_gibbs_total_iterations - num_gibbs_burn_in][p];		
-//		
-//		for (int g = 0; g < num_gibbs_total_iterations - num_gibbs_burn_in; g++){
-//			final bartMachineTreeNode[] trees = gibbs_samples_of_bart_trees_after_burn_in[g];
-//			int[] variable_counts_one_gibbs = new int[p];
-//			for (bartMachineTreeNode tree : trees){	
-//				if (type.equals("splits")){
-//					variable_counts_one_gibbs = Tools.add_arrays(variable_counts_one_gibbs, tree.attributeSplitCounts());
-//				}
-//				else if (type.equals("trees")){
-//					variable_counts_one_gibbs = Tools.binary_add_arrays(variable_counts_one_gibbs, tree.attributeSplitCounts());
-//				}				
-//				
-//			}
-//			variable_counts_all_gibbs[g] = variable_counts_one_gibbs;
-//		}		
-//		return variable_counts_all_gibbs;
-//	}
+	public int[] getCountsForAllAttribute(final String type) {	
+		int[] variable_counts = new int[p];
+		
+		for (YARFTree tree : yarf_trees){	
+			if (type.equals("splits")){
+				variable_counts = Tools.add_arrays(variable_counts, tree.root.attributeSplitCounts());
+			}
+			else if (type.equals("trees")){
+				variable_counts = Tools.binary_add_arrays(variable_counts, tree.root.attributeSplitCounts());
+			}				
+			
+		}		
+		return variable_counts;
+	}
 	
 	/**
 	 * Return the proportion of times each of the attributes were used (count over total number of splits) 
@@ -285,48 +359,70 @@ public class YARF extends Classifier implements Serializable {
 	 * @param type	Either "splits" or "trees" ("splits" means total number and "trees" means sum of binary values of whether or not it has appeared in the tree)
 	 * @return		The proportion of splits for all Gibbs samples further indexed by the attribute 1, ..., p
 	 */
-//	public double[] getAttributeProps(final String type) {
-//		int[][] variable_counts_all_gibbs = getCountsForAllAttribute(type);
-//		double[] attribute_counts = new double[p];
-//		for (int g = 0; g < num_gibbs_total_iterations - num_gibbs_burn_in; g++){
-//			attribute_counts = Tools.add_arrays(attribute_counts, variable_counts_all_gibbs[g]);
-//		}
-//		Tools.normalize_array(attribute_counts); //will turn it into proportions
-//		return attribute_counts;
-//	}
+	public double[] getAttributeProps(final String type) {
+		return Tools.normalize_array(getCountsForAllAttribute(type));
+	}
 	
-	/**
-	 * For all Gibbs samples after burn in, calculate the set of interaction counts (consider a split on x_j 
-	 * and a daughter node splits on x_k and that would be considered an "interaction")
-	 * 
-	 * @return	A matrix of size p x p where the row is top split and the column is a bottom split. It is recommended to triangularize the matrix after ignoring the order.
-	 */
-//	public int[][] getInteractionCounts(){
-//		int[][] interaction_count_matrix = new int[p][p];
-//		
-//		for (int g = 0; g < gibbs_samples_of_bart_trees_after_burn_in.length; g++){
-//			bartMachineTreeNode[] trees = gibbs_samples_of_bart_trees_after_burn_in[g];
-//			
-//			for (bartMachineTreeNode tree : trees){
-//				//get the set of pairs of interactions
-//				HashSet<UnorderedPair<Integer>> set_of_interaction_pairs = new HashSet<UnorderedPair<Integer>>(p * p);
-//				//find all interactions
-//				tree.findInteractions(set_of_interaction_pairs);
-//				//now tabulate these interactions in our count matrix
-//				for (UnorderedPair<Integer> pair : set_of_interaction_pairs){
-//					interaction_count_matrix[pair.getFirst()][pair.getSecond()]++; 
-//				}
-//			}	
-//		}
-//		
-//		return interaction_count_matrix;
-//	}
+	public int[][] getInteractionCounts(){
+		int[][] interaction_count_matrix = new int[p][p];		
+			
+		for (YARFTree tree : yarf_trees){
+			//get the set of pairs of interactions
+			HashSet<UnorderedPair<Integer>> set_of_interaction_pairs = new HashSet<UnorderedPair<Integer>>(p * p);
+			//find all interactions
+			tree.root.findInteractions(set_of_interaction_pairs);
+			//now tabulate these interactions in our count matrix
+			for (UnorderedPair<Integer> pair : set_of_interaction_pairs){
+				interaction_count_matrix[pair.getFirst()][pair.getSecond()]++; 
+			}
+		}
+	
+		return interaction_count_matrix;
+	}
 
 	/** Flush all unnecessary data from the Gibbs chains to conserve RAM */
 	protected void FlushData() {
 		for (int t = 0; t < num_cores; t++){
 			yarf_trees[t].FlushData();
 		}
+	}
+	
+	
+	/**
+	 * After the classifier has been built, new records can be evaluated / predicted
+	 * (implemented by a daughter class)
+	 * 
+	 * @param records					A n* x p matrix of n* observations to be evaluated / predicted.
+	 * @param num_cores_evaluate		The number of processor cores to be used during the evaluation / prediction
+	 * @return							The predictions
+	 */
+	public double[] Evaluate(double[][] records, int num_cores_evaluate){
+		int n_star = records.length;
+		final double[] y_hats = new double[n_star];
+		
+		//speedup for the dumb user
+		if (num_cores_evaluate == 1){			
+			for (int i = 0; i < n_star; i++){
+				y_hats[i] = Evaluate(records[i]);
+			}
+			return y_hats;
+		}
+		
+		ExecutorService tree_eval_pool = Executors.newFixedThreadPool(num_cores_evaluate);
+		for (int i = 0; i < n_star; i++){
+			final int i_f = i;
+			tree_eval_pool.execute(new Runnable(){
+				public void run() {
+					y_hats[i_f] = Evaluate(records[i_f]);
+				}
+			});
+		}
+		tree_eval_pool.shutdown();
+		try {	         
+			tree_eval_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS); //effectively infinity
+	    } catch (InterruptedException ignored){}
+		
+		return y_hats;	
 	}
 
 	/**
@@ -337,15 +433,17 @@ public class YARF extends Classifier implements Serializable {
 	 * @param record				The observation to be evaluated / predicted
 	 */
 	public double Evaluate(double[] record) {	
-		return defaultNodeAssignmentAggregation(allNodeAssignments(record));
+		return nodeAssignmentAggregation(allNodeAssignments(record));
 	}	
 	
-	private double defaultNodeAssignmentAggregation(double[] y_preds){
+	private double nodeAssignmentAggregation(double[] y_preds){
+		if (customFunctionAggregation()){
+			//TODO
+		}
 		if (is_a_regression){
 			return StatUtils.mean(y_preds); //the sample average
 		}
-		double[] modes = StatUtils.mode(y_preds); //there could be multiple modes
-		return modes[StatToolbox.randInt(modes.length)]; //return one at random in the spirit of "random forests"		
+		return StatToolbox.sample_mode(y_preds);
 	}
 	
 	public double[] allNodeAssignments(double[] record){
@@ -355,41 +453,6 @@ public class YARF extends Classifier implements Serializable {
 		}
 		return y_preds;		
 	}
-	
-	public double[] allNodeAssignments(double[] record, int num_cores_evaluate){
-		//speedup for the dumb user
-		if (num_cores_evaluate == 1){
-			return allNodeAssignments(record);
-		}
-		
-		final double[] y_preds = new double[num_trees];
-		ExecutorService tree_eval_pool = Executors.newFixedThreadPool(num_cores_evaluate);
-		for (int t = 0; t < num_trees; t++){
-			final int tf = t;
-			tree_eval_pool.execute(new Runnable(){
-				public void run() {
-					y_preds[tf] = yarf_trees[tf].Evaluate(record);
-				}
-			});
-		}
-		tree_eval_pool.shutdown();
-		try {	         
-			tree_eval_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS); //effectively infinity
-	    } catch (InterruptedException ignored){}
-		
-		return y_preds;	
-	}
-	
-	/**
-	 * The default BART evaluation of a new observations is done via sample average of the 
-	 * posterior predictions. Other functions can be used here such as median, mode, etc.
-	 * 
-	 * @param record				The observation to be evaluated / predicted
-	 * @param num_cores_evaluate	The number of CPU cores to use during evaluation
-	 */
-	public double Evaluate(double[] record, int num_cores_evaluate) {
-		return defaultNodeAssignmentAggregation(allNodeAssignments(record, num_cores_evaluate));
-	}		
 	
 	/**
 	 * After burn in, find the depth (greatest generation of a terminal node) of each tree for each Gibbs sample
@@ -500,8 +563,21 @@ public class YARF extends Classifier implements Serializable {
 		}		
 		return indices;
 	}
+	
+	public void setWait(boolean wait){
+		this.wait = wait;
+	}
 
+	public long getCompletionTime(){
+		return tf;
+	}
+
+	public boolean stopped(){
+		return stopped;
+	}
+	
 	public void StopBuilding() {
+		stopped = true;
 		for (int t = 0; t < num_trees; t++){
 			yarf_trees[t].StopBuilding();
 		}

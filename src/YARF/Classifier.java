@@ -158,18 +158,7 @@ public abstract class Classifier implements Serializable{
 	
 	/** deletes all data that's unneeded at this point in runtime in order to save memory */
 	protected abstract void FlushData();
-	
-	/**
-	 * After the classifier has been built, new records can be evaluated / predicted
-	 * (implemented by a daughter class)
-	 * 
-	 * @param record		The observation to be evaluated / predicted
-	 * @param num_cores		The number of processor cores to be used during the evaluation / prediction
-	 * @return				The prediction
-	 */
-	public double Evaluate(double[] record, int num_cores){
-		return Evaluate(record, 1); //single processor defualt
-	}
+
 	
 	/**
 	 * A wrapper for {@link #Evaluate(double[], int)} where one processor core is used

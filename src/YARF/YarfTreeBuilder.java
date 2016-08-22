@@ -2,6 +2,8 @@ package YARF;
 
 import java.util.Arrays;
 
+import org.apache.commons.math3.stat.StatUtils;
+
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 public class YarfTreeBuilder {
@@ -18,7 +20,7 @@ public class YarfTreeBuilder {
 
 	private void splitNode(YARFNode node) {
 		if (tree.stop){
-			return; //user hit the brakes
+			return; //user hit the brakes so ditch
 		}
 		if (nodeTooSmall(node)){
 			node.isLeaf = true;
@@ -37,12 +39,12 @@ public class YarfTreeBuilder {
 		TIntObjectHashMap<int[]> ordered_indices_js = new TIntObjectHashMap<int[]>(features_to_split_on.length);
 		for (int j : features_to_split_on){
 			int[] ordered_indices_j = yarf.sortedIndices(j, node.indices);
-			for (int i_n = 0; i_n < n_n; i_n++){
-				double cost = computeCostOfSplitPoint(ordered_indices_j, i_n);
+			for (int i_cut = 0; i_cut < n_n; i_cut++){
+				double cost = computeCostOfSplitPoint(ordered_indices_j, i_cut);
 				if (cost < lowest_cost){
 					lowest_cost = cost;
 					lowest_cost_split_attribute = j;
-					lowest_cost_split_index = i_n;
+					lowest_cost_split_index = i_cut;
 				}
 			}
 			ordered_indices_js.put(j, ordered_indices_j); //save it for later
@@ -64,28 +66,36 @@ public class YarfTreeBuilder {
 	}
 
 	private void assignYHat(YARFNode node) {
-		if (yarf.customFunctionNodeAssign()){
+		if (yarf.customFunctionNodeAssignment()){
 			//TODO
 		}
-		else if (yarf.is_a_regression){//sample average
-			
-		}
-		else { //it's a classification so the modal category
-			//
-		}
+		//sample average or sample mode
+		node.y_pred = yarf.is_a_regression ? StatUtils.mean(node.node_ys()) : StatToolbox.sample_mode(node.node_ys());
 	}
 
-	private double computeCostOfSplitPoint(int[] ordered_indices_j, int i_n) {
+	private double computeCostOfSplitPoint(int[] ordered_indices_j, int i_cut) {
+		//get the indices in the potential left and right children
+		int n =  ordered_indices_j.length;
+		int[] left_indices = Arrays.copyOfRange(ordered_indices_j, 0, i_cut);
+		int[] right_indices = Arrays.copyOfRange(ordered_indices_j, i_cut, n);		
+		int nL = left_indices.length;
+		int nR = right_indices.length;
 		if (yarf.customFunctionCostCalc()){
 			//TODO
+			return 0;
 		}
-		else if (yarf.is_a_regression){ //the cost is the SSE (across both the left and right)
+		else {
+			double [] ysL = Tools.subArr(tree.yarf.y, left_indices);
+			double [] ysR = Tools.subArr(tree.yarf.y, right_indices);
 			
+			if (yarf.is_a_regression){ //the cost is the SSE (across both the left and right)
+				return StatToolbox.sample_sum_sq_err(ysL) + StatToolbox.sample_sum_sq_err(ysR);
+			}
+			else { //it's a classification - the "cost" is the sample weighted average of negative entropy among left and right
+				return nL / (double)n * StatToolbox.natural_negative_entropy(ysL) + 
+						nR / (double)n * StatToolbox.natural_negative_entropy(ysR);
+			}
 		}
-		else { //it's a classification
-			//
-		}
-		return 0;
 	}
 
 	private boolean nodeTooSmall(YARFNode node) {

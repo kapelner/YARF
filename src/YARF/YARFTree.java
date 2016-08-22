@@ -1,5 +1,8 @@
 package YARF;
 
+import java.util.HashSet;
+
+import OpenSourceExtensions.UnorderedPair;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.set.hash.TIntHashSet;
