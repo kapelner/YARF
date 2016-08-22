@@ -30,7 +30,6 @@ public class YarfTreeBuilder {
 		double lowest_cost = Double.MAX_VALUE;
 		
 		int lowest_cost_split_attribute = Integer.MIN_VALUE; //bad flag!
-		double lowest_cost_split_point = Double.NaN; //bad flag!
 		int lowest_cost_split_index = Integer.MIN_VALUE; //bad flag!
 		
 		int[] features_to_split_on = selectAttributesToTry(node);
@@ -42,7 +41,6 @@ public class YarfTreeBuilder {
 				if (cost < lowest_cost){
 					lowest_cost = cost;
 					lowest_cost_split_attribute = j;
-					lowest_cost_split_point = yarf.getXj(j)[i_n];
 					lowest_cost_split_index = i_n;
 				}
 			}
@@ -51,7 +49,7 @@ public class YarfTreeBuilder {
 		
 		//indicate the splitting rule in this node
 		node.splitAttribute = lowest_cost_split_attribute;
-		node.splitValue = lowest_cost_split_point;
+		node.splitValue = yarf.getXj(lowest_cost_split_attribute)[lowest_cost_split_index];
 		
 		//give birth to two children
 		YARFNode left = new YARFNode(node);
