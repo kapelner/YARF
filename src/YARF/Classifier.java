@@ -89,6 +89,10 @@ public abstract class Classifier implements Serializable{
 		}				
 		X.add(record);		
 	}
+	
+	public void addTrainingDataResponse(double[] y){
+		this.y = y;
+	}
 
 	
 	

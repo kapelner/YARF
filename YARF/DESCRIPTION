@@ -8,6 +8,7 @@ Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
 Description: A fully customizable Random Forests implementation
 License: GPL-3
 Depends:
+	YARFJARs,
     R (>= 3.2.0),
     rJava (>= 0.9-8)
 Imports:

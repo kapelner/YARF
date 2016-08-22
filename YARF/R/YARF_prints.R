@@ -3,7 +3,6 @@
 #' @param object 					A YARF model object.
 #' @param ... 						Other methods passed to summary
 #' @method summary YARF
-#' @S3method summary YARF
 #' 
 #' @author Adam Kapelner
 #' @export
@@ -46,7 +45,6 @@ summary.YARF = function(object, ...){
 #' @param x		 					A YARF model object.
 #' @param ... 						Other methods passed to print
 #' @method print YARF
-#' @S3method print YARF
 #' 
 #' @author Adam Kapelner
 #' @export

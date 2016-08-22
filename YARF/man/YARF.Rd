@@ -7,56 +7,75 @@
 \title{A fully customizable Random Forests implementation}
 \usage{
 YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL, num_trees = 500,
-  boostrap_indices_fun = NULL, bootstrap_indicies_fun_data = NULL,
-  oob_estimates = TRUE, mtry = NULL, cost_calc = NULL,
-  node_assign = NULL, shared_functions = NULL, use_missing_data = FALSE,
-  covariates_to_permute = NULL, use_missing_data_dummies_as_covars = FALSE,
-  impute_missingness_with_x_j_bar_for_lm = TRUE, mem_cache_for_speed = TRUE,
-  serialize = FALSE, seed = NULL, verbose = TRUE)
+  boostrap_indices = NULL, mtry = NULL, mtry_fun = NULL,
+  nodesize = NULL, nodesize_fun = NULL, cost_calc_fun = NULL,
+  node_assign_fun = NULL, aggregation_fun = NULL, shared_funs = NULL,
+  use_missing_data = FALSE, use_missing_data_dummies_as_covars = FALSE,
+  replace_missing_data_with_x_j_bar = TRUE, mem_cache_for_speed = TRUE,
+  covariates_to_permute = NULL, serialize = FALSE, seed = NULL,
+  wait = TRUE, verbose = TRUE, debug_log = FALSE)
 }
 \arguments{
-\item{X}{}
+\item{X}{The data frame of training data}
 
-\item{y}{}
+\item{y}{The training responses}
 
-\item{Xy}{}
+\item{Xy}{The data frame of training data where the last column is responses}
 
-\item{Xother}{}
+\item{Xother}{Other data that is used in the training but the RF doesn't split on it}
 
-\item{num_trees}{}
+\item{num_trees}{The # of trees in the RF. Default is \code{500}.}
 
-\item{boostrap_indices_fun}{}
+\item{boostrap_indices}{An n x num_trees matrix of indices where each column is the bootstrap indices of the training data.
+The default is \code{NULL} indicating the default algorithm of sampling {1,...,n} with replacement.}
 
-\item{bootstrap_indicies_fun_data}{}
+\item{mtry}{The number of variables tried at every split. The default is \code{NULL} which indicates
+the out-of-box RF default which is floor(p / 3) for regression and for classification,
+floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter.}
 
-\item{oob_estimates}{}
+\item{mtry_fun}{If you wish to create a custom number of mtry, pass in javascript code here as a string.}
 
-\item{mtry}{}
+\item{nodesize}{The minimum number of observations in a node. YARF will stop splitting at this point.
+If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
+will be used.}
 
-\item{cost_calc}{}
+\item{nodesize_fun}{A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
+nodesize will be calculated as a static constant (see the \code{nodesize} argument).}
 
-\item{node_assign}{}
+\item{cost_calc_fun}{A custom cost calculation for node splits in Javascript. The default is \code{NULL}
+which defaults to sum of squared error for regression or sum of entropy for classification.}
 
-\item{shared_functions}{}
+\item{node_assign_fun}{A custom node assignment function in Javascript. This function is run after RF greedily finds the 
+"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
+in regression or the modal class during classification.}
 
-\item{use_missing_data}{}
+\item{aggregation_fun}{A custom javascript function which aggregates the predictions in the trees for one observations 
+into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
+regression and the modal category for classification.}
 
-\item{covariates_to_permute}{}
-
-\item{use_missing_data_dummies_as_covars}{}
-
-\item{impute_missingness_with_x_j_bar_for_lm}{}
+\item{use_missing_data}{Use the "missing-in-attributes" to fit data with missingness.}
 
 \item{mem_cache_for_speed}{}
 
-\item{serialize}{}
+\item{covariates_to_permute}{Indices of features to randomly permute when creating a YARF. The default is \code{NULL}
+indicating no features are permuted. This is an argument used mostly by other YARF functions.}
 
-\item{seed}{}
+\item{serialize}{Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
+time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
+we will automatically serialize after other operations that add data (such as the OOB evaluation).}
 
-\item{verbose}{}
+\item{seed}{Set a random seed for reproducibility.}
+
+\item{wait}{Should we hang R to wait for the YARF model to complete? The default is \code{TRUE}.}
+
+\item{verbose}{Should we print out messages verbosely during construction? Default is \code{FALSE}.}
+
+\item{debug_log}{Should we print out messages from Java? Default is \code{FALSE}.}
+
+\item{shared_functions}{Custom Javascript functions that are always around. The default is \code{NULL} for no shared functions.}
 }
 \value{
-A list of all arguments passed in plus..
+A list of all arguments passed in plus...
 }
 \description{
 Software which helps practitioners optimally design experiments that measure the slope divided by the intercept.

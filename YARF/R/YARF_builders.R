@@ -1,7 +1,5 @@
-YARF_MAX_MEM_MB_DEFAULT = 1100 #1.1GB is the most a 32bit machine can give without throwing an error or crashing
-YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
-
 #' Builds a YARF Model
+#' 
 #' @param X 								The data frame of training data
 #' @param y 								The training responses
 #' @param Xy 								The data frame of training data where the last column is responses
@@ -32,10 +30,12 @@ YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
 #' 											indicating no features are permuted. This is an argument used mostly by other YARF functions.
 #' @param mem_cache_for_speed 
 #' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
-#' 											time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}.
+#' 											time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
+#' 											we will automatically serialize after other operations that add data (such as the OOB evaluation).
 #' @param seed								Set a random seed for reproducibility. 
-#' @param wait								Should we hang R to wait for the YARF model to complete. The default is \code{TRUE}.
-#' @param verbose 							Should we print out messages verbosely during construction. Default is \code{FALSE}.
+#' @param wait								Should we hang R to wait for the YARF model to complete? The default is \code{TRUE}.
+#' @param verbose 							Should we print out messages verbosely during construction? Default is \code{FALSE}.
+#' @param debug_log							Should we print out messages from Java? Default is \code{FALSE}.
 #' 
 #' @return									A list of all arguments passed in plus... 
 #' 
@@ -72,7 +72,8 @@ YARF = function(
 		serialize = FALSE,
 		seed = NULL,
 		wait = TRUE,
-		verbose = TRUE){
+		verbose = TRUE,
+		debug_log = FALSE){
 	
 	if (serialize && !wait){
 		stop("'serialize' can only by TRUE if 'wait' is TRUE (you cannot save a model that is not yet fully constructed).")
@@ -82,19 +83,13 @@ YARF = function(
 		stop("The 'num_trees' argument is not a positive integer.")
 	}
 	
-	if ((is.null(mtry) && is.null(mtry_fun)) || (!is.null(mtry) && !is.null(mtry_fun))){
-		stop("You have to specify EITHER 'mtry' OR 'mtry_function' but not both (or none)")
-	}
-	if (is.null(mtry)){
-		if (class(mtry_fun) != "chracter"){
+	if (!is.null(mtry_fun)){
+		if (class(mtry_fun) != "character"){
 			stop("'mtry_function' must be a character string of Javascript code")
 		}
 	}
 	
-	if ((is.null(nodesize) && is.null(nodesize_fun)) || (!is.null(nodesize) && !is.null(nodesize_fun))){
-		stop("You have to specify EITHER 'nodesize' OR 'nodesize_function' but not both (or none)")
-	}
-	if (is.null(nodesize)){
+	if (!is.null(nodesize_fun)){
 		if (class(nodesize_fun) != "character"){
 			stop("'nodesize' must be a character string of Javascript code")
 		}
@@ -193,23 +188,23 @@ YARF = function(
 	
 	#now take a look at the bootstrap indices data
 	if (is.null(boostrap_indices)){ #the user wants the standard non-parametric bootstrap sampling with replacement
-		bootstrap_indicies = matrix(NA, n, num_trees)
+		bootstrap_indices = matrix(NA, n, num_trees)
 		one_to_n = seq(1, n)
 		for (t in 1 : num_trees){
-			bootstrap_indicies[, t] = sample(one_to_n)
+			bootstrap_indices[, t] = sample(one_to_n)
 		}
 	} else {
 		#ensure the indicies is the correct format
-		if (class(bootstrap_indicies) %notin% c("data.frame", "matrix")){
+		if (class(bootstrap_indices) %notin% c("data.frame", "matrix")){
 			stop("The bootstrap_indicies must be a data.frame or matrix")
 		}
-		if (!all.equal(dim(bootstrap_indicies), c(n, num_trees))){
+		if (!all.equal(dim(bootstrap_indices), c(n, num_trees))){
 			stop("The bootstrap_indicies must be n x num_trees")
 		}
-		if (!(sum(apply(bootstrap_indicies, 1, as.integer) == apply(bootstrap_indicies, 1, function(x){x})) != (n * num_trees))){
+		if (!(sum(apply(bootstrap_indices, 1, as.integer) == apply(bootstrap_indices, 1, function(x){x})) != (n * num_trees))){
 			stop("The bootstrap_indicies must be integers")
 		}
-		if (sum(bootstrap_indicies > n) + sum(bootstrap_indicies < 1) > 0){
+		if (sum(bootstrap_indices > n) + sum(bootstrap_indices < 1) > 0){
 			stop("The bootstrap_indicies elements must all be in {1,...,n}")
 		}
 	}
@@ -338,12 +333,12 @@ YARF = function(
 	#now load data and/or scripts
 	if (!is.null(mtry)){
 		.jcall(java_YARF, "V", "setMTry", as.integer(mtry))
-	} else {
+	} else if (!is.null(mtry_fun)) {
 		.jcall(java_YARF, "V", "setMTryFunction", mtry_fun)
 	}
 	if (!is.null(nodesize)){
 		.jcall(java_YARF, "V", "setNodesize", as.integer(nodesize))
-	} else {
+	} else if (!is.null(nodesize_fun)) {
 		.jcall(java_YARF, "V", "setNodesizeFunction", nodesize_fun)
 	}
 	
@@ -386,7 +381,7 @@ YARF = function(
 	
 	.jcall(java_YARF, "V", "setTrainingDataNames", colnames(model_matrix_training_data))
 	
-	.jcall(java_YARF, "V", "setOtherDataNames", colnames(Xother))
+	.jcall(java_YARF, "V", "setOtherDataNames", as.character(colnames(Xother)))
 	#now load the "other" data into YARF
 	for (i in 1 : n){
 		row_as_char = as.character(Xother[i, ])
@@ -454,6 +449,8 @@ YARF = function(
 	yarf_mod
 }
 
+#' Computes the out-of-bag (OOB) predictions for the training data. 
+#' This gives a good sense of out-of-sample performance in the future.
 #' 
 #' @param yarf_mod 							The yarf model object
 #' @param oob_metric						If regression, we will return L1, MAE, L2 and RMSE and if classification,
@@ -510,6 +507,9 @@ YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
 			confusion_matrix[n_levels + 1, n_levels + 1] = yarf_mod$misclassification_error
 			#return the whole thing
 			yarf_mod$confusion_matrix = confusion_matrix
+		}
+		if (yarf_mod$serialize){ #if they did it before, do it now too
+			YARF_serialize(yarf_mod)
 		}
 		#send it back
 		yarf_mod

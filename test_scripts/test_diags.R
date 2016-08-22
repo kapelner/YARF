@@ -1,7 +1,12 @@
-install.packages("rJava")
-Sys.setenv(JAVA_HOME="C:\Program Files\Java\jre1.8.0_102")
-Sys.getenv("JAVA_HOME")
+# install.packages("rJava")
 
+# Sys.getenv("JAVA_HOME")
+
+# library(rJava)
+# .jinit()
+# .jcall("java/lang/System", "S", "getProperty", "java.runtime.version")
+
+Sys.setenv(JAVA_HOME="C:\\Program Files\\Java\\jdk1.8.0_102")
 options(java.parameters = "-Xmx3000m")
 library(YARF)
 library(MASS)

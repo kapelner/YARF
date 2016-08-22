@@ -1,8 +1,4 @@
-#see http://stackoverflow.com/questions/2547402/is-there-a-built-in-function-for-finding-the-mode
-sample_mode = function(arr) {
-	ux = unique(arr)
-	ux[which.max(tabulate(match(arr, ux)))]
-}
+
 
 #' Computes a response prediction for new data observation(s). Predictions are an aggregation from each of the 
 #' individual trees' predictions based on the function passed into the model creation step. If no function was 
@@ -13,7 +9,6 @@ sample_mode = function(arr) {
 #' 									p is the same length as the original training data.
 #' @param ... 						Other methods passed to predict
 #' @method predict YARF
-#' @S3method predict YARF
 #' @return 							The yhat prediction for the \code{new_data} record(s).
 #' 
 #' @author Kapelner
@@ -53,4 +48,9 @@ check_serialization = function(yarf){
 	if (is.jnull(yarf$java_YARF)){
 		stop("This YARF object was loaded from an R image but was not serialized.\n  Please build YARF using the option \"serialize = TRUE\" next time.\n")
 	}
+}
+#see http://stackoverflow.com/questions/2547402/is-there-a-built-in-function-for-finding-the-mode
+sample_mode = function(arr) {
+	ux = unique(arr)
+	ux[which.max(tabulate(match(arr, ux)))]
 }
