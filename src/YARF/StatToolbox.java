@@ -1,33 +1,10 @@
-/*
-    BART - Bayesian Additive Regressive Trees
-    Software for Supervised Statistical Learning
-    
-    Copyright (C) 2012 Professor Ed George & Adam Kapelner, 
-    Dept of Statistics, The Wharton School of the University of Pennsylvania
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details:
-    
-    http://www.gnu.org/licenses/gpl-2.0.txt
-
-    You should have received a copy of the GNU General Public License along
-    with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
-
 package YARF;
 
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -282,15 +259,17 @@ public class StatToolbox {
 		return R.nextInt(i);
 	}
 	
-	public static <E> List<E> pickNRandomElements(List<E> list, int subset_size) {
-	    int length = list.size();
-
-	    if (length < subset_size) return null;
-
-	    //We don't need to shuffle the whole list
-	    for (int i = length - 1; i >= length - subset_size; --i){
-	        Collections.swap(list, i, randInt(i + 1));
-	    }
-	    return list.subList(length - subset_size, length);
+	//http://lemire.me/blog/2013/08/16/picking-n-distinct-numbers-at-random-how-to-do-it-fast/
+	public static int[] pickNRandomElements(int[] arr, int subset_size) {
+		BitSet bs = new BitSet(arr.length);
+        int cardinality = 0;
+        while(cardinality < subset_size) {
+        	int v = randInt(arr.length);
+        	if (!bs.get(v)) {
+        		bs.set(v);
+        		cardinality++;
+        	}
+        }
+        return bs.stream().toArray();
 	}
 }
