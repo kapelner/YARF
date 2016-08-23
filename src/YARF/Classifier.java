@@ -1,6 +1,10 @@
 package YARF;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -57,7 +61,9 @@ public abstract class Classifier implements Serializable{
 
 	private String unique_name;
 
-	protected int[] missingnessAmongFeatures;	
+	protected int[] missingnessAmongFeatures;
+
+	protected PrintStream printStreamToFile;	
 
 	
 	/** A dummy constructor which keeps <code>Serializable</code> happy */
@@ -134,30 +140,16 @@ public abstract class Classifier implements Serializable{
 	 * @see {@link https://blogs.oracle.com/nickstephen/entry/java_redirecting_system_out_and
 	 */
 	public void suppressOrWriteToDebugLog(){
-		//also handle the logging
-        LogManager logManager = LogManager.getLogManager();
-        logManager.reset();
-
-        // create log file, no limit on size
-        FileHandler fileHandler = null;
+		File file = new File("yarf.log");
 		try {
-			fileHandler = new FileHandler(unique_name + ".log", Integer.MAX_VALUE, 1, false);
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
+			printStreamToFile = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)), true);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        fileHandler.setFormatter(new SuperSimpleFormatter());
-        Logger.getLogger("").addHandler(fileHandler);
-        
-        
-        // now rebind stdout/stderr to logger
-        Logger logger = Logger.getLogger("stdout");         
-        LoggingOutputStream  los = new LoggingOutputStream(logger, StdOutErrLevel.STDOUT);
-        System.setOut(new PrintStream(los, true));
-        logger = Logger.getLogger("stderr");                                    
-        los = new LoggingOutputStream(logger, StdOutErrLevel.STDERR);            
-        System.setErr(new PrintStream(los, true)); 		
+	    System.setOut(printStreamToFile);	
+	    System.setErr(printStreamToFile);
+	    System.out.println("test");
 	}
 	
 	/** deletes all data that's unneeded at this point in runtime in order to save memory */

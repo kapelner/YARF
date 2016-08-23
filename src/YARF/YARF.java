@@ -79,6 +79,34 @@ public class YARF extends Classifier implements Serializable {
 	/** should we hang the system until the model is fully constructed? */
 	private boolean wait;
 
+	public static void main(String[] args){
+		YARF yarf = new YARF();
+		yarf.setWait(true);
+		yarf.setNumCores(1);
+		yarf.setNumTrees(1);
+		yarf.setNodesize(3);
+		yarf.setPredType("regression");
+		
+		int n = 10;
+		int p = 5;
+		int[] indices_t = new int[n];
+		yarf.X = new ArrayList<double[]>(n);
+		yarf.y = new double[n];
+		for (int i = 0; i < n; i++){
+			indices_t[i] = i;
+			double[] x_i = new double[p];
+			for (int j = 0; j < p; j++){
+				x_i[j] = Math.random();
+			}
+			yarf.X.add(x_i);
+			yarf.y[i] = Math.random();
+		}		
+		yarf.finalizeTrainingData();
+		yarf.addBootstrapIndices(indices_t, 0);
+
+		yarf.Build();
+		
+	}
 	
 	public YARF(){}
 	
@@ -295,7 +323,7 @@ public class YARF extends Classifier implements Serializable {
 		if (verbose){
 			System.out.println("building YARF " + (mem_cache_for_speed ? "with" : "without") + " mem-cache speedup...");
 		}
-
+		System.err.println("inside YARF");
 		ExecutorService tree_grow_pool = Executors.newFixedThreadPool(num_cores);
 		for (int t = 0; t < num_trees; t++){
 			final int tf = t;
@@ -482,7 +510,8 @@ public class YARF extends Classifier implements Serializable {
 		super.finalizeTrainingData();
 		//initialize other data that requires data to be finalized
 		X_by_col = new TIntObjectHashMap<double[]>(p);
-		bootstrap_indices = new int[num_trees][n];
+		bootstrap_indices = new int[num_trees][];
+		System.out.println("bil" + bootstrap_indices.length);
 		indicies_one_to_n = new TIntHashSet();
 		for (int i = 0; i < n; i++){
 			indicies_one_to_n.add(i);
@@ -565,6 +594,7 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	public void setWait(boolean wait){
+		System.err.println("inside YARF setwait");
 		this.wait = wait;
 	}
 
