@@ -22,13 +22,13 @@ public class YARFNode implements Cloneable {
 	private YARFNode right;
 	
 	/** the generation of this node from the top node (root note has generation = 0 by definition) */
-	public int depth;
+	public int depth = BAD_FLAG_int;
 	/** is this node a terminal node? */
 	public boolean isLeaf;
 	/** the attribute this node makes a decision on */
-	public int splitAttribute;
+	public int splitAttribute = BAD_FLAG_int;
 	/** the value this node makes a decision on */
-	public double splitValue;
+	public double splitValue = BAD_FLAG_double;
 	/** send missing data to the right? */ 
 	public boolean sendMissingDataRight;
 	/** if this is a leaf node, then the result of the prediction for regression, otherwise null */

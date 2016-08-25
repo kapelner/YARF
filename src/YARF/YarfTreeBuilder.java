@@ -40,6 +40,9 @@ public class YarfTreeBuilder {
 		for (int j : features_to_split_on){
 			System.out.println("features_to_split_on" + Tools.StringJoin(features_to_split_on));
 			int[] ordered_indices_j = yarf.sortedIndices(j, node.indices);
+			
+			//two options about missingness (a) there is no missingness in this feature (b) there is
+			
 			for (int i_cut = 0; i_cut < n_n; i_cut++){
 				double cost = computeCostOfSplitPoint(ordered_indices_j, i_cut);
 				if (cost < lowest_cost){
