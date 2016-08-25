@@ -60,7 +60,7 @@ public class YARF extends Classifier implements Serializable {
 	//convenient pre-computed data to have around
 	protected transient TIntObjectHashMap<int[]> all_attribute_sorts;
 	private transient TIntHashSet indicies_one_to_n;
-	protected transient ArrayList<Integer> indicies_one_to_p;
+	protected transient int[] indicies_one_to_p_min_1;
 	
 	//everything that has to do with scripts
 	private transient ScriptEngine nashorn_js_engine;
@@ -87,20 +87,33 @@ public class YARF extends Classifier implements Serializable {
 		yarf.setNodesize(3);
 		yarf.setPredType("regression");
 		
+//		int n = 10;
+//		int p = 5;
+//		int[] indices_t = new int[n];
+//		yarf.X = new ArrayList<double[]>(n);
+//		yarf.y = new double[n];
+//		for (int i = 0; i < n; i++){
+//			indices_t[i] = i;
+//			double[] x_i = new double[p];
+//			for (int j = 0; j < p; j++){
+//				x_i[j] = Math.random();
+//			}
+//			yarf.X.add(x_i);
+//			yarf.y[i] = Math.random();
+//		}
+		
 		int n = 10;
-		int p = 5;
+//		int p = 1;
 		int[] indices_t = new int[n];
 		yarf.X = new ArrayList<double[]>(n);
 		yarf.y = new double[n];
 		for (int i = 0; i < n; i++){
 			indices_t[i] = i;
-			double[] x_i = new double[p];
-			for (int j = 0; j < p; j++){
-				x_i[j] = Math.random();
-			}
+			double[] x_i = {i};
 			yarf.X.add(x_i);
-			yarf.y[i] = Math.random();
-		}		
+			yarf.y[i] = i;
+		}
+		
 		yarf.finalizeTrainingData();
 		yarf.addBootstrapIndices(indices_t, 0);
 
@@ -323,7 +336,7 @@ public class YARF extends Classifier implements Serializable {
 		if (verbose){
 			System.out.println("building YARF " + (mem_cache_for_speed ? "with" : "without") + " mem-cache speedup...");
 		}
-		System.err.println("inside YARF");
+//		System.err.println("inside YARF");
 		ExecutorService tree_grow_pool = Executors.newFixedThreadPool(num_cores);
 		for (int t = 0; t < num_trees; t++){
 			final int tf = t;
@@ -516,9 +529,9 @@ public class YARF extends Classifier implements Serializable {
 		for (int i = 0; i < n; i++){
 			indicies_one_to_n.add(i);
 		}
-		indicies_one_to_p = new ArrayList<Integer>();
+		indicies_one_to_p_min_1 = new int[p];
 		for (int j = 0; j < p; j++){
-			indicies_one_to_p.add(j);
+			indicies_one_to_p_min_1[j] = j;
 		}
 	}
 	
@@ -531,11 +544,13 @@ public class YARF extends Classifier implements Serializable {
 	 * @return		The nx1 vector of that feature
 	 */
 	protected double[] getXj(int j) {
+		System.out.println("getXJ " + j + "n" + n + "p" + p);
 		double[] x_dot_j = X_by_col.get(j);
 		if (x_dot_j == null){ //gotta build it
 			synchronized(X_by_col){ //don't wanna build it twice so sync it
 				x_dot_j = new double[n];
 				for (int i = 0; i < n; i++){
+					System.out.println("getXJ " + j + " i " + i);
 					x_dot_j[i] = X.get(i)[j];
 				}
 				X_by_col.put(j, x_dot_j);
@@ -594,7 +609,7 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	public void setWait(boolean wait){
-		System.err.println("inside YARF setwait");
+//		System.err.println("inside YARF setwait");
 		this.wait = wait;
 	}
 

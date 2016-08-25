@@ -38,6 +38,7 @@ public class YarfTreeBuilder {
 		int[] features_to_split_on = selectAttributesToTry(node);
 		TIntObjectHashMap<int[]> ordered_indices_js = new TIntObjectHashMap<int[]>(features_to_split_on.length);
 		for (int j : features_to_split_on){
+			System.out.println("features_to_split_on" + Tools.StringJoin(features_to_split_on));
 			int[] ordered_indices_j = yarf.sortedIndices(j, node.indices);
 			for (int i_cut = 0; i_cut < n_n; i_cut++){
 				double cost = computeCostOfSplitPoint(ordered_indices_j, i_cut);
@@ -112,8 +113,8 @@ public class YarfTreeBuilder {
 		if (yarf.customFunctionMtry()){
 			//TODO
 		}
-		int mtry = (int)Math.floor(yarf.is_a_regression ? (yarf.p / 3) : Math.sqrt(yarf.p));
-		return StatToolbox.pickNRandomElements(node.indices, mtry);
+		int mtry = Math.max(1, (int)Math.floor(yarf.is_a_regression ? (yarf.p / 3) : Math.sqrt(yarf.p))); //at least it's 1!!!
+		return StatToolbox.pickNRandomElements(yarf.indicies_one_to_p_min_1, mtry);
 	}
 
 }

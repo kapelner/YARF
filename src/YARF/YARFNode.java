@@ -1,5 +1,6 @@
 package YARF;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 import OpenSourceExtensions.UnorderedPair;
@@ -62,6 +63,7 @@ public class YARFNode implements Cloneable {
 	 */
 	public YARFNode(YARFNode parent){
 		this.parent = parent;
+		tree = parent.tree;
 		
 		if (parent != null){
 			depth = parent.depth + 1;
@@ -159,8 +161,68 @@ public class YARFNode implements Cloneable {
 		}
 	}
 	
+	public void printTree(){
+		printNodeDebugInfo("");
+		if (left != null){
+			left.printNodeDebugInfo("");
+		}
+		if (right != null){
+			right.printNodeDebugInfo("");
+		}
+	}
+	
+
+	/**
+	 * Prints debug information about this node, its parent and its immediate children
+	 * 
+	 * @param title		A string to print within this message
+	 */
+	public void printNodeDebugInfo(String title) {		
+		System.out.println("\n" + title + " node debug info for " + this.stringLocation(true) + (isLeaf ? " (LEAF) " : " (INTERNAL NODE) ") + " d = " + depth);
+		System.out.println("-----------------------------------------");
+		System.out.println("n_eta = " + nodeSize() + " y_pred = " + (y_pred == BAD_FLAG_double ? "BLANK" : y_pred));
+		System.out.println("parent = " + parent + " left = " + left + " right = " + right);
+		
+		if (this.parent != null){
+			System.out.println("----- PARENT RULE:   X_" + parent.splitAttribute + " <= " + parent.splitValue + " & M -> " + (parent.sendMissingDataRight ? "R" : "L") + " ------");
+			//get vals of this x currently here
+			double[] x_dot_j = tree.yarf.getXj(parent.splitAttribute);
+			double[] x_dot_j_node = new double[this.nodeSize()];
+			for (int i = 0; i < this.nodeSize(); i++){
+				x_dot_j_node[i] = x_dot_j[indices[i]];
+			}
+			Arrays.sort(x_dot_j_node);
+			System.out.println("   all X_" + parent.splitAttribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
+		}
+		
+		if (!isLeaf){
+			System.out.println("----- RULE:   X_" + splitAttribute + " <= " + splitValue + " & M -> " + (sendMissingDataRight ? "R" : "L") + " ------");
+			//get vals of this x currently here
+			double[] x_dot_j= tree.yarf.getXj(parent.splitAttribute);
+			double[] x_dot_j_node = new double[nodeSize()];
+			for (int i = 0; i < nodeSize(); i++){
+				x_dot_j_node[i] = x_dot_j[indices[i]];
+			}
+			Arrays.sort(x_dot_j_node);
+			System.out.println("   all X_" + splitAttribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
+		}	
+		
+		System.out.println("responses: (size " + node_ys.length + ") [" + Tools.StringJoin(node_ys) + "]" +  " sum_responses_qty_sqd = " + StatToolbox.sample_sum_sq_err(this.node_ys));
+		System.out.println("indicies: (size " + indices.length + ") [" + Tools.StringJoin(indices) + "]");
+//		if (Arrays.equals(yhats, new double[yhats.length])){
+//			System.out.println("y_hat_vec: (size " + yhats.length + ") [ BLANK ]");
+//		}
+//		else {
+//			System.out.println("y_hat_vec: (size " + yhats.length + ") [" + Tools.StringJoin(bart.un_transform_y_and_round(yhats)) + "]");
+//		}
+		System.out.println("-----------------------------------------\n\n\n");
+	}	
+	
 	public double[] node_ys(){
 		if (node_ys == null){
+//			System.out.println("tree " + tree);
+//			System.out.println("tree.yarf " + tree.yarf);
+//			System.out.println("tree.yarf.y " + tree.yarf.y + " indices " + indices);
 			node_ys = Tools.subArr(tree.yarf.y, indices);
 		}
 		return node_ys;
