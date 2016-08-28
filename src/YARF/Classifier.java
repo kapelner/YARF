@@ -11,12 +11,8 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.logging.FileHandler;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
-
-import CustomLogging.*;
 
 /**
  * The base class for all machine learning / statistical-learning
@@ -58,8 +54,6 @@ public abstract class Classifier implements Serializable{
 	protected double[] residuals;
 
 	protected String[] feature_names;
-
-	private String unique_name;
 
 	protected int[] missingnessAmongFeatures;
 
@@ -144,7 +138,6 @@ public abstract class Classifier implements Serializable{
 		try {
 			printStreamToFile = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)), true);
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	    System.setOut(printStreamToFile);	
@@ -203,10 +196,6 @@ public abstract class Classifier implements Serializable{
 			out.print("\n");
 		}
 		out.close();		
-	}
-	
-	public void setUniqueName(String unique_name) {
-		this.unique_name = unique_name;
 	}
 	
 

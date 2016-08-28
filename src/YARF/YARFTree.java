@@ -4,7 +4,7 @@ import gnu.trove.iterator.TIntIterator;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 
-
+/** A very simple wrapper class for the root node of the random tree */
 public class YARFTree extends Classifier {
 	private static final long serialVersionUID = 2834945939944472818L;
 	
@@ -21,8 +21,7 @@ public class YARFTree extends Classifier {
 	public void Build() {
 		System.out.println("BUILD TREE");
 		root = new YARFNode(this);
-		new YarfTreeBuilder(this);
-		root.printTree();
+		new YARFTreeBuilder(this);
 	}
 
 	public void FlushData() {

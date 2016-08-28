@@ -59,16 +59,26 @@ public class YARF extends Classifier implements Serializable {
 
 	//convenient pre-computed data to have around
 	protected transient TIntObjectHashMap<int[]> all_attribute_sorts;
-	private transient TIntHashSet indicies_one_to_n;
-	protected transient int[] indicies_one_to_p_min_1;
+	private transient TIntHashSet indices_one_to_n;
+	protected transient int[] indices_one_to_p_min_1;
 	
-	//everything that has to do with scripts
+	//all custom scripts
+	private String shared_functions_str;
+	private String mtry_function_str;
+	private String make_node_into_leaf_function_str;
+	private String cost_single_node_calc_function_str;
+	private String cost_both_children_calc_function_str;
+	private String node_assignment_function_str;
+	private String aggregation_function_str;
+	
+	//everything that has to do with scripts that's transient / lazy-loaded
 	private transient ScriptEngine nashorn_js_engine;
     private transient Compilable compilingEngine;
-	private transient String shared_funs;
+    //all invocables
 	protected transient Invocable mtry_fun;
-	protected transient Invocable nodesize_fun;
-	protected transient Invocable cost_calc_fun;
+	protected transient Invocable make_node_into_leaf_fun;
+	protected transient Invocable cost_single_node_calc_fun;
+	protected transient Invocable cost_both_children_calc_fun;
 	protected transient Invocable node_assignment_fun;
 	protected transient Invocable aggregation_fun;
 	
@@ -79,15 +89,16 @@ public class YARF extends Classifier implements Serializable {
 	/** should we hang the system until the model is fully constructed? */
 	private boolean wait;
 
+
 	public static void main(String[] args){
 		YARF yarf = new YARF();
 		yarf.setWait(true);
 		yarf.setNumCores(1);
 		yarf.setNumTrees(1);
-		yarf.setNodesize(3);
+		yarf.setNodesize(2);
 		yarf.setPredType("regression");
 		
-//		int n = 10;
+//		int n = 30;
 //		int p = 5;
 //		int[] indices_t = new int[n];
 //		yarf.X = new ArrayList<double[]>(n);
@@ -103,13 +114,12 @@ public class YARF extends Classifier implements Serializable {
 //		}
 		
 		int n = 10;
-//		int p = 1;
-		int[] indices_t = new int[n];
+		int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
 		yarf.X = new ArrayList<double[]>(n);
 		yarf.y = new double[n];
 		for (int i = 0; i < n; i++){
-			indices_t[i] = i;
-			double[] x_i = {i};
+//			indices_t[i] = i;
+			double[] x_i = {100 - i};
 			yarf.X.add(x_i);
 			yarf.y[i] = i;
 		}
@@ -190,13 +200,8 @@ public class YARF extends Classifier implements Serializable {
 		this.nodesize = nodesize;
 	}
 	
-	//all JS functions stuff --- shared must be set FIRST!!!!
-	public void setSharedFunctions(String shared_funs) throws ScriptException{
-		this.shared_funs = shared_funs;
-	}
-	
-	private Invocable stringToInvokableCompiledFunction(String fun) throws ScriptException{
-        //lazy load for this stuff
+	private Invocable stringToInvokableCompiledFunction(String fun) {
+        //lazy load for this stuff for serialization to work properly
 		if (nashorn_js_engine == null){
 			nashorn_js_engine = new ScriptEngineManager().getEngineByName("nashorn");
 		}
@@ -204,30 +209,87 @@ public class YARF extends Classifier implements Serializable {
 			compilingEngine = (Compilable) nashorn_js_engine;
 		}
 		
-		String fun_and_shared_libraries = fun + "\n\n" + shared_funs;
-		CompiledScript cscript = compilingEngine.compile(fun_and_shared_libraries); 
-        cscript.eval(nashorn_js_engine.getBindings(ScriptContext.ENGINE_SCOPE));
+		String fun_and_shared_libraries = fun + "\n\n" + shared_functions_str;
+		CompiledScript cscript = null;
+		try {
+			cscript = compilingEngine.compile(fun_and_shared_libraries);
+			cscript.eval(nashorn_js_engine.getBindings(ScriptContext.ENGINE_SCOPE));
+		} catch (ScriptException e) {
+			e.printStackTrace();
+		}
         return (Invocable)cscript.getEngine();
 	}
 	
-	public void setMTryFunction(String mtry_fun) throws ScriptException{
-        this.mtry_fun = stringToInvokableCompiledFunction(mtry_fun);
+	public int[] runMtry(YARFNode node){
+		if (mtry_fun == null){
+			mtry_fun = stringToInvokableCompiledFunction(mtry_function_str);	
+		}
+		try {
+			return  (int[]) mtry_fun.invokeFunction("tryVars", node);
+		} catch (NoSuchMethodException | ScriptException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
-	public void setNodesizeFunction(String nodesize_fun) throws ScriptException{
-		this.nodesize_fun = stringToInvokableCompiledFunction(nodesize_fun);
+	public boolean runNodesizeLegal(YARFNode node){
+		if (make_node_into_leaf_fun == null){
+			make_node_into_leaf_fun = stringToInvokableCompiledFunction(make_node_into_leaf_function_str);	
+		}
+		try {
+			return (boolean)make_node_into_leaf_fun.invokeFunction("makeNodeIntoLeaf", node);
+		} catch (NoSuchMethodException | ScriptException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 	
-	public void setCostCalcFunction(String cost_calc_fun) throws ScriptException{
-		this.cost_calc_fun = stringToInvokableCompiledFunction(cost_calc_fun);
+	public double runSingleNodeCost(YARFNode node){
+		if (cost_single_node_calc_fun == null){
+			cost_single_node_calc_fun = stringToInvokableCompiledFunction(cost_single_node_calc_function_str);	
+		}
+		try {
+			return (double)cost_single_node_calc_fun.invokeFunction("nodeCost", node);
+		} catch (NoSuchMethodException | ScriptException e) {
+			e.printStackTrace();
+		}
+		return YARFNode.BAD_FLAG_double;
 	}
 	
-	public void setNodeAssignmentFunction(String node_assignment_fun) throws ScriptException{
-		this.node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_fun);
+	public double runBothChildrenCost(YARFNode leftNode, YARFNode rightNode){
+		if (cost_both_children_calc_fun == null){
+			cost_both_children_calc_fun = stringToInvokableCompiledFunction(cost_both_children_calc_function_str);	
+		}
+		try {
+			return (double)cost_both_children_calc_fun.invokeFunction("splitCost", leftNode, rightNode);
+		} catch (NoSuchMethodException | ScriptException e) {
+			e.printStackTrace();
+		}
+		return YARFNode.BAD_FLAG_double;
 	}
 	
-	public void setAggregationFunction(String aggregation_fun) throws ScriptException{
-		this.aggregation_fun = stringToInvokableCompiledFunction(aggregation_fun);
+	public double runNodeAssignment(YARFNode node){
+		if (node_assignment_fun == null){
+			node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_function_str);	
+		}
+		try {
+			return (double)node_assignment_fun.invokeFunction("assignYhatToNode", node);
+		} catch (NoSuchMethodException | ScriptException e) {
+			e.printStackTrace();
+		}
+		return YARFNode.BAD_FLAG_double;
+	}
+	
+	public double runAggregation(double[] y_hat_trees){
+		if (aggregation_fun == null){
+			aggregation_fun = stringToInvokableCompiledFunction(aggregation_function_str);	
+		}
+		try {
+			return (double)aggregation_fun.invokeFunction("aggregateYhatsIntoOneYhat", y_hat_trees);
+		} catch (NoSuchMethodException | ScriptException e) {
+			e.printStackTrace();
+		}
+		return YARFNode.BAD_FLAG_double;
 	}
 	
 	public boolean customFunctionMtry(){
@@ -235,11 +297,15 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	public boolean customFunctionNodesize(){
-		return nodesize_fun != null;
+		return make_node_into_leaf_fun != null;
 	}
 	
-	public boolean customFunctionCostCalc(){
-		return cost_calc_fun != null;
+	public boolean customFunctionSingleNodeCostCalc(){
+		return cost_single_node_calc_fun != null;
+	}
+	
+	public boolean customFunctionBothChildrenCostCalc(){
+		return cost_both_children_calc_fun != null;
 	}
 	
 	public boolean customFunctionNodeAssignment(){
@@ -263,7 +329,7 @@ public class YARF extends Classifier implements Serializable {
 		yarf_trees[t].setTrainingIndices(bootstrap_indices[t]);
 		//now get oob indices - it begins as the full thing then we subtract 
 		//out the bootstrap indices of the tree
-		TIntHashSet oob_indices = new TIntHashSet(indicies_one_to_n);
+		TIntHashSet oob_indices = new TIntHashSet(indices_one_to_n);
 		oob_indices.removeAll(bootstrap_indices[t]);
 		yarf_trees[t].setOutOfBagIndices(oob_indices);
 	}
@@ -525,13 +591,13 @@ public class YARF extends Classifier implements Serializable {
 		X_by_col = new TIntObjectHashMap<double[]>(p);
 		bootstrap_indices = new int[num_trees][];
 		System.out.println("bil" + bootstrap_indices.length);
-		indicies_one_to_n = new TIntHashSet();
+		indices_one_to_n = new TIntHashSet();
 		for (int i = 0; i < n; i++){
-			indicies_one_to_n.add(i);
+			indices_one_to_n.add(i);
 		}
-		indicies_one_to_p_min_1 = new int[p];
+		indices_one_to_p_min_1 = new int[p];
 		for (int j = 0; j < p; j++){
-			indicies_one_to_p_min_1[j] = j;
+			indices_one_to_p_min_1[j] = j;
 		}
 	}
 	
@@ -544,13 +610,13 @@ public class YARF extends Classifier implements Serializable {
 	 * @return		The nx1 vector of that feature
 	 */
 	protected double[] getXj(int j) {
-		System.out.println("getXJ " + j + "n" + n + "p" + p);
+//		System.out.println("getXJ " + j + "n" + n + "p" + p);
 		double[] x_dot_j = X_by_col.get(j);
 		if (x_dot_j == null){ //gotta build it
 			synchronized(X_by_col){ //don't wanna build it twice so sync it
 				x_dot_j = new double[n];
 				for (int i = 0; i < n; i++){
-					System.out.println("getXJ " + j + " i " + i);
+//					System.out.println("getXJ " + j + " i " + i);
 					x_dot_j[i] = X.get(i)[j];
 				}
 				X_by_col.put(j, x_dot_j);
@@ -558,6 +624,31 @@ public class YARF extends Classifier implements Serializable {
 		}
 		return x_dot_j;
 	 }
+	
+	protected TIntHashSet missingnessInXj(int j, int[] indices_to_check){
+		TIntHashSet missing_indices = new TIntHashSet();
+		double[] x_j = getXj(j);
+		for (int i : indices_to_check){
+			if (x_j[i] == MISSING_VALUE){
+				missing_indices.add(i);
+			}
+		}
+		return missing_indices;
+	}
+	
+//	protected boolean missingnessExistsInXj(int j, int[] indices_to_check){
+//		double[] x_j = getXj(j);
+//		for (int i : indices_to_check){
+//			if (x_j[i] == MISSING_VALUE){
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
+	
+//	protected boolean missingnessExistsInXj(int j){
+//		return missingnessExistsInXj(j, this.indices_one_to_n._set);
+//	}
 	
 	protected int[] sortedIndices(int j, int[] sub_indices){
 		int[] indices_sorted_j = all_attribute_sorts.get(j);
@@ -613,6 +704,64 @@ public class YARF extends Classifier implements Serializable {
 		this.wait = wait;
 	}
 
+	public String getShared_functions_str() {
+		return shared_functions_str;
+	}
+
+	public void setShared_functions_str(String shared_functions_str) {
+		this.shared_functions_str = shared_functions_str;
+	}
+
+	public String getMtry_function_str() {
+		return mtry_function_str;
+	}
+
+	public void setMtry_function_str(String mtry_function_str) {
+		this.mtry_function_str = mtry_function_str;
+	}
+
+	public String getCost_single_node_calc_function_str() {
+		return cost_single_node_calc_function_str;
+	}
+
+	public void setCost_single_node_calc_function_str(
+			String cost_single_node_calc_function_str) {
+		this.cost_single_node_calc_function_str = cost_single_node_calc_function_str;
+	}
+
+	public String getCost_both_children_calc_function_str() {
+		return cost_both_children_calc_function_str;
+	}
+
+	public void setCost_both_children_calc_function_str(
+			String cost_both_children_calc_function_str) {
+		this.cost_both_children_calc_function_str = cost_both_children_calc_function_str;
+	}
+
+	public String getAggregation_function_str() {
+		return aggregation_function_str;
+	}
+
+	public void setAggregation_function_str(String aggregation_function_str) {
+		this.aggregation_function_str = aggregation_function_str;
+	}
+
+	public String getMake_node_into_leaf_function_str() {
+		return make_node_into_leaf_function_str;
+	}
+
+	public void setMake_node_into_leaf_function_str(String nodesize_function_str) {
+		this.make_node_into_leaf_function_str = nodesize_function_str;
+	}
+
+	public String getNode_assignment_function_str() {
+		return node_assignment_function_str;
+	}
+
+	public void setNode_assignment_function_str(String node_assignment_function_str) {
+		this.node_assignment_function_str = node_assignment_function_str;
+	}
+	
 	public long getCompletionTime(){
 		return tf;
 	}

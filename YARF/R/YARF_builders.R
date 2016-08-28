@@ -1,4 +1,4 @@
-#' Builds a YARF Model
+#' Builds a YARF Model. There are many custom functions
 #' 
 #' @param X 								The data frame of training data
 #' @param y 								The training responses
@@ -16,7 +16,16 @@
 #' 											will be used.
 #' @param nodesize_fun						A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
 #' 											nodesize will be calculated as a static constant (see the \code{nodesize} argument).				
-#' @param cost_calc_fun						A custom cost calculation for node splits in Javascript. The default is \code{NULL}
+#' @param cost_single_node_calc_fun			A custom cost calculation for a potential node (when considering a split) in Javascript. 
+#' 											The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
+#' 											to the sample average (if regression) and sum of entropy (if classification). You may find it 
+#' 											convenient to also made a node assignment here. If so, make sure you specify the node assignment
+#' 											function as a blank function (not \code{NULL}).
+#' @param cost_both_children_calc_fun		A custom cost calculation for an entire split considering both the putative left and right children
+#' 											nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
+#' 											sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
+#' 											to the number of observations in each node).
+#' 
 #' 											which defaults to sum of squared error for regression or sum of entropy for classification.							 
 #' @param node_assign_fun					A custom node assignment function in Javascript. This function is run after RF greedily finds the 
 #' 											"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 

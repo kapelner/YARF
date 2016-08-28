@@ -120,17 +120,27 @@ public class StatToolbox {
 		return sample_sum_sq_err(y) / ((double)y.length - 1);		
 	}	
 	
+
+
+	public static double sample_sum_sq_err(double[] ys, double y_center_point) {
+		double sum_sqd_deviations = 0;
+		for (int i = 0; i < ys.length; i++){
+			sum_sqd_deviations += Math.pow(ys[i] - y_center_point, 2);
+		}
+		return sum_sqd_deviations;
+	}
+	
 	/**
 	 * Compute the sum of squared error (the squared deviation from the sample average) of a vector of data
 	 * 
-	 * @param y	The vector of data values
-	 * @return	The sum of squared error
+	 * @param ys	The vector of data values
+	 * @return		The sum of squared error
 	 */	
-	public static final double sample_sum_sq_err(double[] y){
-		double y_bar = sample_average(y);
+	public static final double sample_sum_sq_err(double[] ys){
+		double y_bar = sample_average(ys);
 		double sum_sqd_deviations = 0;
-		for (int i = 0; i < y.length; i++){
-			sum_sqd_deviations += Math.pow(y[i] - y_bar, 2);
+		for (int i = 0; i < ys.length; i++){
+			sum_sqd_deviations += Math.pow(ys[i] - y_bar, 2);
 		}
 		return sum_sqd_deviations;
 	}
