@@ -6,7 +6,6 @@ import gnu.trove.list.array.TIntArrayList;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
 /**
  * A class that contains many generally useful convenience methods.
  * 
@@ -367,10 +366,11 @@ public class Tools {
 	}
 
 	
-	public static double[] subArr(double[] arr, int[] sub_indices){
-		double[] sub_array = new double[sub_indices.length];
-		for (int i = 0; i < sub_indices.length; i++){
-			sub_array[i] = arr[sub_indices[i]];
+	public static double[] subArr(double[] arr, TIntArrayList indices){
+		int n_sub = indices.size();
+		double[] sub_array = new double[n_sub];
+		for (int i = 0; i < n_sub; i++){
+			sub_array[i] = arr[indices.get(i)];
 		}
 		return sub_array;
 	}

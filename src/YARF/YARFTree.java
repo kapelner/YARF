@@ -1,6 +1,7 @@
 package YARF;
 
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -10,7 +11,7 @@ public class YARFTree extends Classifier {
 	
 	protected YARF yarf;
 	protected YARFNode root;
-	protected int[] bootstrap_indices;
+	protected TIntArrayList bootstrap_indices;
 	protected TIntHashSet oob_indices;
 	protected boolean stop;
 
@@ -28,7 +29,7 @@ public class YARFTree extends Classifier {
 		root.flushNodeData();
 	}
 
-	public void setTrainingIndices(int[] bootstrap_indices) {
+	public void setTrainingIndices(TIntArrayList bootstrap_indices) {
 		this.bootstrap_indices = bootstrap_indices;
 	}
 

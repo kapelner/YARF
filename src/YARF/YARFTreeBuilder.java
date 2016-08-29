@@ -1,9 +1,12 @@
 package YARF;
 
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.TreeSet;
 
 import OpenSourceExtensions.TDoubleHashSetAndArray;
 import bartMachine.Classifier;
@@ -44,7 +47,7 @@ public class YARFTreeBuilder {
 		
 		//which features can we split on in this node?
 		int[] features_to_split_on = selectAttributesToTry(node);
-		int node_n = node.nodeSize();
+		
 		
 		//this will house the optimal split
 		YARFNode lowest_left_node = null;
@@ -57,46 +60,44 @@ public class YARFTreeBuilder {
 		//there are two missingness options - check them in random order
 		double r = StatToolbox.rand();
 		boolean[] trueFalseRandomOrder = {r > 0.5, r <= 0.5};
-
+		int node_n = node.nodeSize();
 		
 		
-		for (int j : features_to_split_on){
-			//we need to get x values we can split on
-			double[] xj = yarf.getXj(j);
-			double[] xj_node = new double[node_n];
-			double max = Double.MIN_VALUE;
-			for (int i = 0; i < node_n; i++){
-				double val = xj[node.indices[i]];
-				xj_node[i] = val;
-				if (val > max){
-					max = val;
-				}
-			}	
-			//create a unique set
-			TDoubleHashSet xj_split_points = new TDoubleHashSet(xj_node);
-			//first kill the max since when you create split rules of the form x <= c, splitting
-			//on the max always yields an empty right node
-			xj_split_points.remove(max);
-			//now get rid of missing (we handle that without splitting)
-			xj_split_points.remove(Classifier.MISSING_VALUE);
-			//if there's no values, we cannot use this feature
-			if (xj_split_points.isEmpty()){
+		for (int j : features_to_split_on){	
+			//first get the indices for this note sorted on attribute j
+			TIntArrayList ordered_nonmissing_indices_j = yarf.sortedIndices(j, node.indices);
+			//we also need the missing indices
+			TIntHashSet missing_indices_j = yarf.missingnessInXj(j, ordered_nonmissing_indices_j);
+			//we cannot have any missing indices here
+			ordered_nonmissing_indices_j.removeAll(missing_indices_j);
+			
+			TreeSet<Double> xj_split_points = getSplitPoints(j, ordered_nonmissing_indices_j, missing_indices_j.isEmpty());
+			int num_split_points = xj_split_points.size();
+			//if there's no split points, we cannot use this feature
+			//if there's one split point and no missingness, we still can't use it
+			if (num_split_points == 0 || (missing_indices_j.isEmpty() && num_split_points == 1)){
+				System.out.println("no split points on feature " + j);
 				continue;
 			}
 			
-			int[] ordered_indices_j = yarf.sortedIndices(j, node.indices);
-			TIntHashSet missing_indices_j = yarf.missingnessInXj(j, ordered_indices_j);
-
-			for (boolean send_missing_data_right : trueFalseRandomOrder){
+			for (double split_point : xj_split_points){
 				
-				for (int i_cut = 0; i_cut < n_n; i_cut++){
+			}
+			for (boolean send_missing_data_right : trueFalseRandomOrder){
+				//begin the cut here
+				int i_cut = 0;
+				//find the next point in the cut
+				
+				
+				
+				for (int i_cut = 0; i_cut < node_n; i_cut++){
 					//set up zygotes
 					YARFNode putative_left = new YARFNode(node);
 					YARFNode putative_right = new YARFNode(node);
 					
 					if (missing_indices_j.isEmpty()){ //then it's simple who goes where
-						putative_left.indices = Arrays.copyOfRange(ordered_indices_j, 0, i_cut);
-						putative_right.indices = Arrays.copyOfRange(ordered_indices_j, i_cut, n_n);
+						putative_left.indices = Arrays.copyOfRange(ordered_nonmissing_indices_j, 0, i_cut);
+						putative_right.indices = Arrays.copyOfRange(ordered_nonmissing_indices_j, i_cut, n_n);
 					}
 					else { //now it's annoying... 
 					
@@ -123,7 +124,8 @@ public class YARFTreeBuilder {
 						lowest_send_missing_data_right = send_missing_data_right;
 					}
 				}
-				if (missing_indices_j.isEmpty()){break;} //no need to check the other because it will be the same
+				if (missing_indices_j.isEmpty()){break;} //no need to check the other because it will be the same 
+				//(this enforces randomness of L/R missingness sending)
 			}
 		}
 		
@@ -163,6 +165,30 @@ public class YARFTreeBuilder {
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
 		splitNode(node.right);
+	}
+
+	private TreeSet<Double> getSplitPoints(int j, TIntArrayList ordered_nonmissing_indices_j, boolean no_missingness) {
+		int node_n = ordered_nonmissing_indices_j.size();
+		//we need to get x values we can split on
+		double[] xj = yarf.getXj(j);
+		TreeSet<Double> xj_split_points = new TreeSet<Double>();
+		double max = Double.MIN_VALUE;
+		for (int i = 0; i < node_n; i++){
+			double val = xj[ordered_nonmissing_indices_j.get(i)];
+			xj_split_points.add(val);
+			if (no_missingness && val > max){
+				max = val;
+			}
+		}
+		
+		//if there is no missingness, we can kill the max. Why?
+		//Because when you create split rules of the form x <= c, splitting
+		//on the max always yields an empty right node
+		if (no_missingness){
+			xj_split_points.remove(max);
+		}
+
+		return xj_split_points;
 	}
 
 	private double totalChildrenCost(YARFNode putative_left, YARFNode putative_right) {

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 import OpenSourceExtensions.UnorderedPair;
+import gnu.trove.list.array.TIntArrayList;
 
 public class YARFNode implements Cloneable {
 	
@@ -37,14 +38,18 @@ public class YARFNode implements Cloneable {
 	/** if this is a leaf node, then the result of the prediction for regression, otherwise null */
 	public double y_pred = BAD_FLAG_double;
 	/** the indices in this node */
-	public int[] indices;
-
+	public TIntArrayList indices;
+	/** the number of training observations in this node */
+	private Integer node_size;
+	/** what tree is this node in? */
 	private YARFTree tree;
 
 	//convenience functions for looking at the data in this node
 	private double[] node_ys;
 	private ArrayList<double[]> node_Xs;
 	private ArrayList<double[]> node_X_others;
+
+	
 	
 	/**
 	 * Picks a random direction for missing data to flow down the tree from this node. As of
@@ -114,7 +119,10 @@ public class YARFNode implements Cloneable {
 	}
 	
 	public int nodeSize(){
-		return indices.length;
+		if (node_size == null){
+			node_size = indices.size();
+		}
+		return node_size;
 	}
 	
 	/**
@@ -197,7 +205,7 @@ public class YARFNode implements Cloneable {
 				double[] x_dot_j = tree.yarf.getXj(parent.split_attribute);
 				double[] x_dot_j_node = new double[this.nodeSize()];
 				for (int i = 0; i < this.nodeSize(); i++){
-					x_dot_j_node[i] = x_dot_j[indices[i]];
+					x_dot_j_node[i] = x_dot_j[indices.get(i)];
 				}
 				Arrays.sort(x_dot_j_node);
 				System.out.println("   all X_" + parent.split_attribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
@@ -212,14 +220,14 @@ public class YARFNode implements Cloneable {
 				double[] x_dot_j = tree.yarf.getXj(split_attribute);
 				double[] x_dot_j_node = new double[nodeSize()];
 				for (int i = 0; i < nodeSize(); i++){
-					x_dot_j_node[i] = x_dot_j[indices[i]];
+					x_dot_j_node[i] = x_dot_j[indices.get(i)];
 				}
 				Arrays.sort(x_dot_j_node);
 				System.out.println("   all X_" + split_attribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
 			}	
 		}
 		System.out.println("responses: (size " + node_ys().length + ") [" + Tools.StringJoin(node_ys()) + "]" +  " sse = " + StatToolbox.sample_sum_sq_err(node_ys()));
-		System.out.println("indicies: (size " + indices.length + ") [" + Tools.StringJoin(indices) + "]");
+		System.out.println("indicies: (size " + nodeSize() + ") [" + Tools.StringJoin(indices) + "]");
 //		if (Arrays.equals(yhats, new double[yhats.length])){
 //			System.out.println("y_hat_vec: (size " + yhats.length + ") [ BLANK ]");
 //		}
@@ -243,7 +251,7 @@ public class YARFNode implements Cloneable {
 		if (node_Xs == null){
 			node_Xs = new ArrayList<double[]>(nodeSize());
 			for (int i = 0; i < nodeSize(); i++){
-				node_Xs.add(tree.yarf.X.get(indices[i]));
+				node_Xs.add(tree.yarf.X.get(indices.get(i)));
 			}
 		}
 		return node_Xs;
@@ -253,7 +261,7 @@ public class YARFNode implements Cloneable {
 		if (node_X_others == null){
 			node_X_others = new ArrayList<double[]>(nodeSize());
 			for (int i = 0; i < nodeSize(); i++){
-				node_X_others.add(tree.yarf.Xother.get(indices[i]));
+				node_X_others.add(tree.yarf.Xother.get(indices.get(i)));
 			}
 		}
 		return node_Xs;

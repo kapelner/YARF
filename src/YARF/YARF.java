@@ -1,6 +1,8 @@
 package YARF;
 
 
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -326,7 +328,7 @@ public class YARF extends Classifier implements Serializable {
 	
 	public void setBootstrapAndOutOfBagIndices(int t){
 		//make a copy
-		yarf_trees[t].setTrainingIndices(bootstrap_indices[t]);
+		yarf_trees[t].setTrainingIndices(new TIntArrayList(bootstrap_indices[t]));
 		//now get oob indices - it begins as the full thing then we subtract 
 		//out the bootstrap indices of the tree
 		TIntHashSet oob_indices = new TIntHashSet(indices_one_to_n);
@@ -625,10 +627,12 @@ public class YARF extends Classifier implements Serializable {
 		return x_dot_j;
 	 }
 	
-	protected TIntHashSet missingnessInXj(int j, int[] indices_to_check){
+	protected TIntHashSet missingnessInXj(int j, TIntArrayList ordered_nonmissing_indices_j){
 		TIntHashSet missing_indices = new TIntHashSet();
 		double[] x_j = getXj(j);
-		for (int i : indices_to_check){
+		TIntIterator iter = ordered_nonmissing_indices_j.iterator();
+		while (iter.hasNext()){
+			int i = iter.next();
 			if (x_j[i] == MISSING_VALUE){
 				missing_indices.add(i);
 			}
@@ -650,7 +654,7 @@ public class YARF extends Classifier implements Serializable {
 //		return missingnessExistsInXj(j, this.indices_one_to_n._set);
 //	}
 	
-	protected int[] sortedIndices(int j, int[] sub_indices){
+	protected TIntArrayList sortedIndices(int j, TIntArrayList indices){
 		int[] indices_sorted_j = all_attribute_sorts.get(j);
 		if (indices_sorted_j == null){ //we need to build it
 			synchronized(all_attribute_sorts){ //don't want to do this twice so sync it
@@ -658,14 +662,14 @@ public class YARF extends Classifier implements Serializable {
 				all_attribute_sorts.put(j, indices_sorted_j);				
 			}
 		}
-		if (sub_indices != null){ //that means we want some of them only
-			int n_sub = sub_indices.length;
+		if (indices != null){ //that means we want some of them only
+			int n_sub = indices.size();
 			int[] sorted_sub_indices = new int[n_sub];
 			for (int i_s = 0; i_s < n_sub; i_s++){
-				sorted_sub_indices[i_s] = indices_sorted_j[sub_indices[i_s]];
+				sorted_sub_indices[i_s] = indices_sorted_j[indices.get(i_s)];
 			}			
 		}
-		return indices_sorted_j;
+		return new TIntArrayList(indices_sorted_j);
 	}
 	
 	
