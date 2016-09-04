@@ -1,6 +1,7 @@
 package YARF;
 
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TDoubleIntHashMap;
 import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -66,9 +67,11 @@ public class YARFTreeBuilder {
 		for (int j : features_to_split_on){	
 			//first get the indices for this note sorted on attribute j
 			TIntArrayList ordered_nonmissing_indices_j = yarf.sortedIndices(j, node.indices);
+			//we also need the values themselves
+			double[] xj = yarf.getXj(j);
 			//we also need the missing indices
 			TIntHashSet missing_indices_j = yarf.missingnessInXj(j, ordered_nonmissing_indices_j);
-			//we cannot have any missing indices here
+			//once we remove the missing indices it will be true to its name
 			ordered_nonmissing_indices_j.removeAll(missing_indices_j);
 			
 			TreeSet<Double> xj_split_points = getSplitPoints(j, ordered_nonmissing_indices_j, missing_indices_j.isEmpty());
@@ -80,14 +83,19 @@ public class YARFTreeBuilder {
 				continue;
 			}
 			
+			//we need to now convert split points to indices
+
+			TDoubleIntHashMap split_points_to_indices = yarf.splitPointToCutoffSortedIndex(j);
+			
 			for (double split_point : xj_split_points){
-				
+				split_points_to_indices
 			}
 			for (boolean send_missing_data_right : trueFalseRandomOrder){
-				//begin the cut here
-				int i_cut = 0;
-				//find the next point in the cut
-				
+
+				//find the next legal index point in the cut
+				while (true){
+					if (node.)
+				}
 				
 				
 				for (int i_cut = 0; i_cut < node_n; i_cut++){

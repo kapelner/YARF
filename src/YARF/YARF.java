@@ -3,7 +3,10 @@ package YARF;
 
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TDoubleIntHashMap;
+import gnu.trove.map.hash.TDoubleObjectHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.Serializable;
@@ -11,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -653,6 +657,30 @@ public class YARF extends Classifier implements Serializable {
 //	protected boolean missingnessExistsInXj(int j){
 //		return missingnessExistsInXj(j, this.indices_one_to_n._set);
 //	}
+	
+	private TIntObjectHashMap<TDoubleIntHashMap> feature_to_split_point_to_indices;
+	
+	protected TDoubleIntHashMap splitPointToCutoffSortedIndex(int j){
+		TDoubleIntHashMap split_point_to_cutoff_index = feature_to_split_point_to_indices.get(j);
+		if (split_point_to_cutoff_index != null){
+			return split_point_to_cutoff_index;
+		}
+		
+		//do the work and cache it
+		split_point_to_cutoff_index = new TDoubleIntHashMap(n);
+		
+		//we need to get x values we can split on
+		double[] xj = getXj(j);
+		int[] sorted_indices = getSortedIndices(j);
+		for (int i = 0; i < n; i++){
+			double val = xj[sorted_indices[i]];
+			split_point_to_cutoff_index.put(val, sorted_indices[i]);
+		}
+		
+		feature_to_split_point_to_indices.put(j, split_point_to_cutoff_index);
+		return split_point_to_cutoff_index;
+	}
+	
 	
 	protected TIntArrayList sortedIndices(int j, TIntArrayList indices){
 		int[] indices_sorted_j = all_attribute_sorts.get(j);
