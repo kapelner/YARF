@@ -6,14 +6,15 @@
 \alias{YARF-package}
 \title{A fully customizable Random Forests implementation}
 \usage{
-YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL, num_trees = 500,
+YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
+  allow_missingness_in_y = FALSE, num_trees = 500,
   boostrap_indices = NULL, mtry = NULL, mtry_fun = NULL,
   nodesize = NULL, nodesize_fun = NULL, cost_calc_fun = NULL,
   node_assign_fun = NULL, aggregation_fun = NULL, shared_funs = NULL,
-  use_missing_data = FALSE, use_missing_data_dummies_as_covars = FALSE,
-  replace_missing_data_with_x_j_bar = TRUE, mem_cache_for_speed = TRUE,
-  covariates_to_permute = NULL, serialize = FALSE, seed = NULL,
-  wait = TRUE, verbose = TRUE, debug_log = FALSE)
+  use_missing_data = FALSE, replace_missing_data_with_x_j_bar = TRUE,
+  mem_cache_for_speed = TRUE, covariates_to_permute = NULL,
+  serialize = FALSE, seed = NULL, wait = TRUE, verbose = TRUE,
+  debug_log = FALSE)
 }
 \arguments{
 \item{X}{The data frame of training data}
@@ -23,6 +24,9 @@ YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL, num_trees = 500,
 \item{Xy}{The data frame of training data where the last column is responses}
 
 \item{Xother}{Other data that is used in the training but the RF doesn't split on it}
+
+\item{allow_missingness_in_y}{If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
+handled in the custom functions, YARF will crash. Default is \code{FALSE}.}
 
 \item{num_trees}{The # of trees in the RF. Default is \code{500}.}
 
@@ -41,9 +45,6 @@ will be used.}
 
 \item{nodesize_fun}{A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
 nodesize will be calculated as a static constant (see the \code{nodesize} argument).}
-
-\item{cost_calc_fun}{A custom cost calculation for node splits in Javascript. The default is \code{NULL}
-which defaults to sum of squared error for regression or sum of entropy for classification.}
 
 \item{node_assign_fun}{A custom node assignment function in Javascript. This function is run after RF greedily finds the 
 "lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
@@ -72,6 +73,19 @@ we will automatically serialize after other operations that add data (such as th
 
 \item{debug_log}{Should we print out messages from Java? Default is \code{FALSE}.}
 
+\item{cost_single_node_calc_fun}{A custom cost calculation for a potential node (when considering a split) in Javascript. 
+The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
+to the sample average (if regression) and sum of entropy (if classification). You may find it 
+convenient to also made a node assignment here. If so, make sure you specify the node assignment
+function as a blank function (not \code{NULL}).}
+
+\item{cost_both_children_calc_fun}{A custom cost calculation for an entire split considering both the putative left and right children
+                                            nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
+                                            sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
+                                            to the number of observations in each node).
+
+                                            which defaults to sum of squared error for regression or sum of entropy for classification.}
+
 \item{shared_functions}{Custom Javascript functions that are always around. The default is \code{NULL} for no shared functions.}
 }
 \value{
@@ -80,7 +94,7 @@ A list of all arguments passed in plus...
 \description{
 Software which helps practitioners optimally design experiments that measure the slope divided by the intercept.
 
-Builds a YARF Model
+Builds a YARF Model. There are many custom functions
 }
 \author{
 Adam Kapelner \email{kapelner@qc.cuny.edu}

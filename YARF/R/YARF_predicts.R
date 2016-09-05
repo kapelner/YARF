@@ -32,11 +32,11 @@ predict.YARF = function(object, new_data, ...){
 	}
 	
 	#now process and make dummies if necessary
-	new_data = pre_process_new_data(new_data, bart_machine)
+	new_data = pre_process_new_data(new_data, object)
 	
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
 	
-	y_hats = t(sapply(.jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores), .jevalArray))
+	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores)
 	if (object$pred_type == "classification"){	
 		y_hats = factor(y_hats, levels = yarf_mod$y_levels)
 	}

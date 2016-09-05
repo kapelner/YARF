@@ -180,7 +180,7 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	public void setPredType(String pred_type){
-		if (pred_type == "regression"){
+		if (pred_type.equals("regression")){
 			is_a_regression = true;
 		}
 	}
@@ -316,6 +316,14 @@ public class YARF extends Classifier implements Serializable {
 			yarf_trees[t] = new YARFTree(this);
 			setBootstrapAndOutOfBagIndices(t);
 		}
+	}
+	
+	public int progress(){
+		int progress = 0;
+		for (YARFTree tree : yarf_trees){
+			progress += (tree.built() ? 1 : 0);
+		}
+		return progress;
 	}
 	
 	public void setBootstrapAndOutOfBagIndices(int t){

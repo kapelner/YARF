@@ -2,7 +2,7 @@
 % Please edit documentation in R/YARF_builders.R
 \name{YARF_stop}
 \alias{YARF_stop}
-\title{Halts the model building}
+\title{Halts the model building.}
 \usage{
 YARF_stop(yarf_mod)
 }
@@ -10,7 +10,7 @@ YARF_stop(yarf_mod)
 \item{yarf_mod}{The yarf model object}
 }
 \description{
-Halts the model building
+Halts the model building.
 }
 \author{
 Adam Kapelner

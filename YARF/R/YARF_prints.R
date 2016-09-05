@@ -19,7 +19,7 @@ summary.YARF = function(object, ...){
 	if (progress_report$done){
 		cat("Model construction completed in", round(progress_report$time_elapsed_in_min, 2), "minutes.\n")
 		
-		if (yarf_mod$y_oob != null){ #print out OOB info if calculated 
+		if (!is.null(yarf_mod$y_oob)){ #print out OOB info if calculated 
 			cat("OOB results:\n\n")
 			if (yarf_mod$pred_type == "regression"){
 				cat("L2:", round(yarf_mod$L2_err_oob, 3), "\n")
@@ -32,7 +32,7 @@ summary.YARF = function(object, ...){
 				print(confusion_matrix)
 			}
 		} else {
-			cat("Run the 'YARF_update_with_oob_results' to get out of sample performance estimates using the out of bag predictions.\n")
+			cat("Run the 'YARF_update_with_oob_results' function to get out of sample\nperformance estimates using the out of bag predictions.\n")
 		}
 	} else {
 		#just print out a progress report

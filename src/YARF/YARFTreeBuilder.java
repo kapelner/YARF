@@ -26,7 +26,7 @@ public class YARFTreeBuilder {
 		if (makeNodeLeaf(node)){
 			node.is_leaf = true;
 			assignYHat(node);
-			node.printNodeDebugInfo("");
+			//node.printNodeDebugInfo("");
 			return; //ditch... because we're done...
 		}
 		
@@ -125,7 +125,7 @@ public class YARFTreeBuilder {
 			System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));
 			node.is_leaf = true;
 			assignYHat(node);
-			node.printNodeDebugInfo("");
+			//node.printNodeDebugInfo("");
 			return;
 		}
 		
@@ -149,7 +149,7 @@ public class YARFTreeBuilder {
 		node.left = lowest_left_node;
 		node.right = lowest_right_node;
 
-		node.printNodeDebugInfo("");
+		//node.printNodeDebugInfo("");
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
 		splitNode(node.right);
@@ -205,7 +205,7 @@ public class YARFTreeBuilder {
 		else { //it's a classification - the "cost" is the negative entropy which is the negative of the gain...
 			node.cost = StatToolbox.natural_negative_entropy(ys);
 		}
-		System.out.println("computeNodeCost node " + node + " cost = " + node.cost + " pred = " + node.y_pred + " size = " + node.nodeSize());
+		//System.out.println("computeNodeCost node " + node + " cost = " + node.cost + " pred = " + node.y_pred + " size = " + node.nodeSize());
 	}
 
 	private void assignYHat(YARFNode node) {

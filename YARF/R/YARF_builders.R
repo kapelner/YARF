@@ -76,7 +76,6 @@ YARF = function(
 		shared_funs = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = FALSE,
-		use_missing_data_dummies_as_covars = FALSE,
 		replace_missing_data_with_x_j_bar = TRUE,
 		#other arguments
 		mem_cache_for_speed = TRUE,
@@ -284,9 +283,9 @@ YARF = function(
 		cat("YARF before preprocess...\n")
 	}
 	
-	pre_process_obj = pre_process_training_data(X, FALSE)
+	pre_process_obj = pre_process_training_data(X)
 	model_matrix_training_data = pre_process_obj$data
-	p = ncol(model_matrix_training_data) - 1 # we subtract one because we tacked on the response as the last column
+	p = ncol(model_matrix_training_data) # we subtract one because we tacked on the response as the last column
 #	factor_lengths = pre_process_obj$factor_lengths
 	if (verbose){
 		cat("YARF after preprocess...", ncol(model_matrix_training_data), "total features...\n")
@@ -323,8 +322,6 @@ YARF = function(
 	.jcall(java_YARF, "V", "setVerbose", verbose)
 	.jcall(java_YARF, "V", "setMemCacheForSpeed", mem_cache_for_speed)
 	.jcall(java_YARF, "V", "setPredType", pred_type)
-	
-	
 	
 	#now load data and/or scripts
 	if (!is.null(mtry)){
@@ -407,28 +404,39 @@ YARF = function(
 	}
 	.jcall(java_YARF, "V", "setWait", wait)
 	.jcall(java_YARF, "V", "Build")
-		
-	#return all arguments plus some commonly useful stuff
-	all_arguments = as.list(match.call())
-	all_arguments[[1]] = NULL
-	#except the data itself - that's a waste of RAM
-	all_arguments$X = NULL
-	all_arguments$y = NULL
-	all_arguments$Xy = NULL
 	
-	yarf_mod = c(
-			all_arguments, 
-			y = y,
-			pred_type = pred_type,
-			t0 = t0,
-			java_YARF = java_YARF,
-			y_levels = y_levels,	
-			num_y_levels = num_y_levels,
-			n = n,
-			p = p,
-			model_matrix_training_data = model_matrix_training_data,
-			training_data_features = colnames(model_matrix_training_data),
-			predictors_which_are_factors = predictors_which_are_factors
+	yarf_mod = list(
+		allow_missingness_in_y = allow_missingness_in_y,
+		num_trees = num_trees,
+		boostrap_indices = boostrap_indices, 
+		mtry = mtry,
+		mtry_fun = mtry_fun,
+		nodesize = nodesize,
+		nodesize_fun = nodesize_fun,
+		cost_calc_fun = cost_calc_fun,
+		node_assign_fun = node_assign_fun,
+		aggregation_fun = aggregation_fun,
+		shared_funs = shared_funs, 
+		use_missing_data = use_missing_data,
+		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
+		mem_cache_for_speed = mem_cache_for_speed,
+		serialize = serialize,
+		seed = seed,
+		wait = wait,
+		verbose = verbose,
+		debug_log = debug_log,
+		X = X,
+		y = y,
+		pred_type = pred_type,
+		t0 = t0,
+		java_YARF = java_YARF,
+		y_levels = y_levels,	
+		num_y_levels = num_y_levels,
+		n = n,
+		p = p,
+		model_matrix_training_data = model_matrix_training_data,
+		training_data_features = colnames(model_matrix_training_data),
+		predictors_which_are_factors = predictors_which_are_factors
 	)
 
 	
@@ -522,7 +530,7 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 		stop("Construction of this model was halted.")
 	}
 	
-	num_trees_completed = .jcall(yarf_mod$java_YARF, "V", "progress")
+	num_trees_completed = .jcall(yarf_mod$java_YARF, "I", "progress")
 	progress = num_trees_completed / yarf_mod$num_trees 
 	
 	time_remaining_estimate = NULL
@@ -530,7 +538,7 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 	if (progress < 1){
 		time_elapsed_in_min = (Sys.time() - as.numeric(yarf_mod$t0)) / 60
 	} else {
-		time_elapsed_in_min = (.jcall(yarf_mod$java_YARF, "J", "getCompletionTime") - as.numeric(yarf_mod$t0)) / 60
+		time_elapsed_in_min = (.jcall(yarf_mod$java_YARF, "J", "getCompletionTime") / 1000 - as.numeric(yarf_mod$t0)) / 60
 	}
 	
 	#now estimate how long it will take to complete

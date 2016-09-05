@@ -13,16 +13,23 @@
 #-Xrunjdwp:server=y,transport=dt_socket,address=8000, suspend=n
 # options(java.parameters = c("-Xmx3000m", "-Xdebug", "-Xrunjdwp:server=y,transport=dt_socket,address=8000"))
 
-options(java.parameters = c("-Xmx3000m"))
+options(java.parameters = c("-Xmx4000m"))
 library(YARF)
 
 n = 100
-X = data.frame(x1 = rnorm(n))
-y = 3 + 6 * X[,1] + rnorm(n, 0, 0.1)
+X = data.frame(x1 = 0 : (n - 1))
+y = 3 - 0.5 * X[,1] + rnorm(n, 0, 0.1)
 plot(X[,1], y)
 
-yarf_mod = YARF(X, y, num_trees = 1)
+yarf_mod = YARF(X, y, num_trees = 100, use_missing_data = TRUE)
+yarf_mod
 
+xstar = seq(-20,120, by = 0.01)
+xstar[1] = NA
+y_hat = predict(yarf_mod, data.frame(x1 = xstar))
+
+plot(xstar, y_hat)
+y_hat[1]
 
 library(MASS)
 data(Boston)
@@ -30,5 +37,7 @@ data(Boston)
 X = Boston[, 1 : 13]
 y = Boston[, 14]
 
-yarf_mod = YARF(X, y, debug_log = TRUE)
+yarf_mod = YARF(X, y, num_trees = 500)
+y_hat = predict(yarf_mod, X)
 
+plot(y, y_hat)
