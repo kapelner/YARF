@@ -309,18 +309,6 @@ YARF = function(
 		cat("warning: printing out the log file will slow down the runtime significantly.\n")
 		.jcall(java_YARF, "V", "writeStdOutToLogFile")
 	}
-	
-#	//init
-#	//set num cores, seed, verbose, etc
-#	//add data
-#	//set data feature names
-#	//add "other" data
-#	//set "other" data feature names
-#	//set num trees
-#	//init trees
-#	//give bootstrap samples (indices)
-#	//load all custom functions
-#	//BUILD
 
 	#if the user hasn't set a number of cores, set it here
 	if (!exists("YARF_NUM_CORES", envir = YARF_globals)){
@@ -389,22 +377,24 @@ YARF = function(
 	
 	.jcall(java_YARF, "V", "setTrainingDataNames", colnames(model_matrix_training_data))
 	
-	.jcall(java_YARF, "V", "setOtherDataNames", as.character(colnames(Xother)))
-	#now load the "other" data into YARF
-	for (i in 1 : n){
-		row_as_char = as.character(Xother[i, ])
-		row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
-		.jcall(java_YARF, "V", "addOtherDataRow", row_as_char)
+	if (!is.null(Xother)){
+		.jcall(java_YARF, "V", "setOtherDataNames", as.character(colnames(Xother)))
+		#now load the "other" data into YARF
+		for (i in 1 : n){
+			row_as_char = as.character(Xother[i, ])
+			row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
+			.jcall(java_YARF, "V", "addOtherDataRow", row_as_char)
+		}
+		if (verbose){
+			cat("YARF 'other' data finalized...\n")
+		}
 	}
 	
 	#now load the bootstrap indices into YARF
 	for (t in 1 : num_trees){
-		.jcall(java_YARF, "V", "addBootstrapIndices", as.integer(bootstrap_indices[, t]), as.integer(t))
+		.jcall(java_YARF, "V", "addBootstrapIndices", as.integer(bootstrap_indices[, t] - 1), as.integer(t - 1)) ##Java is minus 1 from R's indexing
 	}
-	
-	if (verbose){
-		cat("YARF 'other' data finalized...\n")
-	}
+	.jcall(java_YARF, "V", "initTrees") #immediately follows
 	
 	
 	#build the YARF model and let the user know what type of model this is

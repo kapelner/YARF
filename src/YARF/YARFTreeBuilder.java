@@ -205,7 +205,7 @@ public class YARFTreeBuilder {
 		else { //it's a classification - the "cost" is the negative entropy which is the negative of the gain...
 			node.cost = StatToolbox.natural_negative_entropy(ys);
 		}
-//		System.out.println("computeNodeCost node " + node + " cost = " + node.cost + " pred = " + node.y_pred + " size = " + node.nodeSize());
+		System.out.println("computeNodeCost node " + node + " cost = " + node.cost + " pred = " + node.y_pred + " size = " + node.nodeSize());
 	}
 
 	private void assignYHat(YARFNode node) {

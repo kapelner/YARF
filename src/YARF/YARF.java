@@ -140,20 +140,6 @@ public class YARF extends Classifier implements Serializable {
 	
 	public YARF(){}
 	
-	//init
-	//set num cores, seed, verbose, etc
-	//add data
-	//set data feature names
-	//add "other" data
-	//set "other" data feature names
-	//set num trees
-	//init trees
-	//give bootstrap samples (indices)
-	//load all custom functions
-	//BUILD
-
-	
-	
 	/**
 	 * Adds an observation / record to the "other" data array. The
 	 * observation is converted to doubles and the entries that are 
@@ -324,6 +310,7 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	public void initTrees(){
+		//System.out.println("initTrees num_trees = " + num_trees);
 		yarf_trees = new YARFTree[num_trees];
 		for (int t = 0; t < num_trees; t++){
 			yarf_trees[t] = new YARFTree(this);
@@ -332,6 +319,7 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	public void setBootstrapAndOutOfBagIndices(int t){
+		//System.out.println("setBootstrapAndOutOfBagIndices t = " + t);
 		//make a copy
 		yarf_trees[t].setTrainingIndices(new TIntArrayList(bootstrap_indices[t]));
 		//now get oob indices - it begins as the full thing then we subtract 
@@ -385,23 +373,11 @@ public class YARF extends Classifier implements Serializable {
 		
 		return y_hat_oobs;
 	}
-	
-//	public int[] getSortedIndicesAtAttribute(int j, int sub_indices){
-//		synchronized(all_attribute_sorts){
-//			int[] all_indices = all_attribute_sorts.get(j);
-//			if (all_indices == null){ //lazy create for this attribute
-//				double[] xj = new double[n];
-//				for (int i = 0; i < n; i++){
-//					xj[i] = X.get(i)[j];
-//				}
-//			}			
-//		}
-//
-//	}
 
 	/** This function builds the forest by building all the trees */
 	public void Build() {
 
+		//System.err.println("inside YARF");
 		all_attribute_sorts = new TIntObjectHashMap<int[]>(p);
 		initTrees();
 		//run a build on all threads
@@ -409,7 +385,7 @@ public class YARF extends Classifier implements Serializable {
 		if (verbose){
 			System.out.println("building YARF " + (mem_cache_for_speed ? "with" : "without") + " mem-cache speedup...");
 		}
-//		System.err.println("inside YARF");
+		//System.err.println("inside 2");
 		ExecutorService tree_grow_pool = Executors.newFixedThreadPool(num_cores);
 		for (int t = 0; t < num_trees; t++){
 			final int tf = t;
@@ -588,8 +564,9 @@ public class YARF extends Classifier implements Serializable {
 		return null;
 	}
 	
-	public void addBootstrapIndices(int[] indices_t, int tree){
-		bootstrap_indices[tree] = indices_t;
+	public void addBootstrapIndices(int[] indices_t, int t){
+		//System.out.println("addBootstrapIndices t = " + t + " ind = " + indices_t);
+		bootstrap_indices[t] = indices_t;
 	}
 	
 	public void finalizeTrainingData(){
@@ -597,15 +574,17 @@ public class YARF extends Classifier implements Serializable {
 		//initialize other data that requires data to be finalized
 		X_by_col = new TIntObjectHashMap<double[]>(p);
 		bootstrap_indices = new int[num_trees][];
-		System.out.println("bil" + bootstrap_indices.length);
+		//System.out.println("bil" + bootstrap_indices.length);
 		indices_one_to_n = new TIntHashSet();
 		for (int i = 0; i < n; i++){
 			indices_one_to_n.add(i);
 		}
+		//System.out.println("indices_one_to_n" + indices_one_to_n);
 		indices_one_to_p_min_1 = new int[p];
 		for (int j = 0; j < p; j++){
 			indices_one_to_p_min_1[j] = j;
 		}
+		//System.out.println("indices_one_to_p_min_1" + indices_one_to_p_min_1);
 	}
 	
 	

@@ -90,11 +90,25 @@ public abstract class Classifier implements Serializable{
 		X.add(record);		
 	}
 	
+	/**
+	 * Ditto except for 1-d training matrices
+	 * 
+	 * @param x_i
+	 */
+	public void addTrainingDataRow(String x_i){
+		String[] x_i_vec = {x_i};
+		addTrainingDataRow(x_i_vec);	
+	}
+	
 	public void addTrainingDataResponse(double[] y){
 		this.y = y;
 	}
 
-	
+
+	public void setTrainingDataNames(String feature_name){
+		String[] feature_names = {feature_name};
+		setTrainingDataNames(feature_names);
+	}
 	
 	public void setTrainingDataNames(String[] feature_names){
 		this.feature_names = feature_names;
