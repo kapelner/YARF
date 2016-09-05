@@ -3,6 +3,7 @@ package YARF;
 
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -91,6 +92,10 @@ public class Tools {
 	public static String StringJoin(TIntArrayList all){
 		return StringJoin(all.toArray(), ", ");
 	}	
+
+	public static String StringJoin(TIntHashSet hash) {
+		return StringJoin(hash.toArray());
+	}
 	
 	/**
 	 * Joins a collection of strings into one string with commas

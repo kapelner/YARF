@@ -1,17 +1,7 @@
 package YARF;
 
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TDoubleIntHashMap;
-import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
-
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.TreeSet;
-
-import OpenSourceExtensions.TDoubleHashSetAndArray;
-import bartMachine.Classifier;
-import bartMachine.Tools;
 
 public class YARFTreeBuilder {
 
@@ -41,9 +31,9 @@ public class YARFTreeBuilder {
 		}
 		
 		//greedy search... set up the horses
-		double lowest_total_split_cost = Double.MAX_VALUE;
+		double lowest_total_split_cost = node.cost; //if you can't beat this... don't bother
 		int lowest_cost_split_attribute = Integer.MIN_VALUE; //bad flag!
-		int lowest_cost_split_index = Integer.MIN_VALUE; //bad flag!
+		double lowest_cost_split_value = Double.NaN; //bad flag!
 		boolean lowest_send_missing_data_right = false;
 		
 		//which features can we split on in this node?
@@ -53,7 +43,7 @@ public class YARFTreeBuilder {
 		//this will house the optimal split
 		YARFNode lowest_left_node = null;
 		YARFNode lowest_right_node = null;
-//		System.out.println("features_to_split_on: " + Tools.StringJoin(features_to_split_on));
+		System.out.println("features_to_split_on: " + Tools.StringJoin(features_to_split_on));
 //		System.out.println("n_n: " + n_n);
 		
 		//two options about missingness (a) there is no missingness in this feature (b) there is
@@ -61,54 +51,43 @@ public class YARFTreeBuilder {
 		//there are two missingness options - check them in random order
 		double r = StatToolbox.rand();
 		boolean[] trueFalseRandomOrder = {r > 0.5, r <= 0.5};
-		int node_n = node.nodeSize();
 		
 		
 		for (int j : features_to_split_on){	
-			//first get the indices for this note sorted on attribute j
-			TIntArrayList ordered_nonmissing_indices_j = yarf.sortedIndices(j, node.indices);
-			//we also need the values themselves
+			//first get the indices for this note sorted on attribute j and get the missings as well
+			TIntArrayList ordered_nonmissing_indices_j = new TIntArrayList();
+			TIntHashSet missing_indices_j = new TIntHashSet();
+			yarf.sortedIndices(j, node.indices, ordered_nonmissing_indices_j, missing_indices_j);
+			System.out.println("node.indices: " + Tools.StringJoin(node.indices));
+			System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));
+			System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));
+
+			int num_max_split_points = ordered_nonmissing_indices_j.size();
+
 			double[] xj = yarf.getXj(j);
-			//we also need the missing indices
-			TIntHashSet missing_indices_j = yarf.missingnessInXj(j, ordered_nonmissing_indices_j);
-			//once we remove the missing indices it will be true to its name
-			ordered_nonmissing_indices_j.removeAll(missing_indices_j);
 			
-			TreeSet<Double> xj_split_points = getSplitPoints(j, ordered_nonmissing_indices_j, missing_indices_j.isEmpty());
-			int num_split_points = xj_split_points.size();
-			//if there's no split points, we cannot use this feature
-			//if there's one split point and no missingness, we still can't use it
-			if (num_split_points == 0 || (missing_indices_j.isEmpty() && num_split_points == 1)){
-				System.out.println("no split points on feature " + j);
-				continue;
-			}
-			
-			//we need to now convert split points to indices
-
-			TDoubleIntHashMap split_points_to_indices = yarf.splitPointToCutoffSortedIndex(j);
-			
-			for (double split_point : xj_split_points){
-				split_points_to_indices
-			}
-			for (boolean send_missing_data_right : trueFalseRandomOrder){
-
-				//find the next legal index point in the cut
-				while (true){
-					if (node.)
-				}
-				
-				
-				for (int i_cut = 0; i_cut < node_n; i_cut++){
+			missing_search : for (boolean send_missing_data_right : trueFalseRandomOrder){
+				//iterate over all the cut points!
+				for (int i_cut = 0; i_cut < num_max_split_points; i_cut++){
+					double split_value = xj[ordered_nonmissing_indices_j.get(i_cut)];
+					if (i_cut < num_max_split_points - 1 && 
+							split_value == xj[ordered_nonmissing_indices_j.get(i_cut + 1)]){ //this is not a split point since the next in the sequence is the same
+						continue;
+					}
 					//set up zygotes
 					YARFNode putative_left = new YARFNode(node);
 					YARFNode putative_right = new YARFNode(node);
+					putative_left.indices = (TIntArrayList)ordered_nonmissing_indices_j.subList(0, i_cut);
+					putative_right.indices = (TIntArrayList)ordered_nonmissing_indices_j.subList(i_cut, num_max_split_points);		
 					
-					if (missing_indices_j.isEmpty()){ //then it's simple who goes where
-						putative_left.indices = Arrays.copyOfRange(ordered_nonmissing_indices_j, 0, i_cut);
-						putative_right.indices = Arrays.copyOfRange(ordered_nonmissing_indices_j, i_cut, n_n);
-					}
-					else { //now it's annoying... 
-					
+					//handle the missingness now
+					if (!missing_indices_j.isEmpty()){ 
+						if (send_missing_data_right){
+							putative_right.indices.addAll(missing_indices_j);
+						}
+						else {
+							putative_left.indices.addAll(missing_indices_j);
+						}
 					}
 
 					//we should ditch if these don't work out
@@ -118,6 +97,8 @@ public class YARFTreeBuilder {
 						continue;
 					}
 					
+					//these are now viable splits, so we compute cost
+					
 					computeNodeCost(putative_left);
 					computeNodeCost(putative_right);
 					
@@ -126,13 +107,13 @@ public class YARFTreeBuilder {
 						System.out.println("beat cost @ " + total_split_cost);
 						lowest_total_split_cost = total_split_cost;
 						lowest_cost_split_attribute = j;
-						lowest_cost_split_index = i_cut;
+						lowest_cost_split_value = split_value;
 						lowest_left_node = putative_left;
 						lowest_right_node = putative_right;
 						lowest_send_missing_data_right = send_missing_data_right;
 					}
 				}
-				if (missing_indices_j.isEmpty()){break;} //no need to check the other because it will be the same 
+				if (missing_indices_j.isEmpty()){break missing_search;} //no need to check the other because it will be the same 
 				//(this enforces randomness of L/R missingness sending)
 			}
 		}
@@ -140,29 +121,28 @@ public class YARFTreeBuilder {
 		
 
 		//if we have been unsuccessful in finding an advantageous split, we should not split
-		if (lowest_total_split_cost > node.cost){
-			System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(false));
+		if (lowest_total_split_cost >= node.cost){
+			System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));
 			node.is_leaf = true;
 			assignYHat(node);
 			node.printNodeDebugInfo("");
 			return;
 		}
 		
-		System.out.println("greedy search successful!! for node: " + node.stringLocation(false)
+		System.out.println("greedy search successful!! for node: " + node.stringLocation(true)
 				+ "\n cost: " + node.cost 
 				+ "\n lowest_total_split_cost: " + lowest_total_split_cost
 				+ "\n lowest_cost_split_attribute: " + lowest_cost_split_attribute
-				+ "\n lowest_cost_split_index: " + lowest_cost_split_index
 				+ "\n lowest_left_node: " + lowest_left_node
 				+ "\n lowest_right_node: " + lowest_right_node
-				+ "\n lowest_send_missing_data_right: " + lowest_right_node
+				+ "\n send_missing: " + (lowest_send_missing_data_right ? "R" : "L")
 				);
 		
 		//otherwise we use the optimal split
 		//first indicate the splitting rule in this node converting the two lucky zygotes into a fetus
 		node.split_attribute = lowest_cost_split_attribute;
 //		System.out.println("  splitValue " + yarf.getXj(lowest_cost_split_attribute)[lowest_cost_split_index]);
-		node.split_value = yarf.getXj(lowest_cost_split_attribute)[lowest_cost_split_index];
+		node.split_value = lowest_cost_split_value;
 		node.send_missing_data_right = lowest_send_missing_data_right;
 		
 		//then officially give birth to two children from the two fetuses
@@ -175,29 +155,29 @@ public class YARFTreeBuilder {
 		splitNode(node.right);
 	}
 
-	private TreeSet<Double> getSplitPoints(int j, TIntArrayList ordered_nonmissing_indices_j, boolean no_missingness) {
-		int node_n = ordered_nonmissing_indices_j.size();
-		//we need to get x values we can split on
-		double[] xj = yarf.getXj(j);
-		TreeSet<Double> xj_split_points = new TreeSet<Double>();
-		double max = Double.MIN_VALUE;
-		for (int i = 0; i < node_n; i++){
-			double val = xj[ordered_nonmissing_indices_j.get(i)];
-			xj_split_points.add(val);
-			if (no_missingness && val > max){
-				max = val;
-			}
-		}
-		
-		//if there is no missingness, we can kill the max. Why?
-		//Because when you create split rules of the form x <= c, splitting
-		//on the max always yields an empty right node
-		if (no_missingness){
-			xj_split_points.remove(max);
-		}
-
-		return xj_split_points;
-	}
+//	private TreeSet<Double> getSplitPoints(int j, TIntArrayList ordered_nonmissing_indices_j, boolean no_missingness) {
+//		int node_n = ordered_nonmissing_indices_j.size();
+//		//we need to get x values we can split on
+//		double[] xj = yarf.getXj(j);
+//		TreeSet<Double> xj_split_points = new TreeSet<Double>();
+//		double max = Double.MIN_VALUE;
+//		for (int i = 0; i < node_n; i++){
+//			double val = xj[ordered_nonmissing_indices_j.get(i)];
+//			xj_split_points.add(val);
+//			if (no_missingness && val > max){
+//				max = val;
+//			}
+//		}
+//		
+//		//if there is no missingness, we can kill the max. Why?
+//		//Because when you create split rules of the form x <= c, splitting
+//		//on the max always yields an empty right node
+//		if (no_missingness){
+//			xj_split_points.remove(max);
+//		}
+//
+//		return xj_split_points;
+//	}
 
 	private double totalChildrenCost(YARFNode putative_left, YARFNode putative_right) {
 		if (yarf.customFunctionBothChildrenCostCalc()){
@@ -233,6 +213,7 @@ public class YARFTreeBuilder {
 			node.y_pred = yarf.runNodeAssignment(node);
 		}
 		//no need to assign for a regression... it was done in the cost function
+		//and for a classification, it's just the modal value among the y's
 		if (!yarf.is_a_regression){
 			node.y_pred = StatToolbox.sample_mode(node.node_ys());
 		}

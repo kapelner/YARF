@@ -4,6 +4,8 @@
 #' @param y 								The training responses
 #' @param Xy 								The data frame of training data where the last column is responses
 #' @param Xother 							Other data that is used in the training but the RF doesn't split on it
+#' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
+#' 											handled in the custom functions, YARF will crash. Default is \code{FALSE}.
 #' @param num_trees 						The # of trees in the RF. Default is \code{500}.
 #' @param boostrap_indices 					An n x num_trees matrix of indices where each column is the bootstrap indices of the training data.
 #' 											The default is \code{NULL} indicating the default algorithm of sampling {1,...,n} with replacement.	
@@ -53,6 +55,7 @@
 YARF = function(
 		#data arguments
 		X = NULL, y = NULL, Xy = NULL, Xother = NULL,
+		allow_missingness_in_y = FALSE,
 		#pick the trees		
 		num_trees = 500,
 		#customizable bootstrap
@@ -137,10 +140,6 @@ YARF = function(
 	}	
 	t0 = Sys.time()
 	
-	if (use_missing_data_dummies_as_covars && replace_missing_data_with_x_j_bar){
-		stop("You cannot impute by averages and use missing data as dummies simultaneously.")
-	}
-	
 	if ((is.null(X) && is.null(Xy)) || is.null(y) && is.null(Xy)){
 		stop("You need to give YARF a training set either by specifying X and y or by specifying a matrix Xy which contains the response named \"y.\"\n")
 	} else if (!is.null(X) && !is.null(y) && !is.null(Xy)){
@@ -175,8 +174,8 @@ YARF = function(
 		stop("The number of responses must be equal to the number of observations in the training data.")
 	}	
 	
-	if (sum(is.na(y)) > 0 || sum(is.null(y)) > 0 || sum(is.nan(y)) > 0){
-		stop("You cannot have any missing data in your response vector.")
+	if (!allow_missingness_in_y && (sum(is.na(y)) > 0 || sum(is.null(y)) > 0 || sum(is.nan(y)) > 0)){
+		stop("You cannot have any missing data in your response vector unless \"allow_missingness_in_y\" is set to TRUE.")
 	}
 	
 	#convenient to keep around
@@ -285,7 +284,7 @@ YARF = function(
 		cat("YARF before preprocess...\n")
 	}
 	
-	pre_process_obj = pre_process_training_data(X, use_missing_data_dummies_as_covars)
+	pre_process_obj = pre_process_training_data(X, FALSE)
 	model_matrix_training_data = pre_process_obj$data
 	p = ncol(model_matrix_training_data) - 1 # we subtract one because we tacked on the response as the last column
 #	factor_lengths = pre_process_obj$factor_lengths
@@ -414,9 +413,6 @@ YARF = function(
 		if (use_missing_data){
 			cat("Missing data feature ON. ")
 		}
-		if (use_missing_data_dummies_as_covars){
-			cat("Missingness used as covariates. ")
-		}
 		cat("\n")
 	}
 	.jcall(java_YARF, "V", "setWait", wait)
@@ -441,8 +437,7 @@ YARF = function(
 			n = n,
 			p = p,
 			model_matrix_training_data = model_matrix_training_data,
-			training_data_features = colnames(model_matrix_training_data)[1 : ifelse(use_missing_data && use_missing_data_dummies_as_covars, (p / 2), p)],
-			training_data_features_with_missing_features = colnames(model_matrix_training_data)[1 : p], #always return this even if there's no missing features
+			training_data_features = colnames(model_matrix_training_data),
 			predictors_which_are_factors = predictors_which_are_factors
 	)
 
@@ -590,7 +585,7 @@ YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10){
 	}
 }
 
-#' Halts the model building
+#' Halts the model building.
 #' 
 #' @param yarf_mod 								The yarf model object
 #' 

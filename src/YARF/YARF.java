@@ -1,12 +1,8 @@
 package YARF;
 
-
-import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TDoubleIntHashMap;
-import gnu.trove.map.hash.TDoubleObjectHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.Serializable;
@@ -14,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -104,31 +99,37 @@ public class YARF extends Classifier implements Serializable {
 		yarf.setNodesize(2);
 		yarf.setPredType("regression");
 		
-//		int n = 30;
-//		int p = 5;
-//		int[] indices_t = new int[n];
-//		yarf.X = new ArrayList<double[]>(n);
-//		yarf.y = new double[n];
-//		for (int i = 0; i < n; i++){
-//			indices_t[i] = i;
-//			double[] x_i = new double[p];
-//			for (int j = 0; j < p; j++){
-//				x_i[j] = Math.random();
-//			}
-//			yarf.X.add(x_i);
-//			yarf.y[i] = Math.random();
-//		}
-		
-		int n = 10;
-		int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
+		int n = 30;
+		int p = 5;
+		int[] indices_t = new int[n];
 		yarf.X = new ArrayList<double[]>(n);
 		yarf.y = new double[n];
 		for (int i = 0; i < n; i++){
-//			indices_t[i] = i;
-			double[] x_i = {100 - i};
+			indices_t[i] = i;
+			double[] x_i = new double[p];
+			for (int j = 0; j < p; j++){
+				x_i[j] = Math.random();
+				if (x_i[j] < 0.1){
+					x_i[j] = MISSING_VALUE;
+				}
+			}
 			yarf.X.add(x_i);
-			yarf.y[i] = i;
+			yarf.y[i] = Math.random();
 		}
+		
+//		int n = 10;
+//		int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
+//		yarf.X = new ArrayList<double[]>(n);
+//		yarf.y = new double[n];
+//		for (int i = 0; i < n; i++){
+////			indices_t[i] = i;
+//			double[] x_i = {i};
+//			if (i == 5 || i == 7){
+//				//x_i[0] = Classifier.MISSING_VALUE;
+//			}
+//			yarf.X.add(x_i);
+//			yarf.y[i] = i;
+//		}
 		
 		yarf.finalizeTrainingData();
 		yarf.addBootstrapIndices(indices_t, 0);
@@ -631,26 +632,16 @@ public class YARF extends Classifier implements Serializable {
 		return x_dot_j;
 	 }
 	
-	protected TIntHashSet missingnessInXj(int j, TIntArrayList ordered_nonmissing_indices_j){
-		TIntHashSet missing_indices = new TIntHashSet();
-		double[] x_j = getXj(j);
-		TIntIterator iter = ordered_nonmissing_indices_j.iterator();
-		while (iter.hasNext()){
-			int i = iter.next();
-			if (x_j[i] == MISSING_VALUE){
-				missing_indices.add(i);
-			}
-		}
-		return missing_indices;
-	}
-	
+//	private TIntObjectHashMap<BitSet> feature_to_missingness;
+//	
 //	protected boolean missingnessExistsInXj(int j, int[] indices_to_check){
-//		double[] x_j = getXj(j);
-//		for (int i : indices_to_check){
-//			if (x_j[i] == MISSING_VALUE){
-//				return true;
+//		BitSet missingness_indices = feature_to_missingness.get(j);
+//		if (feature_to_missingness == null){
+//			for (int i = 0; i < n; i++){
+//				
 //			}
 //		}
+//
 //		return false;
 //	}
 	
@@ -671,7 +662,7 @@ public class YARF extends Classifier implements Serializable {
 		
 		//we need to get x values we can split on
 		double[] xj = getXj(j);
-		int[] sorted_indices = getSortedIndices(j);
+		int[] sorted_indices = getSortedIndicesForAnAttribute(j);
 		for (int i = 0; i < n; i++){
 			double val = xj[sorted_indices[i]];
 			split_point_to_cutoff_index.put(val, sorted_indices[i]);
@@ -682,22 +673,33 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	
-	protected TIntArrayList sortedIndices(int j, TIntArrayList indices){
+	protected void sortedIndices(int j, TIntArrayList sub_indices, TIntArrayList ordered_nonmissing_indices_j, TIntHashSet missing_indices_j){
+		//lllllloooooocccck this
+		double[] x_j = getXj(j);
 		int[] indices_sorted_j = all_attribute_sorts.get(j);
 		if (indices_sorted_j == null){ //we need to build it
 			synchronized(all_attribute_sorts){ //don't want to do this twice so sync it
-				indices_sorted_j = getSortedIndices(j);
+				indices_sorted_j = getSortedIndicesForAnAttribute(j);
 				all_attribute_sorts.put(j, indices_sorted_j);				
 			}
 		}
-		if (indices != null){ //that means we want some of them only
-			int n_sub = indices.size();
-			int[] sorted_sub_indices = new int[n_sub];
-			for (int i_s = 0; i_s < n_sub; i_s++){
-				sorted_sub_indices[i_s] = indices_sorted_j[indices.get(i_s)];
-			}			
+		int n_sub = sub_indices.size();
+		ArrayList<SortPair> non_missing_pairs = new ArrayList<SortPair>(n_sub);
+		for (int i_s = 0; i_s < n_sub; i_s++){
+			int sub_ind = sub_indices.get(i_s);
+			if (isMissing(x_j[sub_ind])){
+				missing_indices_j.add(sub_ind);
+			}
+			else {
+				non_missing_pairs.add(new SortPair(sub_ind, indices_sorted_j[sub_ind]));
+			}
+			
 		}
-		return new TIntArrayList(indices_sorted_j);
+		Collections.sort(non_missing_pairs);
+		ordered_nonmissing_indices_j.ensureCapacity(non_missing_pairs.size());
+		for (int i_s = 0; i_s < non_missing_pairs.size(); i_s++){
+			ordered_nonmissing_indices_j.add(non_missing_pairs.get(i_s).ind);
+		}
 	}
 	
 	
@@ -717,7 +719,7 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	//Java is about annoying as they come... why isn't this implemented????
-	private int[] getSortedIndices(int j) {
+	private int[] getSortedIndicesForAnAttribute(int j) {
 		double[] xj = getXj(j);
 		ArrayList<SortPair> temp = new ArrayList<SortPair>(n);
 		for (int i = 0; i < n; i++){
