@@ -98,7 +98,7 @@ public class YARFNode implements Cloneable {
 			if (Classifier.isMissing(record[evalNode.split_attribute])){
 				evalNode = evalNode.send_missing_data_right ? evalNode.right : evalNode.left;
 			}			
-			else if (record[evalNode.split_attribute] < evalNode.split_value){
+			else if (record[evalNode.split_attribute] <= evalNode.split_value){
 				evalNode = evalNode.left;
 			}
 			else {
@@ -197,22 +197,24 @@ public class YARFNode implements Cloneable {
 		System.out.println("cost = " + (cost == BAD_FLAG_double ? "BLANK" : cost));
 		System.out.println("parent = " + parent + " this = " + this);
 		System.out.println(" left = " + left + " right = " + right);
-
-		if (split_attribute != BAD_FLAG_int){ //rule is unassigned... or it's a leaf...
-			if (this.parent != null){
-				System.out.println("----- PARENT RULE:   X_" + parent.split_attribute + " < " + parent.split_value + " & M -> " + (parent.send_missing_data_right ? "R" : "L") + " ------");
-				//get vals of this x currently here
-				double[] x_dot_j = tree.yarf.getXj(parent.split_attribute);
-				double[] x_dot_j_node = new double[this.nodeSize()];
-				for (int i = 0; i < this.nodeSize(); i++){
-					x_dot_j_node[i] = x_dot_j[indices.get(i)];
-				}
-				Arrays.sort(x_dot_j_node);
-				System.out.println("   all X_" + parent.split_attribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
+		
+		if (this.parent != null){
+			System.out.println("----- PARENT RULE:   X_" + parent.split_attribute + " <= " + parent.split_value + " & M -> " + (parent.send_missing_data_right ? "R" : "L") + " ------");
+			//get vals of this x currently here
+			double[] x_dot_j = tree.yarf.getXj(parent.split_attribute);
+			double[] x_dot_j_node = new double[this.nodeSize()];
+			for (int i = 0; i < this.nodeSize(); i++){
+				x_dot_j_node[i] = x_dot_j[indices.get(i)];
 			}
+			Arrays.sort(x_dot_j_node);
+			System.out.println("   all X_" + parent.split_attribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
+		}
+		
+		if (split_attribute != BAD_FLAG_int){ //rule is unassigned... or it's a leaf...
+
 			
 			if (!is_leaf){
-				System.out.println("----- RULE:   X_" + split_attribute + " < " + split_value + " & M -> " + (send_missing_data_right ? "R" : "L") + " ------");
+				System.out.println("----- RULE:   X_" + split_attribute + " <= " + split_value + " & M -> " + (send_missing_data_right ? "R" : "L") + " ------");
 				//get vals of this x currently here
 	//			System.out.println("parent: " + parent);
 	//			System.out.println("tree: " + tree);
@@ -224,16 +226,7 @@ public class YARFNode implements Cloneable {
 				}
 				Arrays.sort(x_dot_j_node);
 				System.out.println("   all X_" + split_attribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
-			}	
-		}
-		else {
-			double[] x_dot_j = tree.yarf.getXj(0);
-			double[] x_dot_j_node = new double[nodeSize()];
-			for (int i = 0; i < nodeSize(); i++){
-				x_dot_j_node[i] = x_dot_j[indices.get(i)];
 			}
-			Arrays.sort(x_dot_j_node);
-			System.out.println("   all X_" + split_attribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
 		}
 		System.out.println("responses: (size " + node_ys().length + ") [" + Tools.StringJoin(node_ys()) + "]" +  " sse = " + StatToolbox.sample_sum_sq_err(node_ys()));
 		System.out.println("indicies: (size " + nodeSize() + ") [" + Tools.StringJoin(indices) + "]");

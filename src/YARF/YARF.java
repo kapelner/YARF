@@ -122,7 +122,7 @@ public class YARF extends Classifier implements Serializable {
 //		yarf.X = new ArrayList<double[]>(n);
 //		yarf.y = new double[n];
 //		for (int i = 0; i < n; i++){
-////			indices_t[i] = i;
+//			indices_t[i] = i;
 //			double[] x_i = {i};
 //			if (i == 5 || i == 7){
 //				//x_i[0] = Classifier.MISSING_VALUE;
@@ -130,7 +130,8 @@ public class YARF extends Classifier implements Serializable {
 //			yarf.X.add(x_i);
 //			yarf.y[i] = i;
 //		}
-		
+//		yarf.y[9] = -100;
+
 		yarf.finalizeTrainingData();
 		yarf.addBootstrapIndices(indices_t, 0);
 
@@ -344,11 +345,12 @@ public class YARF extends Classifier implements Serializable {
 		for (int i = 0; i < n; i++){
 			ArrayList<Integer> trees_oob = new ArrayList<Integer>();
 			for (int t = 0; t < num_trees; t++){
-				if (yarf_trees[t].oob_indices.contains(i)){
+				if (yarf_trees[t].oob_indices.contains(i)){ //R has it for -1
 					trees_oob.add(t);
 				}
 			}
 			if (trees_oob.isEmpty()){
+				System.out.println("no oob vals for obs #" + i);
 				return null; //we have to have values for all of them otherwise too messy in R
 			}
 			index_to_oob_on_trees.put(i, trees_oob);

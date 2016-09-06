@@ -26,12 +26,12 @@ public class YARFTreeBuilder {
 		if (makeNodeLeaf(node)){
 			node.is_leaf = true;
 			assignYHat(node);
-			//node.printNodeDebugInfo("");
+			node.printNodeDebugInfo("");
 			return; //ditch... because we're done...
 		}
 		
 		//greedy search... set up the horses
-		double lowest_total_split_cost = node.cost; //if you can't beat this... don't bother
+		double lowest_total_split_cost = node.cost; //if you can't beat this... don't bother!!
 		int lowest_cost_split_attribute = Integer.MIN_VALUE; //bad flag!
 		double lowest_cost_split_value = Double.NaN; //bad flag!
 		boolean lowest_send_missing_data_right = false;
@@ -77,10 +77,10 @@ public class YARFTreeBuilder {
 					//set up zygotes
 					YARFNode putative_left = new YARFNode(node);
 					YARFNode putative_right = new YARFNode(node);
-					putative_left.indices = (TIntArrayList)ordered_nonmissing_indices_j.subList(0, i_cut);
-					putative_right.indices = (TIntArrayList)ordered_nonmissing_indices_j.subList(i_cut, num_max_split_points);		
+					putative_left.indices = (TIntArrayList)ordered_nonmissing_indices_j.subList(0, i_cut + 1);
+					putative_right.indices = (TIntArrayList)ordered_nonmissing_indices_j.subList(i_cut + 1, num_max_split_points);		
 					
-					//handle the missingness now
+					//handle the indices from missingness L/R now
 					if (!missing_indices_j.isEmpty()){ 
 						if (send_missing_data_right){
 							putative_right.indices.addAll(missing_indices_j);
@@ -125,13 +125,13 @@ public class YARFTreeBuilder {
 			System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));
 			node.is_leaf = true;
 			assignYHat(node);
-			//node.printNodeDebugInfo("");
+			node.printNodeDebugInfo("");
 			return;
 		}
 		
 		System.out.println("greedy search successful!! for node: " + node.stringLocation(true)
-				+ "\n cost: " + node.cost 
-				+ "\n lowest_total_split_cost: " + lowest_total_split_cost
+				+ "\n previous cost: " + node.cost 
+				+ "\n new cost: " + lowest_total_split_cost
 				+ "\n lowest_cost_split_attribute: " + lowest_cost_split_attribute
 				+ "\n lowest_left_node: " + lowest_left_node
 				+ "\n lowest_right_node: " + lowest_right_node
@@ -149,35 +149,11 @@ public class YARFTreeBuilder {
 		node.left = lowest_left_node;
 		node.right = lowest_right_node;
 
-		//node.printNodeDebugInfo("");
+		node.printNodeDebugInfo("");
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
 		splitNode(node.right);
 	}
-
-//	private TreeSet<Double> getSplitPoints(int j, TIntArrayList ordered_nonmissing_indices_j, boolean no_missingness) {
-//		int node_n = ordered_nonmissing_indices_j.size();
-//		//we need to get x values we can split on
-//		double[] xj = yarf.getXj(j);
-//		TreeSet<Double> xj_split_points = new TreeSet<Double>();
-//		double max = Double.MIN_VALUE;
-//		for (int i = 0; i < node_n; i++){
-//			double val = xj[ordered_nonmissing_indices_j.get(i)];
-//			xj_split_points.add(val);
-//			if (no_missingness && val > max){
-//				max = val;
-//			}
-//		}
-//		
-//		//if there is no missingness, we can kill the max. Why?
-//		//Because when you create split rules of the form x <= c, splitting
-//		//on the max always yields an empty right node
-//		if (no_missingness){
-//			xj_split_points.remove(max);
-//		}
-//
-//		return xj_split_points;
-//	}
 
 	private double totalChildrenCost(YARFNode putative_left, YARFNode putative_right) {
 		if (yarf.customFunctionBothChildrenCostCalc()){
@@ -186,7 +162,7 @@ public class YARFTreeBuilder {
 		if (yarf.is_a_regression){ //sum of SSEs
 			return putative_left.cost + putative_right.cost; 
 		}
-		else { //average entropy among the children
+		else { //proportional average entropy among the children
 			int nL = putative_left.nodeSize();
 			int nR = putative_right.nodeSize();
 			return nL * putative_left.cost + nR * putative_right.cost; //no need to divide by n as this will be shared by ALL possible splits			

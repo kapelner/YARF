@@ -198,7 +198,7 @@ YARF = function(
 		bootstrap_indices = matrix(NA, n, num_trees)
 		one_to_n = seq(1, n)
 		for (t in 1 : num_trees){
-			bootstrap_indices[, t] = sample(one_to_n)
+			bootstrap_indices[, t] = sample(one_to_n, replace = TRUE)
 		}
 	} else {
 		#ensure the indicies is the correct format
@@ -405,10 +405,11 @@ YARF = function(
 	.jcall(java_YARF, "V", "setWait", wait)
 	.jcall(java_YARF, "V", "Build")
 	
+	print(bootstrap_indices)
 	yarf_mod = list(
 		allow_missingness_in_y = allow_missingness_in_y,
 		num_trees = num_trees,
-		boostrap_indices = boostrap_indices, 
+		bootstrap_indices = bootstrap_indices, 
 		mtry = mtry,
 		mtry_fun = mtry_fun,
 		nodesize = nodesize,
@@ -468,7 +469,7 @@ YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
 		n = yarf_mod$n
 		#get it from java multithreaded
 		num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
-		y_oob = t(sapply(.jcall(yarf_mod$java_YARF, "[[D", "evaluateOutOfBagEstimates", num_cores), .jevalArray))
+		y_oob = .jcall(yarf_mod$java_YARF, "[D", "evaluateOutOfBagEstimates", num_cores)
 		
 		if (is.null(y_oob)){
 			stop("OOB estimates cannot be computed since not every observation existed out of bag. Use more trees next time.")

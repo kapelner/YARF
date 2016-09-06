@@ -19,14 +19,14 @@ summary.YARF = function(object, ...){
 	if (progress_report$done){
 		cat("Model construction completed in", round(progress_report$time_elapsed_in_min, 2), "minutes.\n")
 		
-		if (!is.null(yarf_mod$y_oob)){ #print out OOB info if calculated 
+		if (!is.null(object$y_oob)){ #print out OOB info if calculated 
 			cat("OOB results:\n\n")
-			if (yarf_mod$pred_type == "regression"){
-				cat("L2:", round(yarf_mod$L2_err_oob, 3), "\n")
-				cat("RMSE:", round(yarf_mod$rmse_oob, 3), "\n")
-				cat("R^2:", round(yarf_mod$PseudoRsqoob, 3), "\n")
-				cat("L1:", round(yarf_mod$L1_err_oob, 3), "\n")
-				cat("MAE:", round(yarf_mod$mae_oob, 3), "\n")
+			if (object$pred_type == "regression"){
+				cat("L2:", round(object$L2_err_oob, 3), "\n")
+				cat("RMSE:", round(object$rmse_oob, 3), "\n")
+				cat("R^2:", round(object$PseudoRsqoob, 3), "\n")
+				cat("L1:", round(object$L1_err_oob, 3), "\n")
+				cat("MAE:", round(object$mae_oob, 3), "\n")
 			} else {		
 				cat("confusion matrix:\n")
 				print(confusion_matrix)
