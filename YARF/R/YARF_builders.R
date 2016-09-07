@@ -36,7 +36,8 @@
 #' 											into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
 #' 											regression and the modal category for classification.
 #' @param shared_functions					Custom Javascript functions that are always around. The default is \code{NULL} for no shared functions. 
-#' @param use_missing_data					Use the "missing-in-attributes" to fit data with missingness. 	
+#' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
+#' 											default is \code{TRUE}.	
 #' @param covariates_to_permute 			Indices of features to randomly permute when creating a YARF. The default is \code{NULL}
 #' 											indicating no features are permuted. This is an argument used mostly by other YARF functions.
 #' @param mem_cache_for_speed 
@@ -75,8 +76,8 @@ YARF = function(
 		#any helper code which will be accessible to code above
 		shared_funs = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
-		use_missing_data = FALSE,
-		replace_missing_data_with_x_j_bar = TRUE,
+		use_missing_data = TRUE,
+		replace_missing_data_with_x_j_bar = FALSE,
 		#other arguments
 		mem_cache_for_speed = TRUE,
 		covariates_to_permute = NULL, #PRIVATE
