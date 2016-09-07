@@ -351,8 +351,6 @@ YARF = function(
 		.jcall(java_YARF, "V", "setSharedFunctions", shared_funs)
 	}
 	
-	
-	
 	if (!is.null(seed)){
 		#set the seed in R
 		set.seed(seed)
@@ -448,6 +446,22 @@ YARF = function(
 	#use R's S3 object orientation for convenience
 	class(yarf_mod) = "YARF"
 	yarf_mod
+}
+
+
+#' Sets the number of cores for YARF to use for all operations
+#' which are multithreaded (e.g. model construction, prediction, etc)
+#' 
+#' @param num_cores 			The number of cores to use
+#' 
+#' @author Adam Kapelner
+#' @export
+set_YARF_num_cores = function(num_cores){
+	if (class(num_cores) != "integer" || num_cores <= 0){
+		stop("\"num_cores\" must be a natural number.")
+	}
+	assign("YARF_NUM_CORES", num_cores, YARF_globals)
+	cat("YARF now using", num_cores, "cores.\n")
 }
 
 #' Computes the out-of-bag (OOB) predictions for the training data. 
