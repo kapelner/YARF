@@ -121,18 +121,19 @@ public class YARF extends Classifier implements Serializable {
 //			yarf.y[i] = Math.random();
 //		}
 		
-		int n = 10;
-		int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
+		int n = 15;
+		int[] indices_t = new int[n];
+		//int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
 		yarf.X = new ArrayList<double[]>(n);
 		yarf.y = new double[n];
 		for (int i = 0; i < n; i++){
 			indices_t[i] = i;
 			double[] x_i = {i};
-			if (i == 1 || i == 2){
+			if (i == 1 || i == 2 || i == 8){
 				x_i[0] = Classifier.MISSING_VALUE;
 			}
 			yarf.X.add(x_i);
-			yarf.y[i] = i < 5 ? 0 : 1;
+			yarf.y[i] = i < 9 ? 0 : 1;
 		}
 		//yarf.y[9] = -100;
 
@@ -342,7 +343,7 @@ public class YARF extends Classifier implements Serializable {
 		yarf_trees[t].setOutOfBagIndices(oob_indices);
 	}
 	
-	public Double[] evaluateOutOfBagEstimates(int num_cores){
+	public double[] evaluateOutOfBagEstimates(int num_cores){
 		//first get the trees that have this observation out of bag
 		final HashMap<Integer, ArrayList<Integer>> index_to_oob_on_trees = new HashMap<Integer, ArrayList<Integer>>(n);
 		for (int i = 0; i < n; i++){
@@ -356,7 +357,7 @@ public class YARF extends Classifier implements Serializable {
 			index_to_oob_on_trees.put(i, trees_oob);
 		}	
 		
-		final Double[] y_hat_oobs = new Double[n];
+		final double[] y_hat_oobs = new double[n];
 		
 		ExecutorService evaluator_pool = Executors.newFixedThreadPool(num_cores);
 		for (int i = 0; i < n; i++){
@@ -365,7 +366,7 @@ public class YARF extends Classifier implements Serializable {
 				public void run() {
 					ArrayList<Integer> trees_oob = index_to_oob_on_trees.get(i_f);
 					if (trees_oob.isEmpty()){
-						y_hat_oobs[i_f] = null; //no information for the user...
+						y_hat_oobs[i_f] = Double.NaN; //no information for the user...
 					}
 					else {
 						double[] y_preds_trees_oob_only = new double[trees_oob.size()];
@@ -600,7 +601,11 @@ public class YARF extends Classifier implements Serializable {
 		}
 		//System.out.println("indices_one_to_p_min_1" + indices_one_to_p_min_1);
 
-		sorter_locks = new Object[p]; 
+		sorter_locks = new Object[p];
+		for (int j = 0; j < p; j++){
+			sorter_locks[j] = new Object();
+		}
+		//System.out.println("sorter_locks" + sorter_locks);
 	}
 	
 	

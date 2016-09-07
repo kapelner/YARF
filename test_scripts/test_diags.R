@@ -32,12 +32,16 @@ y_hat = predict(yarf_mod, data.frame(x1 = xstar))
 plot(xstar, y_hat)
 y_hat[1]
 
+options(java.parameters = c("-Xmx4000m"))
+library(YARF)
+
 n = 100
 X = data.frame(x1 = 0 : (n - 1))
-y = factor(ifelse(X[,1] > 50, "A", "B"))
-yarf_mod = YARF(X, y, num_trees = 100, use_missing_data = TRUE)
+y = factor(ifelse(X[,1] >= 50, "A", "B"))
+yarf_mod = YARF(X, y, num_trees = 500, use_missing_data = TRUE)
 yarf_mod
-
+yarf_mod = YARF_update_with_oob_results(yarf_mod)
+yarf_mod
 
 
 
@@ -48,6 +52,16 @@ X = Boston[, 1 : 13]
 y = Boston[, 14]
 
 yarf_mod = YARF(X, y, num_trees = 500)
+yarf_mod
+yarf_mod = YARF_update_with_oob_results(yarf_mod)
+yarf_mod
 y_hat = predict(yarf_mod, X)
 
 plot(y, y_hat)
+
+library(randomForest)
+rf_mod = randomForest(X, y, num_trees = 500)
+y_hat = predict(rf_mod, X)
+
+plot(y, y_hat)
+rf_mod

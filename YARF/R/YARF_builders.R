@@ -237,7 +237,7 @@ YARF = function(
 		}
 	} else if (class(y) == "factor"){ #if y is a factor and binary
 		if (num_y_levels > 8){
-			cat("Warning: You are doing classificaiton with more than 8 classes. Cast y to numeric if you wish to do regression.")
+			cat("Warning: You are doing classification with more than 8 classes. Cast y to numeric if you wish to do regression.")
 		}		
 		pred_type = "classification"
 	} else { #otherwise throw an error
@@ -405,7 +405,7 @@ YARF = function(
 	.jcall(java_YARF, "V", "setWait", wait)
 	.jcall(java_YARF, "V", "Build")
 	
-	print(bootstrap_indices)
+	####print(bootstrap_indices)
 	yarf_mod = list(
 		allow_missingness_in_y = allow_missingness_in_y,
 		num_trees = num_trees,
@@ -439,15 +439,13 @@ YARF = function(
 		training_data_features = colnames(model_matrix_training_data),
 		predictors_which_are_factors = predictors_which_are_factors
 	)
-
-	
 	
 	#Let's serialize the object if the user wishes
 	if (serialize){
 		YARF_serialize(yarf_mod)
 	}
 	
-	#use R's S3 object orientation
+	#use R's S3 object orientation for convenience
 	class(yarf_mod) = "YARF"
 	yarf_mod
 }
@@ -470,7 +468,7 @@ YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
 		#get it from java multithreaded
 		num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
 		y_oob = .jcall(yarf_mod$java_YARF, "[D", "evaluateOutOfBagEstimates", num_cores)
-		
+		y_oob[is.nan(y_oob)] = NA
 		yarf_mod$num_oob_obs_missing = sum(is.na(y_oob))
 		
 		#return a bunch more stuff
@@ -479,12 +477,12 @@ YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
 			yarf_mod$residuals = y - y_oob
 			yarf_mod$L1_err_oob = sum(abs(yarf_mod$residuals), na.rm = TRUE)
 			yarf_mod$L2_err_oob = sum(yarf_mod$residuals^2, na.rm = TRUE)
-			yarf_mod$PseudoRsqoob = 1 - yarf_mod$L2_err_oob / sum((y - mean(y))^2)
+			yarf_mod$pseudo_rsq_oob = 1 - yarf_mod$L2_err_oob / sum((y - mean(y))^2)
 			yarf_mod$rmse_oob = sqrt(yarf_mod$L2_err_oob / n)
 			yarf_mod$mae_oob = yarf_mod$L1_err_oob / n
 		} else {		
 			#convert results to factor
-			yarf_mod$y_oob = factor(y_oob, levels = yarf_mod$y_levels)
+			yarf_mod$y_oob = factor(y_oob, labels = yarf_mod$y_levels)
 			
 			#calculate confusion matrix
 			n_levels = yarf_mod$num_y_levels
@@ -494,18 +492,18 @@ YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
 			colnames(confusion_matrix) = c(paste("predicted", yarf_mod$y_levels), "model errors")
 			
 			#set the confusion counts
-			confusion_matrix[1 : n_levels, 1 : n_levels] = as.integer(table(y, y_oob, useNA = "no"))
+			confusion_matrix[1 : n_levels, 1 : n_levels] = data.matrix(table(y, y_oob, useNA = "no")) #should coerce to ints so we get rounding nicely later
 			#set all test errors
 			for (k in 1 : n_levels){
-				confusion_matrix[k, n_levels + 1] = 1 - confusion_matrix[k, k] / sum(confusion_matrix[k, 1 : n_levels])
+				confusion_matrix[k, n_levels + 1] = round(1 - confusion_matrix[k, k] / sum(confusion_matrix[k, 1 : n_levels]), 3)
 			}
 			#set all use errors
 			for (k in 1 : n_levels){
-				confusion_matrix[n_levels + 1, k] = 1 - confusion_matrix[k, k] / sum(confusion_matrix[1 : n_levels, k])
+				confusion_matrix[n_levels + 1, k] = round(1 - confusion_matrix[k, k] / sum(confusion_matrix[1 : n_levels, k]), 3)
 			}
 			#set overall error
-			yarf_mod$misclassification_error = (sum(confusion_matrix[1 : n_levels, 1 : n_levels]) - diag(confusion_matrix[1 : n_levels, 1 : n_levels])) / n
-			confusion_matrix[n_levels + 1, n_levels + 1] = yarf_mod$misclassification_error
+			yarf_mod$misclassification_error = (sum(confusion_matrix[1 : n_levels, 1 : n_levels]) - sum(diag(as.matrix(confusion_matrix[1 : n_levels, 1 : n_levels])))) / n
+			confusion_matrix[n_levels + 1, n_levels + 1] = round(yarf_mod$misclassification_error, 3)
 			#return the whole thing
 			yarf_mod$confusion_matrix = confusion_matrix
 		}
