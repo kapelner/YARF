@@ -44,7 +44,9 @@ yarf_mod = YARF_update_with_oob_results(yarf_mod)
 yarf_mod
 
 
-
+options(java.parameters = c("-Xmx4000m"))
+library(YARF)
+set_YARF_num_cores(2)
 library(MASS)
 data(Boston)
 
@@ -65,3 +67,17 @@ y_hat = predict(rf_mod, X)
 
 plot(y, y_hat)
 rf_mod
+
+
+#show off the asynchronicity
+data(Boston)
+for (i in 1 : 6){
+  Boston = rbind(Boston, Boston)
+}
+dim(Boston)
+
+X = Boston[, 1 : 13]
+y = Boston[, 14]
+
+yarf_mod = YARF(X, y, num_trees = 500, wait = FALSE)
+yarf_mod

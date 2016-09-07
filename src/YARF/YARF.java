@@ -34,6 +34,9 @@ import OpenSourceExtensions.UnorderedPair;
  */
 public class YARF extends Classifier implements Serializable {
 	private static final long serialVersionUID = -6984205353140981153L;
+
+	/** debug mode -- prints lots of messages that are useful */
+	public static final boolean DEBUG = false;
 	
 	/** the number of CPU cores to build many different trees in a YARF model */
 	protected int num_cores;
@@ -397,7 +400,7 @@ public class YARF extends Classifier implements Serializable {
 		initTrees();
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
-		if (verbose){
+		if (DEBUG){
 			System.out.println("building YARF " + (mem_cache_for_speed ? "with" : "without") + " mem-cache speedup...");
 		}
 		//System.err.println("inside 2");
@@ -430,7 +433,7 @@ public class YARF extends Classifier implements Serializable {
 		}
 
 		
-		if (verbose){
+		if (DEBUG){
 			System.out.println("done building YARF in " + ((System.currentTimeMillis() - t0) / 1000.0) + " sec \n");
 		}
 	}

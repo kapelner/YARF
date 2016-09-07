@@ -173,15 +173,15 @@ public class YARFNode implements Cloneable {
 		}
 	}
 	
-	public void printTree(){
-		printNodeDebugInfo("");
-		if (left != null){
-			left.printTree();
-		}
-		if (right != null){
-			right.printTree();
-		}
-	}
+//	public void printTree(){
+//		printNodeDebugInfo("");
+//		if (left != null){
+//			left.printTree();
+//		}
+//		if (right != null){
+//			right.printTree();
+//		}
+//	}
 	
 
 	/**

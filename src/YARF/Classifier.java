@@ -156,7 +156,7 @@ public abstract class Classifier implements Serializable{
 		}
 	    System.setOut(printStreamToFile);	
 	    System.setErr(printStreamToFile);
-	    System.out.println("test");
+	    //System.out.println("test");
 	}
 	
 	/** deletes all data that's unneeded at this point in runtime in order to save memory */

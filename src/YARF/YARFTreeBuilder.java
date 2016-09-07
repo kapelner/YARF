@@ -26,7 +26,7 @@ public class YARFTreeBuilder {
 		if (makeNodeLeaf(node)){
 			node.is_leaf = true;
 			assignYHat(node);
-			node.printNodeDebugInfo("");
+			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return; //ditch... because we're done...
 		}
 		
@@ -43,7 +43,7 @@ public class YARFTreeBuilder {
 		//this will house the optimal split
 		YARFNode lowest_left_node = null;
 		YARFNode lowest_right_node = null;
-		System.out.println("features_to_split_on: " + Tools.StringJoin(features_to_split_on));
+		if (YARF.DEBUG){System.out.println("features_to_split_on: " + Tools.StringJoin(features_to_split_on));}
 //		System.out.println("n_n: " + n_n);
 		
 		//two options about missingness (a) there is no missingness in this feature (b) there is
@@ -58,9 +58,9 @@ public class YARFTreeBuilder {
 			TIntArrayList ordered_nonmissing_indices_j = new TIntArrayList();
 			TIntHashSet missing_indices_j = new TIntHashSet();
 			yarf.sortedIndices(j, node.indices, ordered_nonmissing_indices_j, missing_indices_j);
-			System.out.println("node.indices: " + Tools.StringJoin(node.indices));
-			System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));
-			System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));
+			if (YARF.DEBUG){System.out.println("node.indices: " + Tools.StringJoin(node.indices));}
+			if (YARF.DEBUG){System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));}
+			if (YARF.DEBUG){System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));}
 
 			int num_max_split_points = ordered_nonmissing_indices_j.size();
 
@@ -105,7 +105,7 @@ public class YARFTreeBuilder {
 					double total_split_cost = totalChildrenCost(putative_left, putative_right);
 					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
-						System.out.println("beat cost @ " + total_split_cost);
+						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost);}
 						lowest_total_split_cost = total_split_cost;
 						lowest_cost_split_attribute = j;
 						lowest_cost_split_value = split_value;
@@ -123,21 +123,21 @@ public class YARFTreeBuilder {
 
 		//if we have been unsuccessful in finding an advantageous split, we should not split
 		if (lowest_total_split_cost >= node.cost){
-			System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));
+			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));}
 			node.is_leaf = true;
 			assignYHat(node);
-			node.printNodeDebugInfo("");
+			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return;
 		}
 		
-		System.out.println("greedy search successful!! for node: " + node.stringLocation(true)
+		if (YARF.DEBUG){System.out.println("greedy search successful!! for node: " + node.stringLocation(true)
 				+ "\n previous cost: " + node.cost 
 				+ "\n new cost: " + lowest_total_split_cost
 				+ "\n lowest_cost_split_attribute: " + lowest_cost_split_attribute
 				+ "\n lowest_left_node: " + lowest_left_node
 				+ "\n lowest_right_node: " + lowest_right_node
 				+ "\n send_missing: " + (lowest_send_missing_data_right ? "R" : "L")
-				);
+				);}
 		
 		//otherwise we use the optimal split
 		//first indicate the splitting rule in this node converting the two lucky zygotes into a fetus
@@ -150,7 +150,7 @@ public class YARFTreeBuilder {
 		node.left = lowest_left_node;
 		node.right = lowest_right_node;
 
-		node.printNodeDebugInfo("");
+		if (YARF.DEBUG){node.printNodeDebugInfo("");}
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
 		splitNode(node.right);
