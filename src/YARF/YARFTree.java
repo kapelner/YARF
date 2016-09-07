@@ -14,6 +14,7 @@ public class YARFTree extends Classifier {
 	protected TIntArrayList bootstrap_indices;
 	protected TIntHashSet oob_indices;
 	protected boolean stop;
+	protected boolean completed;
 
 	public YARFTree(YARF yarf) {
 		this.yarf = yarf;
@@ -27,6 +28,7 @@ public class YARFTree extends Classifier {
 		System.out.println("BUILD TREE");
 		root = new YARFNode(this);
 		new YARFTreeBuilder(this);
+		completed = true; //once it's done, ensure the rest of the forest knows about it
 	}
 
 	public void FlushData() {

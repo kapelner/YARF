@@ -471,16 +471,14 @@ YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
 		num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
 		y_oob = .jcall(yarf_mod$java_YARF, "[D", "evaluateOutOfBagEstimates", num_cores)
 		
-		if (is.null(y_oob)){
-			stop("OOB estimates cannot be computed since not every observation existed out of bag. Use more trees next time.")
-		}
+		yarf_mod$num_oob_obs_missing = sum(is.na(y_oob))
 		
 		#return a bunch more stuff
 		if (yarf_mod$pred_type == "regression"){
 			yarf_mod$y_oob = y_oob
 			yarf_mod$residuals = y - y_oob
-			yarf_mod$L1_err_oob = sum(abs(yarf_mod$residuals))
-			yarf_mod$L2_err_oob = sum(yarf_mod$residuals^2)
+			yarf_mod$L1_err_oob = sum(abs(yarf_mod$residuals), na.rm = TRUE)
+			yarf_mod$L2_err_oob = sum(yarf_mod$residuals^2, na.rm = TRUE)
 			yarf_mod$PseudoRsqoob = 1 - yarf_mod$L2_err_oob / sum((y - mean(y))^2)
 			yarf_mod$rmse_oob = sqrt(yarf_mod$L2_err_oob / n)
 			yarf_mod$mae_oob = yarf_mod$L1_err_oob / n
@@ -496,7 +494,7 @@ YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
 			colnames(confusion_matrix) = c(paste("predicted", yarf_mod$y_levels), "model errors")
 			
 			#set the confusion counts
-			confusion_matrix[1 : n_levels, 1 : n_levels] = as.integer(table(y, y_oob))
+			confusion_matrix[1 : n_levels, 1 : n_levels] = as.integer(table(y, y_oob, useNA = "no"))
 			#set all test errors
 			for (k in 1 : n_levels){
 				confusion_matrix[k, n_levels + 1] = 1 - confusion_matrix[k, k] / sum(confusion_matrix[k, 1 : n_levels])

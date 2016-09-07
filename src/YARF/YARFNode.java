@@ -206,7 +206,7 @@ public class YARFNode implements Cloneable {
 			for (int i = 0; i < this.nodeSize(); i++){
 				x_dot_j_node[i] = x_dot_j[indices.get(i)];
 			}
-			Arrays.sort(x_dot_j_node);
+			//Arrays.sort(x_dot_j_node);
 			System.out.println("   all X_" + parent.split_attribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
 		}
 		
@@ -224,7 +224,7 @@ public class YARFNode implements Cloneable {
 				for (int i = 0; i < nodeSize(); i++){
 					x_dot_j_node[i] = x_dot_j[indices.get(i)];
 				}
-				Arrays.sort(x_dot_j_node);
+				//Arrays.sort(x_dot_j_node);
 				System.out.println("   all X_" + split_attribute + " values here: [" + Tools.StringJoin(x_dot_j_node) + "]");
 			}
 		}

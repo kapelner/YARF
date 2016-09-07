@@ -43,8 +43,11 @@ public class YARF extends Classifier implements Serializable {
 	protected boolean is_a_regression;
 	/** time of completion */
 	protected long tf;
-	
+	/** is the model stopped by the user? */
 	private boolean stopped;
+	
+	/** locks on the sorters */
+	private transient Object[] sorter_locks;
 	
 	/** an array of the raw training data by COLUMN i.e. consisting of xj = [x1j, ..., xnj] with the last entry being [y1, ..., yn] */ 
 	private transient TIntObjectHashMap<double[]> X_by_col;
@@ -89,6 +92,7 @@ public class YARF extends Classifier implements Serializable {
 
 	/** should we hang the system until the model is fully constructed? */
 	private boolean wait;
+
 
 
 	public static void main(String[] args){
@@ -338,26 +342,21 @@ public class YARF extends Classifier implements Serializable {
 		yarf_trees[t].setOutOfBagIndices(oob_indices);
 	}
 	
-	public double[] evaluateOutOfBagEstimates(int num_cores){
+	public Double[] evaluateOutOfBagEstimates(int num_cores){
 		//first get the trees that have this observation out of bag
-		
 		final HashMap<Integer, ArrayList<Integer>> index_to_oob_on_trees = new HashMap<Integer, ArrayList<Integer>>(n);
 		for (int i = 0; i < n; i++){
 			ArrayList<Integer> trees_oob = new ArrayList<Integer>();
 			for (int t = 0; t < num_trees; t++){
-				if (yarf_trees[t].oob_indices.contains(i)){ //R has it for -1
+				//if the tree is done being built and it has this observation oob, collect it
+				if (yarf_trees[t].completed && yarf_trees[t].oob_indices.contains(i)){
 					trees_oob.add(t);
 				}
-			}
-			if (trees_oob.isEmpty()){
-				System.out.println("no oob vals for obs #" + i);
-				return null; //we have to have values for all of them otherwise too messy in R
 			}
 			index_to_oob_on_trees.put(i, trees_oob);
 		}	
 		
-		final double[] y_hat_oobs = new double[n];
-		
+		final Double[] y_hat_oobs = new Double[n];
 		
 		ExecutorService evaluator_pool = Executors.newFixedThreadPool(num_cores);
 		for (int i = 0; i < n; i++){
@@ -365,12 +364,17 @@ public class YARF extends Classifier implements Serializable {
 	    	evaluator_pool.execute(new Runnable(){
 				public void run() {
 					ArrayList<Integer> trees_oob = index_to_oob_on_trees.get(i_f);
-					double[] y_preds_trees_oob_only = new double[trees_oob.size()];
-					double[] x_i = X.get(i_f);
-					for (int t = 0; t < trees_oob.size(); t++){
-						y_preds_trees_oob_only[t] = yarf_trees[trees_oob.get(t)].Evaluate(x_i);
+					if (trees_oob.isEmpty()){
+						y_hat_oobs[i_f] = null; //no information for the user...
 					}
-					y_hat_oobs[i_f] = nodeAssignmentAggregation(y_preds_trees_oob_only);
+					else {
+						double[] y_preds_trees_oob_only = new double[trees_oob.size()];
+						double[] x_i = X.get(i_f);
+						for (int t = 0; t < trees_oob.size(); t++){
+							y_preds_trees_oob_only[t] = yarf_trees[trees_oob.get(t)].Evaluate(x_i);
+						}
+						y_hat_oobs[i_f] = nodeAssignmentAggregation(y_preds_trees_oob_only);
+					}
 				}
 			});
 		}
@@ -595,6 +599,8 @@ public class YARF extends Classifier implements Serializable {
 			indices_one_to_p_min_1[j] = j;
 		}
 		//System.out.println("indices_one_to_p_min_1" + indices_one_to_p_min_1);
+
+		sorter_locks = new Object[p]; 
 	}
 	
 	
@@ -661,26 +667,29 @@ public class YARF extends Classifier implements Serializable {
 		return split_point_to_cutoff_index;
 	}
 	
-	
 	protected void sortedIndices(int j, TIntArrayList sub_indices, TIntArrayList ordered_nonmissing_indices_j, TIntHashSet missing_indices_j){
-		//lllllloooooocccck this
-		double[] x_j = getXj(j);
-		int[] indices_sorted_j = all_attribute_sorts.get(j);
-		if (indices_sorted_j == null){ //we need to build it
-			synchronized(all_attribute_sorts){ //don't want to do this twice so sync it
+		//we only do the sorting ONCE per attribute... this ensures this with a minimal 
+		//amount of thread butting
+		synchronized(sorter_locks[j]){
+			int[] indices_sorted_j = all_attribute_sorts.get(j);
+			if (indices_sorted_j == null){ //we need to build it
 				indices_sorted_j = getSortedIndicesForAnAttribute(j);
-				all_attribute_sorts.put(j, indices_sorted_j);				
-			}
+				all_attribute_sorts.put(j, indices_sorted_j);
+			}			
 		}
+
+		//System.out.println("sortedIndices j = " + j + " indices_sorted_j = " + Tools.StringJoin(indices_sorted_j));
 		int n_sub = sub_indices.size();
+		//System.out.println("sortedIndices j = " + j + " sub_indices = " + Tools.StringJoin(sub_indices));
 		ArrayList<SortPair> non_missing_pairs = new ArrayList<SortPair>(n_sub);
+		double[] x_j = getXj(j);
 		for (int i_s = 0; i_s < n_sub; i_s++){
 			int sub_ind = sub_indices.get(i_s);
 			if (isMissing(x_j[sub_ind])){
 				missing_indices_j.add(sub_ind);
 			}
 			else {
-				non_missing_pairs.add(new SortPair(sub_ind, indices_sorted_j[sub_ind]));
+				non_missing_pairs.add(new SortPair(sub_ind, x_j[sub_ind]));
 			}
 			
 		}
@@ -689,6 +698,8 @@ public class YARF extends Classifier implements Serializable {
 		for (int i_s = 0; i_s < non_missing_pairs.size(); i_s++){
 			ordered_nonmissing_indices_j.add(non_missing_pairs.get(i_s).ind);
 		}
+
+		//System.out.println("sortedIndices j = " + j + " ordered_nonmissing_indices_j = " + Tools.StringJoin(ordered_nonmissing_indices_j));
 	}
 	
 	

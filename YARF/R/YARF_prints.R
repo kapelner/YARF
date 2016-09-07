@@ -20,7 +20,9 @@ summary.YARF = function(object, ...){
 		cat("Model construction completed in", round(progress_report$time_elapsed_in_min, 2), "minutes.\n")
 		
 		if (!is.null(object$y_oob)){ #print out OOB info if calculated 
-			cat("OOB results:\n\n")
+			miss = object$num_oob_obs_missing
+			pct_reporting = round((n - miss) / n * 100, 2)
+			cat("OOB results on", pct_reporting, "% of the observations (", miss, " missing):\n\n", sep = "")
 			if (object$pred_type == "regression"){
 				cat("L2:", round(object$L2_err_oob, 3), "\n")
 				cat("RMSE:", round(object$rmse_oob, 3), "\n")
