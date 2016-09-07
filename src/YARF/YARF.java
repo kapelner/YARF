@@ -330,7 +330,7 @@ public class YARF extends Classifier implements Serializable {
 	public int progress(){
 		int progress = 0;
 		for (YARFTree tree : yarf_trees){
-			progress += (tree.built() ? 1 : 0);
+			progress += (tree.completed ? 1 : 0);
 		}
 		return progress;
 	}

@@ -81,3 +81,5 @@ y = Boston[, 14]
 
 yarf_mod = YARF(X, y, num_trees = 500, wait = FALSE)
 yarf_mod
+YARF_progress_reports(yarf_mod, time_delay_in_seconds = 3)
+YARF_update_with_oob_results(yarf_mod)

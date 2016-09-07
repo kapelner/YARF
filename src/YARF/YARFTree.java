@@ -19,10 +19,6 @@ public class YARFTree extends Classifier {
 	public YARFTree(YARF yarf) {
 		this.yarf = yarf;
 	}
-	
-	public boolean built(){
-		return root != null;
-	}
 
 	public void Build() {
 		//System.out.println("BUILD TREE");

@@ -29,7 +29,7 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 	}
 	
 	if (console_message){
-		cat(num_trees_completed, " / ", yarf_mod$num_trees, " trees completed (", round(progress * 100, 1), "% done in ", round(time_elapsed_in_min, 1), " minutes).\n", sep = "")	
+		cat(num_trees_completed, " / ", yarf_mod$num_trees, " trees completed (", round(progress * 100, 1), "% done in ", round(time_elapsed_in_min, 1), "min).\n", sep = "")	
 		
 		if (num_trees_completed >= 1 && progress < 1){
 			cat("Estimated time until completion: ", round(time_remaining_estimate, 1), "min.\n", sep = "")
