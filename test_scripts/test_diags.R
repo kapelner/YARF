@@ -32,6 +32,15 @@ y_hat = predict(yarf_mod, data.frame(x1 = xstar))
 plot(xstar, y_hat)
 y_hat[1]
 
+n = 100
+X = data.frame(x1 = 0 : (n - 1))
+y = factor(ifelse(X[,1] > 50, "A", "B"))
+yarf_mod = YARF(X, y, num_trees = 100, use_missing_data = TRUE)
+yarf_mod
+
+
+
+
 library(MASS)
 data(Boston)
 

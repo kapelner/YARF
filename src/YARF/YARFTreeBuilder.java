@@ -103,6 +103,7 @@ public class YARFTreeBuilder {
 					computeNodeCost(putative_right);
 					
 					double total_split_cost = totalChildrenCost(putative_left, putative_right);
+					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
 						System.out.println("beat cost @ " + total_split_cost);
 						lowest_total_split_cost = total_split_cost;
@@ -162,10 +163,10 @@ public class YARFTreeBuilder {
 		if (yarf.is_a_regression){ //sum of SSEs
 			return putative_left.cost + putative_right.cost; 
 		}
-		else { //proportional average entropy among the children
+		else { //average entropy among the children
 			int nL = putative_left.nodeSize();
 			int nR = putative_right.nodeSize();
-			return nL * putative_left.cost + nR * putative_right.cost; //no need to divide by n as this will be shared by ALL possible splits			
+			return (nL * putative_left.cost + nR * putative_right.cost) / (nL + nR);			
 		}
 	}
 

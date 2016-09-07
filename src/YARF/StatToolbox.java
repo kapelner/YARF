@@ -301,7 +301,7 @@ public class StatToolbox {
 				prop_entropy += p_hat * Math.log(p_hat);
 			}
 		}
-		return prop_entropy;
+		return -prop_entropy;
 	}
 
 	public static TDoubleIntHashMap class_freqs(double[] data) {

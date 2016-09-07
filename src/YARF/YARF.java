@@ -97,40 +97,40 @@ public class YARF extends Classifier implements Serializable {
 		yarf.setNumCores(1);
 		yarf.setNumTrees(1);
 		yarf.setNodesize(2);
-		yarf.setPredType("regression");
+		yarf.setPredType("classification");
 		
-		int n = 30;
-		int p = 5;
-		int[] indices_t = new int[n];
-		yarf.X = new ArrayList<double[]>(n);
-		yarf.y = new double[n];
-		for (int i = 0; i < n; i++){
-			indices_t[i] = i;
-			double[] x_i = new double[p];
-			for (int j = 0; j < p; j++){
-				x_i[j] = Math.random();
-				if (x_i[j] < 0.1){
-					x_i[j] = MISSING_VALUE;
-				}
-			}
-			yarf.X.add(x_i);
-			yarf.y[i] = Math.random();
-		}
-		
-//		int n = 10;
-//		int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
+//		int n = 30;
+//		int p = 5;
+//		int[] indices_t = new int[n];
 //		yarf.X = new ArrayList<double[]>(n);
 //		yarf.y = new double[n];
 //		for (int i = 0; i < n; i++){
 //			indices_t[i] = i;
-//			double[] x_i = {i};
-//			if (i == 5 || i == 7){
-//				//x_i[0] = Classifier.MISSING_VALUE;
+//			double[] x_i = new double[p];
+//			for (int j = 0; j < p; j++){
+//				x_i[j] = Math.random();
+//				if (x_i[j] < 0.1){
+//					x_i[j] = MISSING_VALUE;
+//				}
 //			}
 //			yarf.X.add(x_i);
-//			yarf.y[i] = i;
+//			yarf.y[i] = Math.random();
 //		}
-//		yarf.y[9] = -100;
+		
+		int n = 10;
+		int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
+		yarf.X = new ArrayList<double[]>(n);
+		yarf.y = new double[n];
+		for (int i = 0; i < n; i++){
+			indices_t[i] = i;
+			double[] x_i = {i};
+			if (i == 1 || i == 2){
+				x_i[0] = Classifier.MISSING_VALUE;
+			}
+			yarf.X.add(x_i);
+			yarf.y[i] = i < 5 ? 0 : 1;
+		}
+		//yarf.y[9] = -100;
 
 		yarf.finalizeTrainingData();
 		yarf.addBootstrapIndices(indices_t, 0);
