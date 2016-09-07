@@ -11,8 +11,9 @@ summary.YARF = function(object, ...){
 	if (object$use_missing_data){
 		cat("Missing data feature ON.\n")
 	}
+	n = object$n
 	#first print out characteristics of the training data
-	cat(paste("training data n =", object$n, "and p =", object$p, "\n"))
+	cat(paste("training data n =", n, "and p =", object$p, "\n"))
 	
 	progress_report = YARF_progress(object, console_message = FALSE)
 	

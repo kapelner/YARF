@@ -68,6 +68,29 @@ y_hat = predict(rf_mod, X)
 plot(y, y_hat)
 rf_mod
 
+##verify on classification it works
+options(java.parameters = c("-Xmx4000m"))
+library(YARF)
+set_YARF_num_cores(2)
+
+data(iris)
+X = iris[, 1 : 4]
+y = iris[, 5]
+
+yarf_mod = YARF(X, y, num_trees = 500)
+yarf_mod
+yarf_mod = YARF_update_with_oob_results(yarf_mod)
+yarf_mod
+y_hat = predict(yarf_mod, X)
+table(y, y_hat)
+
+library(randomForest)
+rf_mod = randomForest(X, y, num_trees = 500)
+rf_mod
+y_hat = predict(rf_mod, X)
+table(y, y_hat)
+
+
 
 #show off the asynchronicity
 data(Boston)

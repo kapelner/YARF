@@ -38,7 +38,7 @@ predict.YARF = function(object, new_data, ...){
 	
 	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores)
 	if (object$pred_type == "classification"){	
-		y_hats = factor(y_hats, levels = yarf_mod$y_levels)
+		y_hats = factor(y_hats, labels = yarf_mod$y_levels)
 	}
 	y_hats
 }
