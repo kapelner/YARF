@@ -93,7 +93,7 @@ table(y, y_hat)
 
 
 #show off the asynchronicity
-n = 30000
+n = 20000
 p = 10
 X = matrix(rnorm(n * p), nrow = n)
 beta = as.matrix(rnorm(p))
@@ -127,4 +127,82 @@ YARF_stop(yarf_mod)
 #to remove it and return the memory,
 rm(yarf_mod)
 gc()
+
+##now we will test custom node assignment functions. We first begin
+#with the regular node assignment for regression: the average
+
+
+options(java.parameters = c("-Xmx4000m"))
+library(YARF)
+set_YARF_num_cores(2)
+library(MASS)
+data(Boston)
+
+X = Boston[, 1 : 13]
+y = Boston[, 14]
+
+node_assign_fun = " 
+	function assignYhatToNode(node){
+	  var ys = node.node_ys;
+	  var avg = 0;
+	  for (i = 0; i < ys.length; i++){
+	    avg += ys[i];
+	  }
+	  return avg / ys.length + 0.0;
+	}"
+
+yarf_mod = YARF(X, y, num_trees = 500, node_assign_fun = node_assign_fun)
+yarf_mod
+YARF_update_with_oob_results(yarf_mod)
+#note same results
+
+#now let's get funky and do median
+
+node_assign_fun = " 
+	function assignYhatToNode(node){
+	    var ys = node.node_ys;
+	    ys.sort(function(a,b) {return a - b;});
+	    var half = Math.floor(ys / 2);
+	    if (ys % 2)
+	      return ys[half];
+	    else
+	      return (ys[half - 1] + ys[half]) / 2.0;
+	}"
+
+yarf_mod = YARF(X, y, num_trees = 500, node_assign_fun = node_assign_fun)
+yarf_mod
+YARF_update_with_oob_results(yarf_mod)
+#same results
+
+#now let's go even crazier... let's aggregate across the tree predictions by median
+aggregation_fun = " 
+	function aggregateYhatsIntoOneYhat(y_hat_trees){
+		y_hat_trees.sort(function(a,b) {return a - b;});
+		var half = Math.floor(y_hat_trees / 2);
+		if (y_hat_trees % 2)
+			return y_hat_trees[half];
+		else
+			return (y_hat_trees[half - 1] + y_hat_trees[half]) / 2.0;
+	}"
+
+
+yarf_mod = YARF(X, y, num_trees = 500, node_assign_fun = node_assign_fun, aggregation_fun = aggregation_fun)
+yarf_mod
+YARF_update_with_oob_results(yarf_mod)
+
+#now let's go even crazier... let's make the cost function sum of absolute errors (instead of squared errors)
+cost_calc_fun = " 
+	function nodeCost(node){
+		var ys = node.node_ys;
+	  	var sae = 0;
+	  	for (i = 0; i < ys.length; i++){
+	    	sae += Math.abs(ys[i] - node.y_pred);
+	  	}
+	  	return sae;
+	}"
+
+
+yarf_mod = YARF(X, y, num_trees = 500, node_assign_fun = node_assign_fun, cost_calc_fun = cost_calc_fun)
+yarf_mod
+YARF_update_with_oob_results(yarf_mod)
 

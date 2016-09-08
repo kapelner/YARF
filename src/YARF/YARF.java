@@ -105,39 +105,49 @@ public class YARF extends Classifier implements Serializable {
 		yarf.setNumTrees(1);
 		yarf.setNodesize(2);
 		yarf.setPredType("classification");
+		yarf.node_assignment_function_str = "" 
+				+ "function assignYhatToNode(node){"
+				+ "  var ys = node.node_ys;"
+				+ "  var avg = 0;"
+				+ "  for (i = 0; i < ys.length; i++){"
+				+ "    avg += ys[i];"
+				+ "  }"
+				+ "  return avg / ys.length;"
+				+ "}";
 		
-//		int n = 30;
-//		int p = 5;
-//		int[] indices_t = new int[n];
-//		yarf.X = new ArrayList<double[]>(n);
-//		yarf.y = new double[n];
-//		for (int i = 0; i < n; i++){
-//			indices_t[i] = i;
-//			double[] x_i = new double[p];
-//			for (int j = 0; j < p; j++){
-//				x_i[j] = Math.random();
-//				if (x_i[j] < 0.1){
-//					x_i[j] = MISSING_VALUE;
-//				}
-//			}
-//			yarf.X.add(x_i);
-//			yarf.y[i] = Math.random();
-//		}
 		
-		int n = 15;
+		int n = 30;
+		int p = 5;
 		int[] indices_t = new int[n];
-		//int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
 		yarf.X = new ArrayList<double[]>(n);
 		yarf.y = new double[n];
 		for (int i = 0; i < n; i++){
 			indices_t[i] = i;
-			double[] x_i = {i};
-			if (i == 1 || i == 2 || i == 8){
-				x_i[0] = Classifier.MISSING_VALUE;
+			double[] x_i = new double[p];
+			for (int j = 0; j < p; j++){
+				x_i[j] = Math.random();
+				if (x_i[j] < 0.1){
+					x_i[j] = MISSING_VALUE;
+				}
 			}
 			yarf.X.add(x_i);
-			yarf.y[i] = i < 9 ? 0 : 1;
+			yarf.y[i] = Math.random();
 		}
+		
+//		int n = 15;
+//		int[] indices_t = new int[n];
+//		//int[] indices_t = {1,1,2,3,3,5,7,7,8,9};
+//		yarf.X = new ArrayList<double[]>(n);
+//		yarf.y = new double[n];
+//		for (int i = 0; i < n; i++){
+//			indices_t[i] = i;
+//			double[] x_i = {i};
+//			if (i == 1 || i == 2 || i == 8){
+//				x_i[0] = Classifier.MISSING_VALUE;
+//			}
+//			yarf.X.add(x_i);
+//			yarf.y[i] = i < 9 ? 0 : 1;
+//		}
 		//yarf.y[9] = -100;
 
 		yarf.finalizeTrainingData();
@@ -295,27 +305,27 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	public boolean customFunctionMtry(){
-		return mtry_fun != null;
+		return mtry_function_str != null;
 	}
 	
 	public boolean customFunctionNodesize(){
-		return make_node_into_leaf_fun != null;
+		return make_node_into_leaf_function_str != null;
 	}
 	
 	public boolean customFunctionSingleNodeCostCalc(){
-		return cost_single_node_calc_fun != null;
+		return cost_single_node_calc_function_str != null;
 	}
 	
 	public boolean customFunctionBothChildrenCostCalc(){
-		return cost_both_children_calc_fun != null;
+		return cost_both_children_calc_function_str != null;
 	}
 	
 	public boolean customFunctionNodeAssignment(){
-		return node_assignment_fun != null;
+		return node_assignment_function_str != null;
 	}
 	
 	public boolean customFunctionAggregation(){
-		return aggregation_fun != null;
+		return aggregation_function_str != null;
 	}
 	
 	public void initTrees(){
@@ -551,7 +561,7 @@ public class YARF extends Classifier implements Serializable {
 		if (is_a_regression){
 			return StatUtils.mean(y_preds); //the sample average
 		}
-		return StatToolbox.sample_mode(y_preds);
+		return StatToolbox.sample_mode(y_preds); //most likely class
 	}
 	
 	public double[] allNodeAssignments(double[] record){

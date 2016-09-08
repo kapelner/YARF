@@ -328,7 +328,7 @@ YARF = function(
 	if (!is.null(mtry)){
 		.jcall(java_YARF, "V", "setMTry", as.integer(mtry))
 	} else if (!is.null(mtry_fun)) {
-		.jcall(java_YARF, "V", "setMTryFunction", mtry_fun)
+		.jcall(java_YARF, "V", "setMtry_function_str", mtry_fun)
 	}
 	if (!is.null(nodesize)){
 		.jcall(java_YARF, "V", "setNodesize", as.integer(nodesize))
@@ -337,19 +337,19 @@ YARF = function(
 	}
 	
 	if (!is.null(cost_calc_fun)){
-		.jcall(java_YARF, "V", "setCostCalcFunction", cost_calc_fun)
+		.jcall(java_YARF, "V", "setCost_single_node_calc_function_str", cost_calc_fun)
 	}
 	
 	if (!is.null(node_assign_fun)){
-		.jcall(java_YARF, "V", "setNodeAssignmentFunction", node_assign_fun)
+		.jcall(java_YARF, "V", "setNode_assignment_function_str", node_assign_fun)
 	}
 	
 	if (!is.null(aggregation_fun)){
-		.jcall(java_YARF, "V", "setAggregationFunction", aggregation_fun)
+		.jcall(java_YARF, "V", "setAggregation_function_str", aggregation_fun)
 	}
 	
 	if (!is.null(shared_funs)){
-		.jcall(java_YARF, "V", "setSharedFunctions", shared_funs)
+		.jcall(java_YARF, "V", "setShared_functions_str", shared_funs)
 	}
 	
 	if (!is.null(seed)){

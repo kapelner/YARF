@@ -174,25 +174,31 @@ public class YARFTreeBuilder {
 		if (yarf.customFunctionSingleNodeCostCalc()){
 			node.cost = yarf.runSingleNodeCost(node);
 		}
-		double[] ys = node.node_ys();
-		if (yarf.is_a_regression){ //the cost is the SSE (across both the left and right)
-			node.y_pred = StatToolbox.sample_average(ys); //set it here for convenience
-			node.cost = StatToolbox.sample_sum_sq_err(ys, node.y_pred);
-		}
-		else { //it's a classification - the "cost" is the negative entropy which is the negative of the gain...
-			node.cost = StatToolbox.natural_negative_entropy(ys);
+		else {
+			double[] ys = node.node_ys();
+			if (yarf.is_a_regression){ //the cost is the SSE (across both the left and right)
+				node.y_pred = StatToolbox.sample_average(ys); //set it here for convenience
+				node.cost = StatToolbox.sample_sum_sq_err(ys, node.y_pred);
+			}
+			else { //it's a classification - the "cost" is the negative entropy which is the negative of the gain...
+				node.cost = StatToolbox.natural_negative_entropy(ys);
+			}
 		}
 		//System.out.println("computeNodeCost node " + node + " cost = " + node.cost + " pred = " + node.y_pred + " size = " + node.nodeSize());
 	}
 
 	private void assignYHat(YARFNode node) {
+		//System.out.println("assignYHat");
 		if (yarf.customFunctionNodeAssignment()){
+			//System.out.println("yarf.customFunctionNodeAssignment");
 			node.y_pred = yarf.runNodeAssignment(node);
 		}
-		//no need to assign for a regression... it was done in the cost function
-		//and for a classification, it's just the modal value among the y's
-		if (!yarf.is_a_regression){
-			node.y_pred = StatToolbox.sample_mode(node.node_ys());
+		else {
+			//no need to assign for a regression... it was done in the cost function
+			//and for a classification, it's just the modal value among the y's
+			if (!yarf.is_a_regression){
+				node.y_pred = StatToolbox.sample_mode(node.node_ys());
+			}
 		}
 	}
 
