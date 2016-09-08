@@ -194,7 +194,7 @@ YARF_update_with_oob_results(yarf_mod)
 cost_calc_fun = " 
 	function nodeCost(node){
 		var ys = node.node_ys;
-	  	var sae = 0;
+	  	var sae = 0.0;
 	  	for (i = 0; i < ys.length; i++){
 	    	sae += Math.abs(ys[i] - node.y_pred);
 	  	}

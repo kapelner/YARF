@@ -115,6 +115,16 @@ public class YARF extends Classifier implements Serializable {
 				+ "  return avg / ys.length;"
 				+ "}";
 		
+		yarf.cost_single_node_calc_function_str = ""
+				+ "function nodeCost(node){"
+				+ "	var ys = node.node_ys;"
+				+ "	var sae = 0.0;"
+				+ "	for (i = 0; i < ys.length; i++){"
+				+ "		sae += Math.abs(ys[i] - node.y_pred);"
+				+ "	}"
+				+ "return sae;"
+				+ "}";
+		
 		
 		int n = 30;
 		int p = 5;
@@ -228,6 +238,7 @@ public class YARF extends Classifier implements Serializable {
 			cscript.eval(nashorn_js_engine.getBindings(ScriptContext.ENGINE_SCOPE));
 		} catch (ScriptException e) {
 			e.printStackTrace();
+			System.exit(0);
 		}
         return (Invocable)cscript.getEngine();
 	}
@@ -240,6 +251,7 @@ public class YARF extends Classifier implements Serializable {
 			return  (int[]) mtry_fun.invokeFunction("tryVars", node);
 		} catch (NoSuchMethodException | ScriptException e) {
 			e.printStackTrace();
+			System.exit(0);
 		}
 		return null;
 	}
@@ -252,6 +264,7 @@ public class YARF extends Classifier implements Serializable {
 			return (boolean)make_node_into_leaf_fun.invokeFunction("makeNodeIntoLeaf", node);
 		} catch (NoSuchMethodException | ScriptException e) {
 			e.printStackTrace();
+			System.exit(0);
 		}
 		return false;
 	}
@@ -264,6 +277,7 @@ public class YARF extends Classifier implements Serializable {
 			return (double)cost_single_node_calc_fun.invokeFunction("nodeCost", node);
 		} catch (NoSuchMethodException | ScriptException e) {
 			e.printStackTrace();
+			System.exit(0);
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
@@ -276,6 +290,7 @@ public class YARF extends Classifier implements Serializable {
 			return (double)cost_both_children_calc_fun.invokeFunction("splitCost", leftNode, rightNode);
 		} catch (NoSuchMethodException | ScriptException e) {
 			e.printStackTrace();
+			System.exit(0);
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
@@ -288,6 +303,7 @@ public class YARF extends Classifier implements Serializable {
 			return (double)node_assignment_fun.invokeFunction("assignYhatToNode", node);
 		} catch (NoSuchMethodException | ScriptException e) {
 			e.printStackTrace();
+			System.exit(0);
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
@@ -300,6 +316,7 @@ public class YARF extends Classifier implements Serializable {
 			return (double)aggregation_fun.invokeFunction("aggregateYhatsIntoOneYhat", y_hat_trees);
 		} catch (NoSuchMethodException | ScriptException e) {
 			e.printStackTrace();
+			System.exit(0);
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
