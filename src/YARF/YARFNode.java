@@ -80,6 +80,21 @@ public class YARFNode implements Cloneable {
 			depth = parent.depth + 1;
 		}
 	}
+	
+	public void assignYHat() {
+		//System.out.println("assignYHat");
+		if (tree.yarf.customFunctionNodeAssignment()){
+			System.out.println("yarf.customFunctionNodeAssignment");
+			y_pred = tree.yarf.runNodeAssignment(this);
+		}
+		else {
+			//no need to assign for a regression... it was done in the cost function
+			//and for a classification, it's just the modal value among the y's
+			if (!tree.yarf.is_a_regression){
+				y_pred = StatToolbox.sample_mode(node_ys());
+			}
+		}
+	}
 
 	/**
 	 * Evaluate a record recursively accounting for split rules and the presence of missing data

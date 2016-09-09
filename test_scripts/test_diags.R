@@ -134,48 +134,36 @@ gc()
 
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
-set_YARF_num_cores(2)
+set_YARF_num_cores(1)
 library(MASS)
 data(Boston)
 
 X = Boston[, 1 : 13]
 y = Boston[, 14]
 
-node_assign_fun = " 
-	function assignYhatToNode(node){
-	  var ys = node.node_ys;
-	  var avg = 0;
-	  for (i = 0; i < ys.length; i++){
-	    avg += ys[i];
-	  }
-	  return avg / ys.length + 0.0;
-	}"
+library(readr)
+node_assign_script = read_file("scr01.js")
 
-yarf_mod = YARF(X, y, num_trees = 500, node_assign_fun = node_assign_fun)
+yarf_mod = YARF(X, y, num_trees = 500, 
+                node_assign_script = node_assign_script)
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
+predict(yarf_mod, X)
 #note same results
 
 #now let's get funky and do median
 
-node_assign_fun = " 
-	function assignYhatToNode(node){
-	    var ys = node.node_ys;
-	    ys.sort(function(a,b) {return a - b;});
-	    var half = Math.floor(ys / 2);
-	    if (ys % 2)
-	      return ys[half];
-	    else
-	      return (ys[half - 1] + ys[half]) / 2.0;
-	}"
+node_assign_script = read_file("scr02.js")
+node_assign_script = gsub("\\s", "", node_assign_script) 
+node_assign_script
 
-yarf_mod = YARF(X, y, num_trees = 500, node_assign_fun = node_assign_fun)
+yarf_mod = YARF(X, y, num_trees = 500, node_assign_script = node_assign_script)
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
 #same results
 
 #now let's go even crazier... let's aggregate across the tree predictions by median
-aggregation_fun = " 
+aggregation_script = " 
 	function aggregateYhatsIntoOneYhat(y_hat_trees){
 		y_hat_trees.sort(function(a,b) {return a - b;});
 		var half = Math.floor(y_hat_trees / 2);
@@ -186,7 +174,8 @@ aggregation_fun = "
 	}"
 
 
-yarf_mod = YARF(X, y, num_trees = 500, node_assign_fun = node_assign_fun, aggregation_fun = aggregation_fun)
+yarf_mod = YARF(X, y, num_trees = 500, 
+                node_assign_script = node_assign_script, aggregation_script = aggregation_script)
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
 

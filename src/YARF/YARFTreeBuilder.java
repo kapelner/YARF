@@ -25,7 +25,7 @@ public class YARFTreeBuilder {
 		//if this node is too small (or whatever other reason), ditch from splitting and make it a leaf
 		if (makeNodeLeaf(node)){
 			node.is_leaf = true;
-			assignYHat(node);
+			node.assignYHat();
 			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return; //ditch... because we're done...
 		}
@@ -125,7 +125,7 @@ public class YARFTreeBuilder {
 		if (lowest_total_split_cost >= node.cost){
 			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));}
 			node.is_leaf = true;
-			assignYHat(node);
+			node.assignYHat();
 			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return;
 		}
@@ -185,21 +185,6 @@ public class YARFTreeBuilder {
 			}
 		}
 		//System.out.println("computeNodeCost node " + node + " cost = " + node.cost + " pred = " + node.y_pred + " size = " + node.nodeSize());
-	}
-
-	private void assignYHat(YARFNode node) {
-		//System.out.println("assignYHat");
-		if (yarf.customFunctionNodeAssignment()){
-			//System.out.println("yarf.customFunctionNodeAssignment");
-			node.y_pred = yarf.runNodeAssignment(node);
-		}
-		else {
-			//no need to assign for a regression... it was done in the cost function
-			//and for a classification, it's just the modal value among the y's
-			if (!yarf.is_a_regression){
-				node.y_pred = StatToolbox.sample_mode(node.node_ys());
-			}
-		}
 	}
 
 	private boolean makeNodeLeaf(YARFNode node) {

@@ -21,6 +21,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.math3.stat.StatUtils;
 
@@ -105,19 +106,22 @@ public class YARF extends Classifier implements Serializable {
 		yarf.setNumTrees(1);
 		yarf.setNodesize(2);
 		yarf.setPredType("classification");
-		yarf.node_assignment_function_str = "" 
+		yarf.setNode_assignment_function_str("" 
 				+ "function assignYhatToNode(node){"
-				+ "  var ys = node.node_ys;"
+				+ "  var ys = Java.from(node.node_ys());"
 				+ "  var avg = 0;"
 				+ "  for (i = 0; i < ys.length; i++){"
 				+ "    avg += ys[i];"
 				+ "  }"
 				+ "  return avg / ys.length;"
-				+ "}";
+				+ "}");
 		
 		yarf.cost_single_node_calc_function_str = ""
 				+ "function nodeCost(node){"
-				+ "	var ys = node.node_ys;"
+				+ "  node.assignYHat();"
+				+ "	var ys = Java.from(node.node_ys());"
+				+ "  print('ys l'); print(ys.length); print(ys);"
+				+ "  print('y_pred'); print(node.y_pred);"
 				+ "	var sae = 0.0;"
 				+ "	for (i = 0; i < ys.length; i++){"
 				+ "		sae += Math.abs(ys[i] - node.y_pred);"
@@ -329,13 +333,17 @@ public class YARF extends Classifier implements Serializable {
 	public static final String AssignYhatToNodeScriptFunctionName = "assignYhatToNode";
 	public double runNodeAssignment(YARFNode node){
 		if (node_assignment_fun == null){
-			node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_function_str, AssignYhatToNodeScriptFunctionName);	
+			node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_function_str, AssignYhatToNodeScriptFunctionName);
+			System.out.println("compile node_assignment_function_str:\n" + node_assignment_function_str + "\n======");
 		}
 		try {
-			return (double)node_assignment_fun.invokeFunction(AssignYhatToNodeScriptFunctionName, node);
+			Object obj = node_assignment_fun.invokeFunction(AssignYhatToNodeScriptFunctionName, node);
+			System.out.println("runNodeAssignment: " + obj);
+			return (double)obj;
 		} catch (NoSuchMethodException e) {
 			StopBuilding();
 			System.err.println("Your node assign script must include the function \"" + AssignYhatToNodeScriptFunctionName + "(node)\" and return the node assignment (the predicted yhat) as a double.");
+			System.err.println("node_assignment_function_str:\n" + node_assignment_function_str);
 			e.printStackTrace();
 		} catch (ScriptException e) {
 			StopBuilding();
@@ -871,7 +879,20 @@ public class YARF extends Classifier implements Serializable {
 	}
 
 	public void setNode_assignment_function_str(String node_assignment_function_str) {
+//		System.err.println("boom");
+		
 		this.node_assignment_function_str = node_assignment_function_str;
+//		System.out.println("from R:\n" + DatatypeConverter.printHexBinary(node_assignment_function_str.getBytes()) );
+//		this.node_assignment_function_str = "" 
+//				+ "function assignYhatToNode(node){"
+//				+ "  var ys = node.node_ys;"
+//				+ "  var avg = 0;"
+//				+ "  for (i = 0; i < ys.length; i++){"
+//				+ "    avg += ys[i];"
+//				+ "  }"
+//				+ "  return avg / ys.length;"
+//				+ "}";
+//		System.out.println("from J:\n" + DatatypeConverter.printHexBinary(node_assignment_function_str.getBytes()));
 	}
 	
 	public long getCompletionTime(){
