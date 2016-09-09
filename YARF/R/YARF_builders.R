@@ -12,30 +12,31 @@
 #' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
 #' 											the out-of-box RF default which is floor(p / 3) for regression and for classification,
 #' 											floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter. 
-#' @param mtry_fun							If you wish to create a custom number of mtry, pass in javascript code here as a string.
+#' @param mtry_script						If you wish to create a custom number of mtry, pass in javascript code here as a string.
 #' @param nodesize							The minimum number of observations in a node. YARF will stop splitting at this point.
 #' 											If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
 #' 											will be used.
-#' @param nodesize_fun						A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
+#' @param nodesize_script					A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
 #' 											nodesize will be calculated as a static constant (see the \code{nodesize} argument).				
-#' @param cost_single_node_calc_fun			A custom cost calculation for a potential node (when considering a split) in Javascript. 
+#' @param cost_single_node_calc_script		A custom cost calculation for a potential node (when considering a split) in Javascript. 
 #' 											The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
 #' 											to the sample average (if regression) and sum of entropy (if classification). You may find it 
 #' 											convenient to also made a node assignment here. If so, make sure you specify the node assignment
 #' 											function as a blank function (not \code{NULL}).
-#' @param cost_both_children_calc_fun		A custom cost calculation for an entire split considering both the putative left and right children
+#' @param cost_both_children_calc_script	A custom cost calculation for an entire split considering both the putative left and right children
 #' 											nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
 #' 											sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
 #' 											to the number of observations in each node).
 #' 
 #' 											which defaults to sum of squared error for regression or sum of entropy for classification.							 
-#' @param node_assign_fun					A custom node assignment function in Javascript. This function is run after RF greedily finds the 
+#' @param node_assign_script				A custom node assignment function in Javascript. This function is run after RF greedily finds the 
 #' 											"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
 #' 											in regression or the modal class during classification. 
-#' @param aggregation_fun					A custom javascript function which aggregates the predictions in the trees for one observations 
+#' @param aggregation_script				A custom javascript function which aggregates the predictions in the trees for one observations 
 #' 											into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
 #' 											regression and the modal category for classification.
-#' @param shared_functions					Custom Javascript functions that are always around. The default is \code{NULL} for no shared functions. 
+#' @param shared_scripts					Custom Javascript code that are always in scope when running all your custom methods. 
+#' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 #' 											default is \code{TRUE}.	
 #' @param covariates_to_permute 			Indices of features to randomly permute when creating a YARF. The default is \code{NULL}
@@ -61,20 +62,15 @@ YARF = function(
 		num_trees = 500,
 		#customizable bootstrap
 		boostrap_indices = NULL, #if you want to write your own bootstrapper for the trees, send a n x T matrix of indices here
-		#mtry or a custom function
 		mtry = NULL,
-		mtry_fun = NULL,
-		#nodesize or a custom function
 		nodesize = NULL,
-		nodesize_fun = NULL,
-		#a custom fuction for the cost calculation
-		cost_calc_fun = NULL,
-		#a custom function for the cost calculation
-		node_assign_fun = NULL,
-		#a custom function for aggregating results of trees
-		aggregation_fun = NULL,
-		#any helper code which will be accessible to code above
-		shared_funs = NULL, 
+		#all custom scripts/function
+		mtry_script = NULL,
+		nodesize_script = NULL,
+		cost_single_node_calc_script = NULL,
+		node_assign_script = NULL,
+		aggregation_script = NULL,
+		shared_scripts = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = TRUE,
 		replace_missing_data_with_x_j_bar = FALSE,
@@ -95,41 +91,41 @@ YARF = function(
 		stop("The 'num_trees' argument is not a positive integer.")
 	}
 	
-	if (!is.null(mtry_fun)){
-		if (class(mtry_fun) != "character"){
-			stop("'mtry_function' must be a character string of Javascript code")
+	if (!is.null(mtry_script)){
+		if (class(mtry_script) != "character"){
+			stop("'mtry_script' must be a character string of Javascript code")
 		}
 	}
 	
-	if (!is.null(nodesize_fun)){
-		if (class(nodesize_fun) != "character"){
-			stop("'nodesize' must be a character string of Javascript code")
+	if (!is.null(nodesize_script)){
+		if (class(nodesize_script) != "character"){
+			stop("'nodesize_script' must be a character string of Javascript code")
 		}
 	}
 	
-	if (!is.null(cost_calc_fun)){
-		if (class(cost_calc_fun) != "character"){
-			stop("'cost_calc_fun' must be a character string of Javascript code")
+	if (!is.null(cost_single_node_calc_script)){
+		if (class(cost_single_node_calc_script) != "character"){
+			stop("'cost_single_node_calc_script' must be a character string of Javascript code")
 		}
 	}
 	
-	if (!is.null(node_assign_fun)){
-		if (class(node_assign_fun) != "character"){
-			stop("'node_assign_fun' must be a character string of Javascript code")
+	if (!is.null(node_assign_script)){
+		if (class(node_assign_script) != "character"){
+			stop("'node_assign_script' must be a character string of Javascript code")
 		}
 	}
 	
-	if (!is.null(aggregation_fun)){
-		if (class(aggregation_fun) != "character"){
-			stop("'aggregation_fun' must be a character string of Javascript code")
+	if (!is.null(aggregation_script)){
+		if (class(aggregation_script) != "character"){
+			stop("'aggregation_script' must be a character string of Javascript code")
 		}
 	}
 	
 	
 	
-	if (!is.null(shared_funs)){
-		if (class(shared_funs) != "character"){
-			stop("'shared_funs' must be a character string of Javascript code")
+	if (!is.null(shared_scripts)){
+		if (class(shared_scripts) != "character"){
+			stop("'shared_scripts' must be a character string of Javascript code")
 		}
 	}
 	
@@ -327,29 +323,29 @@ YARF = function(
 	#now load data and/or scripts
 	if (!is.null(mtry)){
 		.jcall(java_YARF, "V", "setMTry", as.integer(mtry))
-	} else if (!is.null(mtry_fun)) {
-		.jcall(java_YARF, "V", "setMtry_function_str", mtry_fun)
+	} else if (!is.null(mtry_script)) {
+		.jcall(java_YARF, "V", "setMtry_function_str", mtry_script)
 	}
 	if (!is.null(nodesize)){
 		.jcall(java_YARF, "V", "setNodesize", as.integer(nodesize))
-	} else if (!is.null(nodesize_fun)) {
-		.jcall(java_YARF, "V", "setNodesizeFunction", nodesize_fun)
+	} else if (!is.null(nodesize_script)) {
+		.jcall(java_YARF, "V", "setNodesizeFunction", nodesize_script)
 	}
 	
-	if (!is.null(cost_calc_fun)){
-		.jcall(java_YARF, "V", "setCost_single_node_calc_function_str", cost_calc_fun)
+	if (!is.null(cost_single_node_calc_script)){
+		.jcall(java_YARF, "V", "setCost_single_node_calc_function_str", cost_single_node_calc_script)
 	}
 	
-	if (!is.null(node_assign_fun)){
-		.jcall(java_YARF, "V", "setNode_assignment_function_str", node_assign_fun)
+	if (!is.null(node_assign_script)){
+		.jcall(java_YARF, "V", "setNode_assignment_function_str", node_assign_script)
 	}
 	
-	if (!is.null(aggregation_fun)){
-		.jcall(java_YARF, "V", "setAggregation_function_str", aggregation_fun)
+	if (!is.null(aggregation_script)){
+		.jcall(java_YARF, "V", "setAggregation_function_str", aggregation_script)
 	}
 	
-	if (!is.null(shared_funs)){
-		.jcall(java_YARF, "V", "setShared_functions_str", shared_funs)
+	if (!is.null(shared_scripts)){
+		.jcall(java_YARF, "V", "setShared_scripts_str", shared_scripts)
 	}
 	
 	if (!is.null(seed)){
@@ -410,13 +406,13 @@ YARF = function(
 		num_trees = num_trees,
 		bootstrap_indices = bootstrap_indices, 
 		mtry = mtry,
-		mtry_fun = mtry_fun,
+		mtry_fun = mtry_script,
 		nodesize = nodesize,
-		nodesize_fun = nodesize_fun,
-		cost_calc_fun = cost_calc_fun,
-		node_assign_fun = node_assign_fun,
-		aggregation_fun = aggregation_fun,
-		shared_funs = shared_funs, 
+		nodesize_fun = nodesize_script,
+		cost_calc_fun = cost_single_node_calc_script,
+		node_assign_fun = node_assign_script,
+		aggregation_fun = aggregation_script,
+		shared_scripts = shared_scripts, 
 		use_missing_data = use_missing_data,
 		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
 		mem_cache_for_speed = mem_cache_for_speed,

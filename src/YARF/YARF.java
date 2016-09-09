@@ -70,7 +70,7 @@ public class YARF extends Classifier implements Serializable {
 	protected transient int[] indices_one_to_p_min_1;
 	
 	//all custom scripts
-	private String shared_functions_str;
+	private String shared_scripts_str;
 	private String mtry_function_str;
 	private String make_node_into_leaf_function_str;
 	private String cost_single_node_calc_function_str;
@@ -222,7 +222,7 @@ public class YARF extends Classifier implements Serializable {
 		this.nodesize = nodesize;
 	}
 	
-	private Invocable stringToInvokableCompiledFunction(String fun) {
+	private Invocable stringToInvokableCompiledFunction(String script_as_string, String function_name) {
         //lazy load for this stuff for serialization to work properly
 		if (nashorn_js_engine == null){
 			nashorn_js_engine = new ScriptEngineManager().getEngineByName("nashorn");
@@ -231,92 +231,135 @@ public class YARF extends Classifier implements Serializable {
 			compilingEngine = (Compilable) nashorn_js_engine;
 		}
 		
-		String fun_and_shared_libraries = fun + "\n\n" + shared_functions_str;
+		String fun_and_shared_libraries = script_as_string + "\n\n" + shared_scripts_str;
 		CompiledScript cscript = null;
 		try {
 			cscript = compilingEngine.compile(fun_and_shared_libraries);
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem compiling the script with the \"" + function_name + "\" function:");
+			e.printStackTrace();
+		}
+		try {
 			cscript.eval(nashorn_js_engine.getBindings(ScriptContext.ENGINE_SCOPE));
 		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem adding the scope to the script with the \"" + function_name + "\" function:");
 			e.printStackTrace();
-			System.exit(0);
 		}
         return (Invocable)cscript.getEngine();
 	}
 	
+	public static final String MTryScriptFunctionName = "tryVars";
 	public int[] runMtry(YARFNode node){
 		if (mtry_fun == null){
-			mtry_fun = stringToInvokableCompiledFunction(mtry_function_str);	
+			mtry_fun = stringToInvokableCompiledFunction(mtry_function_str, MTryScriptFunctionName);	
 		}
 		try {
-			return  (int[]) mtry_fun.invokeFunction("tryVars", node);
-		} catch (NoSuchMethodException | ScriptException e) {
+			return  (int[]) mtry_fun.invokeFunction(MTryScriptFunctionName, node);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your mtry script must include the function \"" + MTryScriptFunctionName + "(node)\" and return an array of integers.");
 			e.printStackTrace();
-			System.exit(0);
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + MTryScriptFunctionName + "\" function:");
+			e.printStackTrace();		
 		}
 		return null;
 	}
 	
+	public static final String NodesizeLegalScriptFunctionName = "makeNodeIntoLeaf";
 	public boolean runNodesizeLegal(YARFNode node){
 		if (make_node_into_leaf_fun == null){
-			make_node_into_leaf_fun = stringToInvokableCompiledFunction(make_node_into_leaf_function_str);	
+			make_node_into_leaf_fun = stringToInvokableCompiledFunction(make_node_into_leaf_function_str, NodesizeLegalScriptFunctionName);	
 		}
 		try {
-			return (boolean)make_node_into_leaf_fun.invokeFunction("makeNodeIntoLeaf", node);
-		} catch (NoSuchMethodException | ScriptException e) {
+			return (boolean)make_node_into_leaf_fun.invokeFunction(NodesizeLegalScriptFunctionName, node);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your nodesize legal script must include the function \"" + NodesizeLegalScriptFunctionName + "(node)\" and return a boolean where true means the node under consideration is legal.");
 			e.printStackTrace();
-			System.exit(0);
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + NodesizeLegalScriptFunctionName + "\" function:");
+			e.printStackTrace();		
 		}
 		return false;
 	}
 	
+	public static final String SingleNodeCostScriptFunctionName = "nodeCost";
 	public double runSingleNodeCost(YARFNode node){
 		if (cost_single_node_calc_fun == null){
-			cost_single_node_calc_fun = stringToInvokableCompiledFunction(cost_single_node_calc_function_str);	
+			cost_single_node_calc_fun = stringToInvokableCompiledFunction(cost_single_node_calc_function_str, SingleNodeCostScriptFunctionName);	
 		}
 		try {
-			return (double)cost_single_node_calc_fun.invokeFunction("nodeCost", node);
-		} catch (NoSuchMethodException | ScriptException e) {
+			return (double)cost_single_node_calc_fun.invokeFunction(SingleNodeCostScriptFunctionName, node);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your node cost script must include the function \"" + SingleNodeCostScriptFunctionName + "(node)\" and return the cost as a double.");
 			e.printStackTrace();
-			System.exit(0);
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + SingleNodeCostScriptFunctionName + "\" function:");
+			e.printStackTrace();		
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
 	
+	public static final String TotalNodeCostScriptFunctionName = "totalChildrenCost";	
 	public double runBothChildrenCost(YARFNode leftNode, YARFNode rightNode){
 		if (cost_both_children_calc_fun == null){
-			cost_both_children_calc_fun = stringToInvokableCompiledFunction(cost_both_children_calc_function_str);	
+			cost_both_children_calc_fun = stringToInvokableCompiledFunction(cost_both_children_calc_function_str, TotalNodeCostScriptFunctionName);	
 		}
 		try {
 			return (double)cost_both_children_calc_fun.invokeFunction("splitCost", leftNode, rightNode);
-		} catch (NoSuchMethodException | ScriptException e) {
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your total cost script must include the function \"" + TotalNodeCostScriptFunctionName + "(leftNode, rightNode)\" and return the total cost of both nodes as a double.");
 			e.printStackTrace();
-			System.exit(0);
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + TotalNodeCostScriptFunctionName + "\" function:");
+			e.printStackTrace();		
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
 	
+	public static final String AssignYhatToNodeScriptFunctionName = "assignYhatToNode";
 	public double runNodeAssignment(YARFNode node){
 		if (node_assignment_fun == null){
-			node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_function_str);	
+			node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_function_str, AssignYhatToNodeScriptFunctionName);	
 		}
 		try {
-			return (double)node_assignment_fun.invokeFunction("assignYhatToNode", node);
-		} catch (NoSuchMethodException | ScriptException e) {
+			return (double)node_assignment_fun.invokeFunction(AssignYhatToNodeScriptFunctionName, node);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your node assign script must include the function \"" + AssignYhatToNodeScriptFunctionName + "(node)\" and return the node assignment (the predicted yhat) as a double.");
 			e.printStackTrace();
-			System.exit(0);
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + AssignYhatToNodeScriptFunctionName + "\" function:");
+			e.printStackTrace();		
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
 	
-	public double runAggregation(double[] y_hat_trees){
+	public static final String AggregationScriptFunctionName = "aggregateYhatsIntoOneYhat";
+	public double runAggregation(double[] y_hats){
 		if (aggregation_fun == null){
-			aggregation_fun = stringToInvokableCompiledFunction(aggregation_function_str);	
+			aggregation_fun = stringToInvokableCompiledFunction(aggregation_function_str, AggregationScriptFunctionName);	
 		}
 		try {
-			return (double)aggregation_fun.invokeFunction("aggregateYhatsIntoOneYhat", y_hat_trees);
-		} catch (NoSuchMethodException | ScriptException e) {
+			return (double)aggregation_fun.invokeFunction(AggregationScriptFunctionName, y_hats, yarf_trees);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your aggregation script must include the function \"" + AggregationScriptFunctionName + "(y_hats, yarf_trees)\" and return the aggregated prediction as a double.");
 			e.printStackTrace();
-			System.exit(0);
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + AggregationScriptFunctionName + "\" function:");
+			e.printStackTrace();		
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
@@ -773,12 +816,12 @@ public class YARF extends Classifier implements Serializable {
 		this.wait = wait;
 	}
 
-	public String getShared_functions_str() {
-		return shared_functions_str;
+	public String getShared_scripts_str() {
+		return shared_scripts_str;
 	}
 
-	public void setShared_functions_str(String shared_functions_str) {
-		this.shared_functions_str = shared_functions_str;
+	public void setShared_scripts_str(String shared_scripts_str) {
+		this.shared_scripts_str = shared_scripts_str;
 	}
 
 	public String getMtry_function_str() {
