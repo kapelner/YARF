@@ -132,22 +132,17 @@ gc()
 #with the regular node assignment for regression: the average
 
 
-options(java.parameters = c("-Xmx4000m"))
-library(YARF)
-set_YARF_num_cores(1)
-library(MASS)
-data(Boston)
-
-X = Boston[, 1 : 13]
-y = Boston[, 14]
-
+options(java.parameters = c("-Xmx4000m")); library(YARF); library(MASS); data(Boston)
+X = Boston[, 1 : 13]; y = Boston[, 14]
 library(readr)
 
 #load the node assign as the median value
 node_assign_script = read_file("scr02.js")
+shared_scripts = read_file("scr04.js")
 
-yarf_mod = YARF(X, y, num_trees = 500, 
-                node_assign_script = node_assign_script)
+yarf_mod = YARF(X, y, num_trees = 1, 
+                node_assign_script = node_assign_script,
+                shared_scripts = shared_scripts)
 YARF_update_with_oob_results(yarf_mod)
 #vanilla RF
 yarf_mod = YARF(X, y, num_trees = 500)
@@ -161,7 +156,8 @@ YARF_update_with_oob_results(yarf_mod)
 cost_single_node_calc_script = read_file("scr03.js")
 
 
-yarf_mod = YARF(X, y, num_trees = 500,
+yarf_mod = YARF(X, y, num_trees = 1,
+                node_assign_script = node_assign_script,
                 cost_single_node_calc_script = cost_single_node_calc_script)
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)

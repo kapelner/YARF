@@ -37,7 +37,7 @@ public class YARF extends Classifier implements Serializable {
 	private static final long serialVersionUID = -6984205353140981153L;
 
 	/** debug mode -- prints lots of messages that are useful */
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 	
 	/** the number of CPU cores to build many different trees in a YARF model */
 	protected int num_cores;
@@ -113,21 +113,29 @@ public class YARF extends Classifier implements Serializable {
 				+ "  for (i = 0; i < ys.length; i++){"
 				+ "    avg += ys[i];"
 				+ "  }"
-				+ "  return avg / ys.length;"
+				+ "  return sample_avg(ys);"
+				+ "}");
+		yarf.setShared_scripts_str(""
+				+ "function sample_avg(arr){print('in sample avg');"
+				+ "	var sum = 0.0;"
+				+ "	for (i = 0; i < arr.length; i++){"
+				+ " 	sum += arr[i];"
+				+ " }"
+				+ "	return sum / arr.length;"
 				+ "}");
 		
-		yarf.cost_single_node_calc_function_str = ""
-				+ "function nodeCost(node){"
-				+ "  node.assignYHat();"
-				+ "	var ys = Java.from(node.node_ys());"
-				+ "  print('ys l'); print(ys.length); print(ys);"
-				+ "  print('y_pred'); print(node.y_pred);"
-				+ "	var sae = 0.0;"
-				+ "	for (i = 0; i < ys.length; i++){"
-				+ "		sae += Math.abs(ys[i] - node.y_pred);"
-				+ "	}"
-				+ "return sae;"
-				+ "}";
+//		yarf.cost_single_node_calc_function_str = ""
+//				+ "function nodeCost(node){"
+//				+ "  node.assignYHat();"
+//				+ "	var ys = Java.from(node.node_ys());"
+//				+ "  print('ys l'); print(ys.length); print(ys);"
+//				+ "  print('y_pred'); print(node.y_pred);"
+//				+ "	var sae = 0.0;"
+//				+ "	for (i = 0; i < ys.length; i++){"
+//				+ "		sae += Math.abs(ys[i] - node.y_pred);"
+//				+ "	}"
+//				+ "return sae;"
+//				+ "}";
 		
 		
 		int n = 30;
@@ -227,6 +235,7 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	private Invocable stringToInvokableCompiledFunction(String script_as_string, String function_name) {
+
         //lazy load for this stuff for serialization to work properly
 		if (nashorn_js_engine == null){
 			nashorn_js_engine = new ScriptEngineManager().getEngineByName("nashorn");
@@ -234,11 +243,18 @@ public class YARF extends Classifier implements Serializable {
 		if (compilingEngine == null){
 			compilingEngine = (Compilable) nashorn_js_engine;
 		}
+		try { //try the shared scripts first so if it fails... the user knows where to look
+			compilingEngine.compile(shared_scripts_str);
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem compiling the shared script:");
+			e.printStackTrace();
+		}
 		
-		String fun_and_shared_libraries = script_as_string + "\n\n" + shared_scripts_str;
+//		System.err.println("script_as_string \n" + function_name);
 		CompiledScript cscript = null;
 		try {
-			cscript = compilingEngine.compile(fun_and_shared_libraries);
+			cscript = compilingEngine.compile(script_as_string + shared_scripts_str);
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem compiling the script with the \"" + function_name + "\" function:");
@@ -597,7 +613,12 @@ public class YARF extends Classifier implements Serializable {
 			final int i_f = i;
 			tree_eval_pool.execute(new Runnable(){
 				public void run() {
-					y_hats[i_f] = Evaluate(records[i_f]);
+					try {
+						y_hats[i_f] = Evaluate(records[i_f]);
+					} catch (ArrayIndexOutOfBoundsException e){
+						tree_eval_pool.shutdownNow();
+						e.printStackTrace();
+					}
 				}
 			});
 		}
