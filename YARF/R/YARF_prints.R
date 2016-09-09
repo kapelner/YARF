@@ -13,7 +13,7 @@ summary.YARF = function(object, ...){
 	}
 	n = object$n
 	#first print out characteristics of the training data
-	cat(paste("training data n =", n, "and p =", object$p, "\n"))
+	cat(paste(object$num_trees, "trees,", "training data n =", n, "and p =", object$p, "\n"))
 	
 	progress_report = YARF_progress(object, console_message = FALSE)
 	

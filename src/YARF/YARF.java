@@ -37,7 +37,7 @@ public class YARF extends Classifier implements Serializable {
 	private static final long serialVersionUID = -6984205353140981153L;
 
 	/** debug mode -- prints lots of messages that are useful */
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
 	
 	/** the number of CPU cores to build many different trees in a YARF model */
 	protected int num_cores;
@@ -334,7 +334,7 @@ public class YARF extends Classifier implements Serializable {
 	public double runNodeAssignment(YARFNode node){
 		if (node_assignment_fun == null){
 			node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_function_str, AssignYhatToNodeScriptFunctionName);
-			System.out.println("compile node_assignment_function_str:\n" + node_assignment_function_str + "\n======");
+			//System.out.println("compile node_assignment_function_str:\n" + node_assignment_function_str + "\n======");
 		}
 		try {
 			return (double)node_assignment_fun.invokeFunction(AssignYhatToNodeScriptFunctionName, node);

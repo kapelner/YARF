@@ -1,9 +1,16 @@
 function assignYhatToNode(node){
-    var ys = node.node_ys;
-    ys.sort(function(a, b) {return a - b;});
-    var half = Math.floor(ys / 2);
-    if (ys % 2)
-      return ys[half];
+    return median(Java.from(node.node_ys()));
+}
+
+function median(arr){
+    arr.sort(function(a, b) {return a - b;});
+    var half = Math.floor(arr.length / 2);
+    if (arr.length % 2)
+      median = arr[half];
     else
-      return (ys[half - 1] + ys[half]) / 2.0;
+      median = (arr[half - 1] + arr[half]) / 2.0;
+    //print("arr: ", arr)
+    //print("half: ", half)
+    //print("median: ", median)
+    return median; 
 }

@@ -142,14 +142,29 @@ X = Boston[, 1 : 13]
 y = Boston[, 14]
 
 library(readr)
-node_assign_script = read_file("scr01.js")
+
+#load the node assign as the median value
+node_assign_script = read_file("scr02.js")
 
 yarf_mod = YARF(X, y, num_trees = 500, 
                 node_assign_script = node_assign_script)
+YARF_update_with_oob_results(yarf_mod)
+#vanilla RF
+yarf_mod = YARF(X, y, num_trees = 500)
+YARF_update_with_oob_results(yarf_mod)
+#note same results
+
+
+#predict(yarf_mod, X)
+
+#now let's go even crazier... let's make the cost function sum of absolute errors (instead of squared errors)
+cost_single_node_calc_script = read_file("scr03.js")
+
+
+yarf_mod = YARF(X, y, num_trees = 500,
+                cost_single_node_calc_script = cost_single_node_calc_script)
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
-predict(yarf_mod, X)
-#note same results
 
 #now let's get funky and do median
 
@@ -179,19 +194,5 @@ yarf_mod = YARF(X, y, num_trees = 500,
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
 
-#now let's go even crazier... let's make the cost function sum of absolute errors (instead of squared errors)
-cost_calc_fun = " 
-	function nodeCost(node){
-		var ys = node.node_ys;
-	  	var sae = 0.0;
-	  	for (i = 0; i < ys.length; i++){
-	    	sae += Math.abs(ys[i] - node.y_pred);
-	  	}
-	  	return sae;
-	}"
 
-
-yarf_mod = YARF(X, y, num_trees = 500, node_assign_fun = node_assign_fun, cost_calc_fun = cost_calc_fun)
-yarf_mod
-YARF_update_with_oob_results(yarf_mod)
 
