@@ -84,7 +84,7 @@ public class YARFNode implements Cloneable {
 	public void assignYHat() {
 		//System.out.println("assignYHat");
 		if (tree.yarf.customFunctionNodeAssignment()){
-			System.out.println("yarf.customFunctionNodeAssignment");
+			//System.out.println("yarf.customFunctionNodeAssignment");
 			y_pred = tree.yarf.runNodeAssignment(this);
 		}
 		else {

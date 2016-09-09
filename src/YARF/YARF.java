@@ -337,9 +337,7 @@ public class YARF extends Classifier implements Serializable {
 			System.out.println("compile node_assignment_function_str:\n" + node_assignment_function_str + "\n======");
 		}
 		try {
-			Object obj = node_assignment_fun.invokeFunction(AssignYhatToNodeScriptFunctionName, node);
-			System.out.println("runNodeAssignment: " + obj);
-			return (double)obj;
+			return (double)node_assignment_fun.invokeFunction(AssignYhatToNodeScriptFunctionName, node);
 		} catch (NoSuchMethodException e) {
 			StopBuilding();
 			System.err.println("Your node assign script must include the function \"" + AssignYhatToNodeScriptFunctionName + "(node)\" and return the node assignment (the predicted yhat) as a double.");
