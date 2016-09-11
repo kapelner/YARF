@@ -177,8 +177,7 @@ public class YARFTreeBuilder {
 		else {
 			double[] ys = node.node_ys();
 			if (yarf.is_a_regression){ //the cost is the SSE (across both the left and right)
-				node.y_pred = StatToolbox.sample_average(ys); //set it here for convenience
-				node.cost = StatToolbox.sample_sum_sq_err(ys, node.y_pred);
+				node.cost = StatToolbox.sample_sum_sq_err(ys, StatToolbox.sample_average(ys));
 			}
 			else { //it's a classification - the "cost" is the negative entropy which is the negative of the gain...
 				node.cost = StatToolbox.natural_negative_entropy(ys);

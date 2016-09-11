@@ -140,7 +140,7 @@ library(readr)
 node_assign_script = read_file("scr02.js")
 shared_scripts = read_file("scr04.js")
 
-yarf_mod = YARF(X, y, num_trees = 1, 
+yarf_mod = YARF(X, y, num_trees = 500, 
                 node_assign_script = node_assign_script,
                 shared_scripts = shared_scripts)
 YARF_update_with_oob_results(yarf_mod)
@@ -191,4 +191,34 @@ yarf_mod
 YARF_update_with_oob_results(yarf_mod)
 
 
+
+options(java.parameters = c("-Xmx4000m")); library(YARF)
+n = 2000
+p = 1
+
+errors = rcauchy(n)
+X = matrix(rnorm(n * p), nrow = n)
+beta = as.matrix(100)
+y = as.numeric(X %*% beta + errors)
+X = data.frame(X)
+plot(X[,1], y)
+
+yarf_mod = YARF(X, y, num_trees = 500, wait = FALSE)
+yarf_mod
+YARF_update_with_oob_results(yarf_mod)
+YARF_progress_reports(yarf_mod)
+
+
+library(readr)
+cost_single_node_calc_script = read_file("scr03.js")
+shared_scripts = read_file("scr04.js")
+node_assign_script = read_file("scr02.js")
+yarf_mod2 = YARF(X, y, num_trees = 500, 
+                node_assign_script = node_assign_script,
+                cost_single_node_calc_script = cost_single_node_calc_script, 
+                shared_scripts = shared_scripts,
+                wait = FALSE)
+yarf_mod2
+YARF_update_with_oob_results(yarf_mod2)
+YARF_progress_reports(yarf_mod)
 

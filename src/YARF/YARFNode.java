@@ -88,9 +88,10 @@ public class YARFNode implements Cloneable {
 			y_pred = tree.yarf.runNodeAssignment(this);
 		}
 		else {
-			//no need to assign for a regression... it was done in the cost function
-			//and for a classification, it's just the modal value among the y's
-			if (!tree.yarf.is_a_regression){
+			if (tree.yarf.is_a_regression){ //the default is the sample average
+				y_pred = StatToolbox.sample_average(node_ys());
+			}
+			else { //and for a classification, it's just the modal value among the y's
 				y_pred = StatToolbox.sample_mode(node_ys());
 			}
 		}
