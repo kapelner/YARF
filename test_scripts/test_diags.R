@@ -222,3 +222,27 @@ yarf_mod2
 YARF_update_with_oob_results(yarf_mod2)
 YARF_progress_reports(yarf_mod)
 
+
+#test construction time
+options(java.parameters = c("-Xmx4000m")); library(YARF)
+n = 2000
+p = 1
+
+errors = rcauchy(n)
+X = matrix(rnorm(n * p), nrow = n)
+beta = as.matrix(100)
+y = as.numeric(X %*% beta + errors)
+X = data.frame(X)
+
+yarf_mod = YARF(X, y, num_trees = 500)
+yarf_mod
+YARF_update_with_oob_results(yarf_mod)
+
+library(readr)
+cost_single_node_calc_script = read_file("scr05.js")
+shared_scripts = read_file("scr04.js")
+yarf_mod2 = YARF(X, y, num_trees = 500,
+                 cost_single_node_calc_script = cost_single_node_calc_script, 
+                 shared_scripts = shared_scripts)
+yarf_mod2
+YARF_update_with_oob_results(yarf_mod2)

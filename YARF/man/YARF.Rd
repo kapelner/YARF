@@ -8,10 +8,11 @@
 \usage{
 YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   allow_missingness_in_y = FALSE, num_trees = 500,
-  boostrap_indices = NULL, mtry = NULL, mtry_fun = NULL,
-  nodesize = NULL, nodesize_fun = NULL, cost_calc_fun = NULL,
-  node_assign_fun = NULL, aggregation_fun = NULL, shared_funs = NULL,
-  use_missing_data = FALSE, replace_missing_data_with_x_j_bar = TRUE,
+  boostrap_indices = NULL, mtry = NULL, nodesize = NULL,
+  mtry_script = NULL, nodesize_script = NULL,
+  cost_single_node_calc_script = NULL, node_assign_script = NULL,
+  aggregation_script = NULL, shared_scripts = NULL,
+  use_missing_data = TRUE, replace_missing_data_with_x_j_bar = FALSE,
   mem_cache_for_speed = TRUE, covariates_to_permute = NULL,
   serialize = FALSE, seed = NULL, wait = TRUE, verbose = TRUE,
   debug_log = FALSE)
@@ -37,24 +38,34 @@ The default is \code{NULL} indicating the default algorithm of sampling {1,...,n
 the out-of-box RF default which is floor(p / 3) for regression and for classification,
 floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter.}
 
-\item{mtry_fun}{If you wish to create a custom number of mtry, pass in javascript code here as a string.}
-
 \item{nodesize}{The minimum number of observations in a node. YARF will stop splitting at this point.
 If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
 will be used.}
 
-\item{nodesize_fun}{A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
+\item{mtry_script}{If you wish to create a custom number of mtry, pass in javascript code here as a string.}
+
+\item{nodesize_script}{A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
 nodesize will be calculated as a static constant (see the \code{nodesize} argument).}
 
-\item{node_assign_fun}{A custom node assignment function in Javascript. This function is run after RF greedily finds the 
+\item{cost_single_node_calc_script}{A custom cost calculation for a potential node (when considering a split) in Javascript. 
+The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
+to the sample average (if regression) and sum of entropy (if classification). You may find it 
+convenient to also made a node assignment here. If so, make sure you specify the node assignment
+function as a blank function (not \code{NULL}).}
+
+\item{node_assign_script}{A custom node assignment function in Javascript. This function is run after RF greedily finds the 
 "lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
 in regression or the modal class during classification.}
 
-\item{aggregation_fun}{A custom javascript function which aggregates the predictions in the trees for one observations 
+\item{aggregation_script}{A custom javascript function which aggregates the predictions in the trees for one observations 
 into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
 regression and the modal category for classification.}
 
-\item{use_missing_data}{Use the "missing-in-attributes" to fit data with missingness.}
+\item{shared_scripts}{Custom Javascript code that are always in scope when running all your custom methods. 
+The default is \code{NULL} for no shared scripts.}
+
+\item{use_missing_data}{Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
+default is \code{TRUE}.}
 
 \item{mem_cache_for_speed}{}
 
@@ -73,20 +84,12 @@ we will automatically serialize after other operations that add data (such as th
 
 \item{debug_log}{Should we print out messages from Java? Default is \code{FALSE}.}
 
-\item{cost_single_node_calc_fun}{A custom cost calculation for a potential node (when considering a split) in Javascript. 
-The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
-to the sample average (if regression) and sum of entropy (if classification). You may find it 
-convenient to also made a node assignment here. If so, make sure you specify the node assignment
-function as a blank function (not \code{NULL}).}
-
-\item{cost_both_children_calc_fun}{A custom cost calculation for an entire split considering both the putative left and right children
+\item{cost_both_children_calc_script}{A custom cost calculation for an entire split considering both the putative left and right children
                                             nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
                                             sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
                                             to the number of observations in each node).
 
                                             which defaults to sum of squared error for regression or sum of entropy for classification.}
-
-\item{shared_functions}{Custom Javascript functions that are always around. The default is \code{NULL} for no shared functions.}
 }
 \value{
 A list of all arguments passed in plus...
