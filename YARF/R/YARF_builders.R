@@ -432,7 +432,8 @@ YARF = function(
 		p = p,
 		model_matrix_training_data = model_matrix_training_data,
 		training_data_features = colnames(model_matrix_training_data),
-		predictors_which_are_factors = predictors_which_are_factors
+		predictors_which_are_factors = predictors_which_are_factors,
+		validation_test_indices = sample(1 : n)
 	)
 	
 	#Let's serialize the object if the user wishes
@@ -459,70 +460,6 @@ set_YARF_num_cores = function(num_cores){
 	}
 	assign("YARF_NUM_CORES", num_cores, YARF_globals)
 	cat("YARF now using", num_cores, "cores.\n")
-}
-
-#' Computes the out-of-bag (OOB) predictions for the training data. 
-#' This gives a good sense of out-of-sample performance in the future.
-#' 
-#' @param yarf_mod 							The yarf model object
-#' @param oob_metric						If regression, we will return L1, MAE, L2 and RMSE and if classification,
-#' 											we will return the confusion matrix with use/test errors and overall error rates. 
-#' 											If you wish for another metric to be computed, pass the function in here as a string of 
-#' 											javascript code. Default is \code{NULL} for no additional metric to be computed.		
-#' @return 									The OOB results
-#' 
-#' @author Adam Kapelner
-#' @export
-YARF_update_with_oob_results = function(yarf_mod, oob_metric = NULL){
-		y = yarf_mod$y
-		n = yarf_mod$n
-		#get it from java multithreaded
-		num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
-		y_oob = .jcall(yarf_mod$java_YARF, "[D", "evaluateOutOfBagEstimates", num_cores)
-		y_oob[is.nan(y_oob)] = NA
-		yarf_mod$num_oob_obs_missing = sum(is.na(y_oob))
-		
-		#return a bunch more stuff
-		if (yarf_mod$pred_type == "regression"){
-			yarf_mod$y_oob = y_oob
-			yarf_mod$residuals = y - y_oob
-			yarf_mod$L1_err_oob = sum(abs(yarf_mod$residuals), na.rm = TRUE)
-			yarf_mod$L2_err_oob = sum(yarf_mod$residuals^2, na.rm = TRUE)
-			yarf_mod$pseudo_rsq_oob = 1 - yarf_mod$L2_err_oob / sum((y - mean(y))^2)
-			yarf_mod$rmse_oob = sqrt(yarf_mod$L2_err_oob / n)
-			yarf_mod$mae_oob = yarf_mod$L1_err_oob / n
-		} else {		
-			#convert results to factor
-			yarf_mod$y_oob = factor(y_oob, labels = yarf_mod$y_levels)
-			
-			#calculate confusion matrix
-			n_levels = yarf_mod$num_y_levels
-			
-			confusion_matrix = as.data.frame(matrix(NA, nrow = n_levels + 1, ncol = n_levels + 1))
-			rownames(confusion_matrix) = c(paste("actual", yarf_mod$y_levels), "use errors")
-			colnames(confusion_matrix) = c(paste("predicted", yarf_mod$y_levels), "model errors")
-			
-			#set the confusion counts
-			confusion_matrix[1 : n_levels, 1 : n_levels] = data.matrix(table(y, y_oob, useNA = "no")) #should coerce to ints so we get rounding nicely later
-			#set all test errors
-			for (k in 1 : n_levels){
-				confusion_matrix[k, n_levels + 1] = round(1 - confusion_matrix[k, k] / sum(confusion_matrix[k, 1 : n_levels]), 3)
-			}
-			#set all use errors
-			for (k in 1 : n_levels){
-				confusion_matrix[n_levels + 1, k] = round(1 - confusion_matrix[k, k] / sum(confusion_matrix[1 : n_levels, k]), 3)
-			}
-			#set overall error
-			yarf_mod$misclassification_error = (sum(confusion_matrix[1 : n_levels, 1 : n_levels]) - sum(diag(as.matrix(confusion_matrix[1 : n_levels, 1 : n_levels])))) / n
-			confusion_matrix[n_levels + 1, n_levels + 1] = round(yarf_mod$misclassification_error, 3)
-			#return the whole thing
-			yarf_mod$confusion_matrix = confusion_matrix
-		}
-		if (yarf_mod$serialize){ #if they did it before, do it now too
-			YARF_serialize(yarf_mod)
-		}
-		#send it back
-		yarf_mod
 }
 
 #' Serializes the model so the user can use \code{save} and \code{save.image}
