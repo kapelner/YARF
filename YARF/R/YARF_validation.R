@@ -73,7 +73,7 @@ YARF_update_with_oob_results = function(yarf_mod, indices = NULL){
 #' 
 #' @param yarf_mod 							The yarf model object
 #' @param validation_proportion				The percentage of the data to use for validation data
-#' 											(and the remaining is test data). The default is 80%.
+#' 											(and the remaining is test data). The default is 80\%.
 #' 
 #' @author Adam Kapelner
 #' @export

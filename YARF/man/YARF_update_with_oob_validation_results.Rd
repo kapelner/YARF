@@ -12,7 +12,7 @@ YARF_update_with_oob_validation_results(yarf_mod, validation_proportion = 0.8)
 \item{yarf_mod}{The yarf model object}
 
 \item{validation_proportion}{The percentage of the data to use for validation data
-(and the remaining is test data). The default is 80%.}
+(and the remaining is test data). The default is 80\%.}
 }
 \description{
 Computes the out-of-bag (OOB) predictions for the validation subset of the training data. 
