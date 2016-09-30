@@ -7,7 +7,7 @@
 #' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
 #' 											handled in the custom functions, YARF will crash. Default is \code{FALSE}.
 #' @param num_trees 						The # of trees in the RF. Default is \code{500}.
-#' @param boostrap_indices 					An n x num_trees matrix of indices where each column is the bootstrap indices of the training data.
+#' @param bootstrap_indices 				An n x num_trees matrix of indices where each column is the bootstrap indices of the training data.
 #' 											The default is \code{NULL} indicating the default algorithm of sampling {1,...,n} with replacement.	
 #' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
 #' 											the out-of-box RF default which is floor(p / 3) for regression and for classification,
@@ -61,7 +61,7 @@ YARF = function(
 		#pick the trees		
 		num_trees = 500,
 		#customizable bootstrap
-		boostrap_indices = NULL, #if you want to write your own bootstrapper for the trees, send a n x T matrix of indices here
+		bootstrap_indices = NULL, #if you want to write your own bootstrapper for the trees, send a n x T matrix of indices here
 		mtry = NULL,
 		nodesize = NULL,
 		#all custom scripts/function
@@ -191,7 +191,7 @@ YARF = function(
 	}
 	
 	#now take a look at the bootstrap indices data
-	if (is.null(boostrap_indices)){ #the user wants the standard non-parametric bootstrap sampling with replacement
+	if (is.null(bootstrap_indices)){ #the user wants the standard non-parametric bootstrap sampling with replacement
 		bootstrap_indices = matrix(NA, n, num_trees)
 		one_to_n = seq(1, n)
 		for (t in 1 : num_trees){
@@ -199,15 +199,15 @@ YARF = function(
 		}
 	} else {
 		#ensure the indicies is the correct format
-		if (class(bootstrap_indices) %notin% c("data.frame", "matrix")){
+		if (!(class(bootstrap_indices) %in% c("data.frame", "matrix"))){
 			stop("The bootstrap_indicies must be a data.frame or matrix")
 		}
 		if (!all.equal(dim(bootstrap_indices), c(n, num_trees))){
 			stop("The bootstrap_indicies must be n x num_trees")
 		}
-		if (!(sum(apply(bootstrap_indices, 1, as.integer) == apply(bootstrap_indices, 1, function(x){x})) != (n * num_trees))){
-			stop("The bootstrap_indicies must be integers")
-		}
+#		if (!(sum(apply(bootstrap_indices, 1, as.integer) == apply(bootstrap_indices, 1, function(x){x})) != (n * num_trees))){
+#			stop("The bootstrap_indicies must be integers")
+#		}
 		if (sum(bootstrap_indices > n) + sum(bootstrap_indices < 1) > 0){
 			stop("The bootstrap_indicies elements must all be in {1,...,n}")
 		}
@@ -215,7 +215,7 @@ YARF = function(
 	if (verbose){
 		cat("YARF data input checked...\n")
 	}	
-	#we are about to construct a YARF object. First, let R garbage collect
+	#we are about to construct a YARF Java object. First, let R garbage collect
 	#to clean up previous YARF objects that are no longer in use. This is important
 	#because R's garbage collection system does not "see" the size of Java objects. Thus,
 	#you are at risk of running out of memory without this invocation. 
@@ -391,11 +391,7 @@ YARF = function(
 	
 	#build the YARF model and let the user know what type of model this is
 	if (verbose){
-		cat("Beginning YARF", pred_type, "model construction...")
-		if (use_missing_data){
-			cat("Missing data feature ON. ")
-		}
-		cat("\n")
+		cat("Beginning YARF", pred_type, "model construction...\n")
 	}
 	.jcall(java_YARF, "V", "setWait", wait)
 	.jcall(java_YARF, "V", "Build")

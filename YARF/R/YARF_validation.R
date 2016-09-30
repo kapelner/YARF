@@ -101,15 +101,16 @@ YARF_update_with_oob_validation_results = function(yarf_mod, validation_proporti
 #' @export
 YARF_update_with_oob_test_results = function(yarf_mod){
 	n_validation = yarf_mod$n_validation
+	n = yarf_mod$n
 	if (is.null(n_validation)){
 		stop("You must first run \"yarf_mod = YARF_update_with_oob_validation_results(yarf_mod, .)\" to establish a validation subset.")
 	}
 	if (!is.null(yarf_mod$test_data_revealed)){
 		warning("You have already peeked at the test data!!!")
 	}
-	test_indices = yarf_mod$validation_test_indices[(n_validation + 1) : yarf_mod$n]
+	test_indices = yarf_mod$validation_test_indices[(n_validation + 1) : n]
 	yarf_mod = YARF_update_with_oob_results(yarf_mod, test_indices)
-	cat("FINAL Test Results (", round((1 - validation_proportion) * 100, 1), "% of the data) for...\n", sep = "")
+	cat("FINAL Test Results (", round((n - n_validation - 1) / n * 100, 1), "% of the data) for...\n", sep = "")
 	print(yarf_mod)
 	yarf_mod$test_data_revealed = TRUE
 	yarf_mod

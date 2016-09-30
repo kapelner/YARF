@@ -50,13 +50,32 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 #' 
 #' @param yarf_mod 							The yarf model object
 #' @param time_delay_in_seconds				Frequency of messages in seconds. Default is \code{10} seconds.
+#' @param plot_oob_error					Create a plot of oob error rate as trees are built to assess 
+#' 											convergence of the YARF model
 #' 
 #' @author Kapelner
 #' @export
-YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10){
+YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_error = FALSE){
+	previous_num_trees_completed = 0
+	trees = c()
+	errors = c()
 	while (TRUE){
-		if (YARF_progress(yarf_mod)$done){
+		progress = YARF_progress(yarf_mod)
+		if (progress$done){
 			break
+		}
+		if (plot_oob_error & progress$num_trees_completed > previous_num_trees_completed){
+			previous_num_trees_completed = progress$num_trees_completed
+			yarf_mod = YARF_update_with_oob_results(yarf_mod)
+			trees = c(trees, previous_num_trees_completed)
+			if (yarf_mod$pred_type == "regression"){
+				errors = c(errors, yarf_mod$pseudo_rsq_oob)
+				plot(trees, errors, type = "o", xlab = "# trees completed", ylab = "oob Pseudo-Rsq")
+			} else {
+				errors = c(errors, yarf_mod$misclassification_error * 100)
+				plot(trees, errors, type = "o", xlab = "# trees completed", ylab = "oob Misclassification Error (%)")
+			}
+
 		}
 		Sys.sleep(time_delay_in_seconds)
 	}
