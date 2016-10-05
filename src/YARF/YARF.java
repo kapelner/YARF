@@ -7,12 +7,14 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import javax.script.Compilable;
 import javax.script.CompiledScript;
@@ -927,5 +929,9 @@ public class YARF extends Classifier implements Serializable {
 		for (int t = 0; t < num_trees; t++){
 			yarf_trees[t].StopBuilding();
 		}
+	}
+	
+	public YARFTree[] getCompletedTrees(){
+		return (YARFTree[]) Arrays.stream(yarf_trees).filter(t -> t.completed).toArray();
 	}
 }

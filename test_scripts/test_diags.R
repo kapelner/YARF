@@ -93,15 +93,16 @@ table(y, y_hat)
 
 
 #show off the asynchronicity
-n = 20000
+n = 8000
 p = 10
 X = matrix(rnorm(n * p), nrow = n)
 beta = as.matrix(rnorm(p))
-y = as.numeric(X %*% beta + rnorm(n))
+y_expe = as.numeric(X %*% beta)
+y = y_expe + rnorm(n)
 X = data.frame(X)
 
 #build a model asynchronously by setting wait to FALSE
-yarf_mod = YARF(X, y, num_trees = 500, wait = FALSE)
+yarf_mod = YARF(X, y, num_trees = 5000, wait = FALSE)
 #the model initializes and upon the beginning of tree construction,
 #returns you to the R prompt while it works as a background process
 yarf_mod
@@ -116,7 +117,7 @@ YARF_update_with_oob_results(yarf_mod)
 #If you would like to wait until the model is built, you
 #can set up a process to notify you about the progress which
 #will return to the prompt when the model is completed
-YARF_progress_reports(yarf_mod, time_delay_in_seconds = 3)
+YARF_progress_reports(yarf_mod, time_delay_in_seconds = 4, plot_oob_error = TRUE, trail = 30)
 #you can "stop" this function at any time without stopping the
 #model construction if you would like to return to the console
 
@@ -127,6 +128,13 @@ YARF_stop(yarf_mod)
 #to remove it and return the memory,
 rm(yarf_mod)
 gc()
+
+##and a logit
+y = factor(rbinom(rep(1, n), rep(1, n), prob = exp(y_expe) / (1 + exp(y_expe))), labels = c("Yes", "No"))
+yarf_mod = YARF(X, y, num_trees = 5000, wait = FALSE)
+YARF_progress_reports(yarf_mod, time_delay_in_seconds = 4, plot_oob_error = TRUE, trail = 30)
+
+
 
 ##now we will test custom node assignment functions. We first begin
 #with the regular node assignment for regression: the average

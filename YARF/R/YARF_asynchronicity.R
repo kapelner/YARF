@@ -7,12 +7,13 @@
 #' @author Kapelner
 #' @export
 YARF_progress = function(yarf_mod, console_message = TRUE){
-	if (.jcall(yarf_mod$java_YARF, "Z", "stopped")){
-		stop("Construction of this model was halted.")
-	}
-	
 	num_trees_completed = .jcall(yarf_mod$java_YARF, "I", "progress")
 	progress = num_trees_completed / yarf_mod$num_trees
+	
+	if (.jcall(yarf_mod$java_YARF, "Z", "stopped")){
+		cat("Construction of this model was halted at", num_trees_completed, "trees before all", yarf_mod$num_trees, "trees were constructed.\n")
+		return
+	}
 	
 	time_remaining_estimate = NULL
 	
@@ -52,13 +53,22 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 #' @param time_delay_in_seconds				Frequency of messages in seconds. Default is \code{10} seconds.
 #' @param plot_oob_error					Create a plot of oob error rate as trees are built to assess 
 #' 											convergence of the YARF model
+#' @param trail_pts							If \code{plot_oob_error} is \code{TRUE}, this optional parameter
+#' 											if non null will plot a secondary window with only the trees in the last \code{trail_trees}
+#' 											number of progress updates defined by \code{time_delay_in_seconds} 
+#' 											versus error which allows assessing the convergence more closely.
+#' 											Default is \code{5}. 								
 #' 
 #' @author Kapelner
 #' @export
-YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_error = FALSE){
+YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_error = FALSE, trail_pts = 5){
+	if (.jcall(yarf_mod$java_YARF, "Z", "stopped")){
+		YARF_progress(yarf_mod)
+		return
+	}
 	previous_num_trees_completed = 0
 	trees = c()
-	errors = c()
+	fit_metrics = c()
 	while (TRUE){
 		progress = YARF_progress(yarf_mod)
 		if (progress$done){
@@ -68,17 +78,30 @@ YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_
 			previous_num_trees_completed = progress$num_trees_completed
 			yarf_mod = YARF_update_with_oob_results(yarf_mod)
 			trees = c(trees, previous_num_trees_completed)
-			if (yarf_mod$pred_type == "regression"){
-				errors = c(errors, yarf_mod$pseudo_rsq_oob)
-				plot(trees, errors, type = "o", xlab = "# trees completed", ylab = "oob Pseudo-Rsq")
+			if (!is.null(trail_pts) & length(trees) > trail_pts){
+				par(mfrow = c(1, 2))
+				num_samples = length(trees)
 			} else {
-				errors = c(errors, yarf_mod$misclassification_error * 100)
-				plot(trees, errors, type = "o", xlab = "# trees completed", ylab = "oob Misclassification Error (%)")
+				par(mfrow = c(1, 1))
+			}
+			if (yarf_mod$pred_type == "regression"){
+				fit_metrics = c(fit_metrics, yarf_mod$pseudo_rsq_oob)
+				plot(trees, fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob Pseudo-Rsq")
+				if (!is.null(trail_pts) & length(trees) > trail_pts){
+					plot(trees[(num_samples - trail_pts) : num_samples], fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob Pseudo-Rsq")
+				}
+			} else {
+				fit_metrics = c(fit_metrics, yarf_mod$misclassification_error * 100)
+				plot(trees, 100 - fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob % Correctly Classified")
+				if (!is.null(trail_pts) & length(trees) > trail_pts){
+					plot(trees[(num_samples - trail_pts) : num_samples], 100 - fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob % Correctly Classified")
+				}
 			}
 
 		}
 		Sys.sleep(time_delay_in_seconds)
 	}
+	list(trees = trees, fit_metrics = fit_metrics)
 }
 
 #' Halts the model building.
@@ -90,4 +113,5 @@ YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_
 YARF_stop = function(yarf_mod){
 	yarf_mod$stopped = TRUE
 	.jcall(yarf_mod$java_YARF, "V", "StopBuilding")
+	yarf_mod
 }
