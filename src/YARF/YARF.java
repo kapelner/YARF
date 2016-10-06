@@ -65,6 +65,7 @@ public class YARF extends Classifier implements Serializable {
 
 	private YARFTree[] yarf_trees;
 	private transient int[][] bootstrap_indices;
+	private transient int[][] other_indices;
 	
 
 	//convenient pre-computed data to have around
@@ -433,10 +434,16 @@ public class YARF extends Classifier implements Serializable {
 		//System.out.println("setBootstrapAndOutOfBagIndices t = " + t);
 		//make a copy
 		yarf_trees[t].setTrainingIndices(new TIntArrayList(bootstrap_indices[t]));
+		if (other_indices[t] != null){ //the other indices is a optional setting
+			yarf_trees[t].setOtherIndices(new TIntArrayList(other_indices[t]));
+		}
 		//now get oob indices - it begins as the full thing then we subtract 
-		//out the bootstrap indices of the tree
+		//out the bootstrap indices of the tree and the "other" indices (if they exist)
 		TIntHashSet oob_indices = new TIntHashSet(indices_one_to_n);
 		oob_indices.removeAll(bootstrap_indices[t]);
+		if (other_indices[t] != null){ //the other indices is a optional setting
+			oob_indices.removeAll(other_indices[t]);
+		}
 		yarf_trees[t].setOutOfBagIndices(oob_indices);
 	}
 	
@@ -680,10 +687,15 @@ public class YARF extends Classifier implements Serializable {
 	public int[][] getNumNodesAndLeavesForTrees(){
 		return null;
 	}
-	
+
 	public void addBootstrapIndices(int[] indices_t, int t){
 		//System.out.println("addBootstrapIndices t = " + t + " ind = " + indices_t);
 		bootstrap_indices[t] = indices_t;
+	}
+	
+	public void addOtherIndices(int[] indices_t, int t){
+		//System.out.println("addBootstrapIndices t = " + t + " ind = " + indices_t);
+		other_indices[t] = indices_t;
 	}
 	
 	public void finalizeTrainingData(){
@@ -691,6 +703,7 @@ public class YARF extends Classifier implements Serializable {
 		//initialize other data that requires data to be finalized
 		X_by_col = new TIntObjectHashMap<double[]>(p);
 		bootstrap_indices = new int[num_trees][];
+		other_indices = new int[num_trees][];
 		//System.out.println("bil" + bootstrap_indices.length);
 		indices_one_to_n = new TIntHashSet();
 		for (int i = 0; i < n; i++){

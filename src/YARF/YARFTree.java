@@ -12,6 +12,7 @@ public class YARFTree extends Classifier {
 	protected YARF yarf;
 	protected YARFNode root;
 	protected TIntArrayList bootstrap_indices;
+	protected TIntArrayList other_indices;
 	protected TIntHashSet oob_indices;
 	protected boolean stop;
 	protected boolean completed;
@@ -35,6 +36,10 @@ public class YARFTree extends Classifier {
 		this.bootstrap_indices = bootstrap_indices;
 	}
 
+	public void setOtherIndices(TIntArrayList other_indices) {
+		this.other_indices = other_indices;
+	}
+	
 	public void setOutOfBagIndices(TIntHashSet oob_indices) {
 		this.oob_indices = oob_indices;
 	}
