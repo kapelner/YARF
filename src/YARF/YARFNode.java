@@ -82,22 +82,6 @@ public class YARFNode implements Cloneable {
 			depth = parent.depth + 1;
 		}
 	}
-	
-	public void assignYHat() {
-		//System.out.println("assignYHat");
-		if (tree.yarf.customFunctionNodeAssignment()){
-			//System.out.println("yarf.customFunctionNodeAssignment");
-			y_pred = tree.yarf.runNodeAssignment(this);
-		}
-		else {
-			if (tree.yarf.is_a_regression){ //the default is the sample average
-				y_pred = StatToolbox.sample_average(node_ys());
-			}
-			else { //and for a classification, it's just the modal value among the y's
-				y_pred = StatToolbox.sample_mode(node_ys());
-			}
-		}
-	}
 
 	/**
 	 * Evaluate a record recursively accounting for split rules and the presence of missing data

@@ -53,6 +53,20 @@ public class YARFTree extends Classifier {
 		}
 		return index_to_y_hat;
 	}
+	
+	public TIntDoubleHashMap evaluateOtherIndices(){
+		if (other_indices == null){
+			return null;
+		}
+		
+		TIntDoubleHashMap index_to_y_hat = new TIntDoubleHashMap(other_indices.size());
+		TIntIterator iterator = other_indices.iterator();
+		while (iterator.hasNext()){
+			int index = iterator.next();
+			index_to_y_hat.put(index, Evaluate(yarf.X.get(index)));
+		}
+		return index_to_y_hat;
+	}
 
 	public double Evaluate(double[] record) {
 		return root.Evaluate(record);

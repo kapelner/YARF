@@ -66,6 +66,8 @@ public class YARF extends Classifier implements Serializable {
 	private YARFTree[] yarf_trees;
 	private transient int[][] bootstrap_indices;
 	private transient int[][] other_indices;
+
+	private Integer default_mtry;	
 	
 
 	//convenient pre-computed data to have around
@@ -80,7 +82,9 @@ public class YARF extends Classifier implements Serializable {
 	private String cost_single_node_calc_function_str;
 	private String cost_both_children_calc_function_str;
 	private String node_assignment_function_str;
+	private String after_node_birth_function_str;
 	private String aggregation_function_str;
+	private String prune_if_function_str;
 	
 	//everything that has to do with scripts that's transient / lazy-loaded
 	private transient ScriptEngine nashorn_js_engine;
@@ -91,6 +95,7 @@ public class YARF extends Classifier implements Serializable {
 	protected transient Invocable cost_single_node_calc_fun;
 	protected transient Invocable cost_both_children_calc_fun;
 	protected transient Invocable node_assignment_fun;
+	protected transient Invocable after_node_birth_fun;
 	protected transient Invocable aggregation_fun;
 	
 	//if we use RF algorithm defaults, here they are
@@ -370,6 +375,26 @@ public class YARF extends Classifier implements Serializable {
 		return YARFNode.BAD_FLAG_double;
 	}
 	
+	public static final String AfterNodeBirthScriptFunctionName = "nodeAfterNodeBirth";
+	public double runAfterNodeBirth(YARFNode node){
+		if (after_node_birth_fun == null){
+			after_node_birth_fun = stringToInvokableCompiledFunction(after_node_birth_function_str, AfterNodeBirthScriptFunctionName);
+		}
+		try {
+			return (double)after_node_birth_fun.invokeFunction(AfterNodeBirthScriptFunctionName, node);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your after node birth script must include the function \"" + AfterNodeBirthScriptFunctionName + "(node)\" and return the node assignment (the predicted yhat) as a double.");
+			System.err.println("after_node_birth_fun:\n" + after_node_birth_function_str);
+			e.printStackTrace();
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + AfterNodeBirthScriptFunctionName + "\" function:");
+			e.printStackTrace();		
+		}
+		return YARFNode.BAD_FLAG_double;
+	}
+	
 	public static final String AggregationScriptFunctionName = "aggregateYhatsIntoOneYhat";
 	public double runAggregation(double[] y_hats){
 		if (aggregation_fun == null){
@@ -407,6 +432,10 @@ public class YARF extends Classifier implements Serializable {
 	
 	public boolean customFunctionNodeAssignment(){
 		return node_assignment_function_str != null;
+	}
+	
+	public boolean customFunctionAfterBirth(){
+		return after_node_birth_function_str != null;
 	}
 	
 	public boolean customFunctionAggregation(){
@@ -694,7 +723,7 @@ public class YARF extends Classifier implements Serializable {
 	}
 	
 	public void addOtherIndices(int[] indices_t, int t){
-		//System.out.println("addBootstrapIndices t = " + t + " ind = " + indices_t);
+		//System.out.println("addOtherIndices t = " + t + " ind = " + indices_t);
 		other_indices[t] = indices_t;
 	}
 	
@@ -765,6 +794,7 @@ public class YARF extends Classifier implements Serializable {
 //	}
 	
 	private TIntObjectHashMap<TDoubleIntHashMap> feature_to_split_point_to_indices;
+
 	
 	protected TDoubleIntHashMap splitPointToCutoffSortedIndex(int j){
 		TDoubleIntHashMap split_point_to_cutoff_index = feature_to_split_point_to_indices.get(j);
@@ -852,6 +882,14 @@ public class YARF extends Classifier implements Serializable {
 		}		
 		return indices;
 	}
+
+	//this is the default mtry as specified by Breiman
+	public int defaultMtry(){
+		if (default_mtry == null){
+			default_mtry = Math.max(1, (int)Math.floor(is_a_regression ? (p / (double)3) : Math.sqrt(p))); //at least it's 1!!!
+		}
+		return default_mtry;
+	}
 	
 	public void setWait(boolean wait){
 //		System.err.println("inside YARF setwait");
@@ -913,20 +951,23 @@ public class YARF extends Classifier implements Serializable {
 	}
 
 	public void setNode_assignment_function_str(String node_assignment_function_str) {
-//		System.err.println("boom");
-		
 		this.node_assignment_function_str = node_assignment_function_str;
-//		System.out.println("from R:\n" + DatatypeConverter.printHexBinary(node_assignment_function_str.getBytes()) );
-//		this.node_assignment_function_str = "" 
-//				+ "function assignYhatToNode(node){"
-//				+ "  var ys = node.node_ys;"
-//				+ "  var avg = 0;"
-//				+ "  for (i = 0; i < ys.length; i++){"
-//				+ "    avg += ys[i];"
-//				+ "  }"
-//				+ "  return avg / ys.length;"
-//				+ "}";
-//		System.out.println("from J:\n" + DatatypeConverter.printHexBinary(node_assignment_function_str.getBytes()));
+	}
+	
+	public String getAfter_node_birth_function_str() {
+		return after_node_birth_function_str;
+	}
+
+	public void setAfter_node_birth_function_str(String after_node_assignment_function_str) {
+		this.after_node_birth_function_str = after_node_assignment_function_str;
+	}
+
+	public String getPrune_if_function_str() {
+		return prune_if_function_str;
+	}
+
+	public void setPrune_if_function_str(String prune_if_function_str) {
+		this.prune_if_function_str = prune_if_function_str;
 	}
 	
 	public long getCompletionTime(){

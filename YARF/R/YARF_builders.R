@@ -7,8 +7,16 @@
 #' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
 #' 											handled in the custom functions, YARF will crash. Default is \code{FALSE}.
 #' @param num_trees 						The # of trees in the RF. Default is \code{500}.
-#' @param bootstrap_indices 				An n x num_trees matrix of indices where each column is the bootstrap indices of the training data.
-#' 											The default is \code{NULL} indicating the default algorithm of sampling {1,...,n} with replacement.	
+#' @param bootstrap_indices 				A list with keys 1,2,..., num_trees where each value is the indices of the training data
+#' 											you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
+#' 											of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
+#' 											to say indices specified here will not be part of the out-of-bag collection of indices.	
+#' @param other_indices						An optional list with keys 1,2,..., num_trees where each value is indices of the training data
+#' 											you wish to use in some custom way for each tree using a custom function. If not custom function
+#' 											is specified which makes use of this, it will be ignored. However, indices specified here will not be part of 
+#' 											the out-of-bag collection of indices. If this is not your wish, the elements in the vectors
+#' 											specified in this list's values should be a subset of those in the values of \code{bootstrap_indices}.
+#' 											The default is \code{NULL} indicating you do not wish to specify any "other" data records. 
 #' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
 #' 											the out-of-box RF default which is floor(p / 3) for regression and for classification,
 #' 											floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter. 
@@ -26,12 +34,12 @@
 #' @param cost_both_children_calc_script	A custom cost calculation for an entire split considering both the putative left and right children
 #' 											nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
 #' 											sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
-#' 											to the number of observations in each node).
-#' 
-#' 											which defaults to sum of squared error for regression or sum of entropy for classification.							 
+#' 											to the number of observations in each node).						 
 #' @param node_assign_script				A custom node assignment function in Javascript. This function is run after RF greedily finds the 
 #' 											"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
 #' 											in regression or the modal class during classification. 
+#' @param after_node_birth_function_str		A custom function in Javascript which is executed after a node is given birth to. The default is 
+#' 											\code{NULL} which implies nothing special is done, the Random Forest default.
 #' @param aggregation_script				A custom javascript function which aggregates the predictions in the trees for one observations 
 #' 											into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
 #' 											regression and the modal category for classification.
@@ -61,7 +69,8 @@ YARF = function(
 		#pick the trees		
 		num_trees = 500,
 		#customizable bootstrap
-		bootstrap_indices = NULL, #if you want to write your own bootstrapper for the trees, send a n x T matrix of indices here
+		bootstrap_indices = NULL, #if you want to specify data indices for the trees
+		other_indices = NULL, #other indices you pass to the tree which will NOT be included in the OOB
 		mtry = NULL,
 		nodesize = NULL,
 		#all custom scripts/function
@@ -69,6 +78,7 @@ YARF = function(
 		nodesize_script = NULL,
 		cost_single_node_calc_script = NULL,
 		node_assign_script = NULL,
+		after_node_birth_function_str = NULL,
 		aggregation_script = NULL,
 		shared_scripts = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
@@ -192,26 +202,39 @@ YARF = function(
 	
 	#now take a look at the bootstrap indices data
 	if (is.null(bootstrap_indices)){ #the user wants the standard non-parametric bootstrap sampling with replacement
-		bootstrap_indices = matrix(NA, n, num_trees)
+		bootstrap_indices = list()
 		one_to_n = seq(1, n)
 		for (t in 1 : num_trees){
-			bootstrap_indices[, t] = sample(one_to_n, replace = TRUE)
+			bootstrap_indices[[t]] = sample(one_to_n, replace = TRUE)
 		}
 	} else {
 		#ensure the indicies is the correct format
-		if (!(class(bootstrap_indices) %in% c("data.frame", "matrix"))){
-			stop("The bootstrap_indicies must be a data.frame or matrix")
+		if (!(class(bootstrap_indices) %in% c("list"))){
+			stop("The bootstrap_indicies must be a list")
 		}
-		if (!all.equal(dim(bootstrap_indices), c(n, num_trees))){
-			stop("The bootstrap_indicies must be n x num_trees")
-		}
-#		if (!(sum(apply(bootstrap_indices, 1, as.integer) == apply(bootstrap_indices, 1, function(x){x})) != (n * num_trees))){
-#			stop("The bootstrap_indicies must be integers")
-#		}
-		if (sum(bootstrap_indices > n) + sum(bootstrap_indices < 1) > 0){
-			stop("The bootstrap_indicies elements must all be in {1,...,n}")
+		for (t in 1 : num_trees){
+			indices = bootstrap_indices[[t]]
+			if (!isTRUE(all.equal(indices, as.integer(indices))) || any(indices < 1) || any(indices > n)){
+				stop("The bootstrap_indicies values must all be vectors whose elements are all in {1,...,n}")
+			}
 		}
 	}
+
+	if (!is.null(other_indices)){
+		#ensure the indicies is the correct format
+		if (!(class(other_indices) %in% c("list"))){
+			stop("The other_indicies must be a list")
+		}
+		for (t in 1 : num_trees){
+			indices = other_indices[[t]]
+			if (!isTRUE(all.equal(indices, as.integer(indices))) || any(indices < 1) || any(indices > n)){
+				stop("The other_indicies values must all be vectors whose elements are all in {1,...,n}")
+			}
+		}
+	}
+	
+	
+	
 	if (verbose){
 		cat("YARF data input checked...\n")
 	}	
@@ -384,7 +407,13 @@ YARF = function(
 	
 	#now load the bootstrap indices into YARF
 	for (t in 1 : num_trees){
-		.jcall(java_YARF, "V", "addBootstrapIndices", as.integer(bootstrap_indices[, t] - 1), as.integer(t - 1)) ##Java is minus 1 from R's indexing
+		.jcall(java_YARF, "V", "addBootstrapIndices", as.integer(bootstrap_indices[[t]] - 1), as.integer(t - 1)) ##Java is minus 1 from R's indexing on all fronts
+	}
+	#and the "other" indices if specified
+	if (!is.null(other_indices)){
+		for (t in 1 : num_trees){
+			.jcall(java_YARF, "V", "addOtherIndices", as.integer(other_indices[[t]] - 1), as.integer(t - 1)) ##Java is minus 1 from R's indexing on all fronts
+		}
 	}
 	.jcall(java_YARF, "V", "initTrees") #immediately follows
 	

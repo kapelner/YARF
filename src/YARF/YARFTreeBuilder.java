@@ -13,6 +13,9 @@ public class YARFTreeBuilder {
 		this.yarf = tree.yarf;
 		//the root node has a overall cost which we need to compute
 		computeNodeCost(tree.root);
+		if (yarf.customFunctionAfterBirth()){
+			yarf.runAfterNodeBirth(tree.root);
+		}
 		//now we start splitting recursively
 		splitNode(tree.root);
 	}
@@ -25,7 +28,7 @@ public class YARFTreeBuilder {
 		//if this node is too small (or whatever other reason), ditch from splitting and make it a leaf
 		if (makeNodeLeaf(node)){
 			node.is_leaf = true;
-			node.assignYHat();
+			assignYHat(node);
 			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return; //ditch... because we're done...
 		}
@@ -125,7 +128,7 @@ public class YARFTreeBuilder {
 		if (lowest_total_split_cost >= node.cost){
 			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));}
 			node.is_leaf = true;
-			node.assignYHat();
+			assignYHat(node);
 			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return;
 		}
@@ -149,11 +152,33 @@ public class YARFTreeBuilder {
 		//then officially give birth to two children from the two fetuses
 		node.left = lowest_left_node;
 		node.right = lowest_right_node;
-
+		if (yarf.customFunctionAfterBirth()){
+			yarf.runAfterNodeBirth(node.left);
+			yarf.runAfterNodeBirth(node.right);
+		}
+		
 		if (YARF.DEBUG){node.printNodeDebugInfo("");}
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
 		splitNode(node.right);
+	}
+	
+
+	
+	public void assignYHat(YARFNode node) {
+		//System.out.println("assignYHat");
+		if (yarf.customFunctionNodeAssignment()){
+			//System.out.println("yarf.customFunctionNodeAssignment");
+			node.y_pred = yarf.runNodeAssignment(node);
+		}
+		else {
+			if (tree.yarf.is_a_regression){ //the default is the sample average
+				node.y_pred = StatToolbox.sample_average(node.node_ys());
+			}
+			else { //and for a classification, it's just the modal value among the y's
+				node.y_pred = StatToolbox.sample_mode(node.node_ys());
+			}
+		}
 	}
 
 	private double totalChildrenCost(YARFNode putative_left, YARFNode putative_right) {
@@ -191,6 +216,7 @@ public class YARFTreeBuilder {
 	
 		if (yarf.customFunctionNodesize()){
 			return yarf.runNodesizeLegal(node);
+		//the default is if it's less than the minimum node size as specified by the user at build time
 		} else if (node.nodeSize() < yarf.nodesize){
 			return true;
 		}
@@ -201,9 +227,7 @@ public class YARFTreeBuilder {
 		if (yarf.customFunctionMtry()){
 			return yarf.runMtry(node);
 		}
-//		System.out.println("(yarf.p / 3.0)" +  (yarf.p / 3.0));
-		int mtry = Math.max(1, (int)Math.floor(yarf.is_a_regression ? (yarf.p / (double)3) : Math.sqrt(yarf.p))); //at least it's 1!!!
-		return StatToolbox.pickNRandomElements(yarf.indices_one_to_p_min_1, mtry);
+		return StatToolbox.pickNRandomElements(yarf.indices_one_to_p_min_1, yarf.defaultMtry());
 	}
 
 }
