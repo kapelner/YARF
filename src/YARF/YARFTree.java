@@ -77,6 +77,14 @@ public class YARFTree extends Classifier {
 		stop = true;
 	}
 	
-	
+	public boolean completed(){
+		return completed;
+	}
+
+	public int maxDepth() {
+		int[] d = {0};
+		root.maxDepth(d);
+		return d[0];
+	}
 
 }

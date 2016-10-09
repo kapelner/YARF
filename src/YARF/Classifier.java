@@ -31,8 +31,6 @@ public abstract class Classifier implements Serializable{
 	
 	/** should we print select messages to the screen */
 	protected boolean verbose = true;
-	/** ? */
-	protected boolean mem_cache_for_speed = true;
 	/**
 	 * Is this value missing?
 	 * 
@@ -219,10 +217,6 @@ public abstract class Classifier implements Serializable{
 
 	public void setSeed(int seed){
 		StatToolbox.setSeed(seed);
-	}
-	
-	public void setMemCacheForSpeed(boolean mem_cache_for_speed){
-		this.mem_cache_for_speed = mem_cache_for_speed;
 	}
 	
 	public void writeStdOutToLogFile(){

@@ -8,14 +8,14 @@
 \usage{
 YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   allow_missingness_in_y = FALSE, num_trees = 500,
-  boostrap_indices = NULL, mtry = NULL, nodesize = NULL,
-  mtry_script = NULL, nodesize_script = NULL,
+  bootstrap_indices = NULL, other_indices = NULL, mtry = NULL,
+  nodesize = NULL, mtry_script = NULL, nodesize_script = NULL,
   cost_single_node_calc_script = NULL, node_assign_script = NULL,
-  aggregation_script = NULL, shared_scripts = NULL,
-  use_missing_data = TRUE, replace_missing_data_with_x_j_bar = FALSE,
-  mem_cache_for_speed = TRUE, covariates_to_permute = NULL,
-  serialize = FALSE, seed = NULL, wait = TRUE, verbose = TRUE,
-  debug_log = FALSE)
+  after_node_birth_function_script = NULL, aggregation_script = NULL,
+  prune_if_script = NULL, shared_scripts = NULL, use_missing_data = TRUE,
+  replace_missing_data_with_x_j_bar = FALSE, mem_cache_for_speed = TRUE,
+  covariates_to_permute = NULL, serialize = FALSE, seed = NULL,
+  wait = TRUE, verbose = TRUE, debug_log = FALSE)
 }
 \arguments{
 \item{X}{The data frame of training data}
@@ -31,8 +31,17 @@ handled in the custom functions, YARF will crash. Default is \code{FALSE}.}
 
 \item{num_trees}{The # of trees in the RF. Default is \code{500}.}
 
-\item{boostrap_indices}{An n x num_trees matrix of indices where each column is the bootstrap indices of the training data.
-The default is \code{NULL} indicating the default algorithm of sampling {1,...,n} with replacement.}
+\item{bootstrap_indices}{A list with keys 1,2,..., num_trees where each value is the indices of the training data
+you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
+of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
+to say indices specified here will not be part of the out-of-bag collection of indices.}
+
+\item{other_indices}{An optional list with keys 1,2,..., num_trees where each value is indices of the training data
+you wish to use in some custom way for each tree using a custom function. If not custom function
+is specified which makes use of this, it will be ignored. However, indices specified here will not be part of 
+the out-of-bag collection of indices. If this is not your wish, the elements in the vectors
+specified in this list's values should be a subset of those in the values of \code{bootstrap_indices}.
+The default is \code{NULL} indicating you do not wish to specify any "other" data records.}
 
 \item{mtry}{The number of variables tried at every split. The default is \code{NULL} which indicates
 the out-of-box RF default which is floor(p / 3) for regression and for classification,
@@ -57,9 +66,16 @@ function as a blank function (not \code{NULL}).}
 "lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
 in regression or the modal class during classification.}
 
+\item{after_node_birth_function_script}{A custom function in Javascript which is executed after a node is given birth to. The default is 
+\code{NULL} which implies nothing special is done, the Random Forest default.}
+
 \item{aggregation_script}{A custom javascript function which aggregates the predictions in the trees for one observations 
 into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
 regression and the modal category for classification.}
+
+\item{prune_if_script}{A custom javascript function which prunes a node (i.e. deletes the node's children and
+sets the node to a leaf and sets a y_hat using the assign function). The default is \code{NULL}
+which means no pruning is performed, the random forest default.}
 
 \item{shared_scripts}{Custom Javascript code that are always in scope when running all your custom methods. 
 The default is \code{NULL} for no shared scripts.}
@@ -85,11 +101,9 @@ we will automatically serialize after other operations that add data (such as th
 \item{debug_log}{Should we print out messages from Java? Default is \code{FALSE}.}
 
 \item{cost_both_children_calc_script}{A custom cost calculation for an entire split considering both the putative left and right children
-                                            nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
-                                            sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
-                                            to the number of observations in each node).
-
-                                            which defaults to sum of squared error for regression or sum of entropy for classification.}
+nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
+sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
+to the number of observations in each node).}
 }
 \value{
 A list of all arguments passed in plus...

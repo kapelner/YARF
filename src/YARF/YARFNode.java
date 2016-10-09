@@ -16,15 +16,18 @@ public class YARFNode implements Cloneable {
 	protected static final double BAD_FLAG_double = -Double.MAX_VALUE;
 	/** a flag that represents an invalid integer value */
 	protected static final int BAD_FLAG_int = -Integer.MAX_VALUE;
+	
 	/** the parent node of this node */
 	protected YARFNode parent;
 	/** the left daughter node */
 	protected YARFNode left;
 	/** the right daughter node */
 	protected YARFNode right;
+	
 	/** the in-sample cost associated with this node */
 	protected double cost = BAD_FLAG_double;
-	
+	/** Information kept for the user during customization */
+	protected Object other_info;
 	/** the generation of this node from the top node (root note has generation = 0 by definition) */
 	public int depth = 0;
 	/** is this node a terminal node? */
@@ -43,7 +46,7 @@ public class YARFNode implements Cloneable {
 	public TIntArrayList indices;
 	/** the number of training observations in this node */
 	private Integer node_size;
-	/** what tree is this node in? */
+	/** what tree is this node part of? */
 	private YARFTree tree;
 
 	//convenience functions for looking at the data in this node
@@ -113,6 +116,8 @@ public class YARFNode implements Cloneable {
 	public void flushNodeData() {
 		indices = null;
 		node_ys = null;
+		node_X_others = null;
+		node_Xs = null;
 		
 		if (this.left != null)
 			this.left.flushNodeData();
@@ -146,12 +151,12 @@ public class YARFNode implements Cloneable {
 	 * 
 	 * @return	The number of nodes
 	 */
-	public int numNodesAndLeaves() {
+	public int numNodes() {
 		if (this.is_leaf){
 			return 1;
 		}
 		else {
-			return 1 + this.left.numNodesAndLeaves() + this.right.numNodesAndLeaves();
+			return 1 + this.left.numNodes() + this.right.numNodes();
 		}
 	}
 	/**
@@ -243,9 +248,6 @@ public class YARFNode implements Cloneable {
 
 	public double[] node_ys(){
 		if (node_ys == null){
-//			System.out.println("tree " + tree);
-//			System.out.println("tree.yarf " + tree.yarf);
-//			System.out.println("tree.yarf.y " + tree.yarf.y + " indices " + indices);
 			node_ys = Tools.subArr(tree.yarf.y, indices);
 		}
 		return node_ys;
@@ -269,6 +271,17 @@ public class YARFNode implements Cloneable {
 			}
 		}
 		return node_Xs;
+	}
+	
+	public void maxDepth(int[] max_depth) {
+		if (this.depth > max_depth[0]){
+			max_depth[0] = this.depth;
+		}
+		if (this.is_leaf){
+			return;
+		}
+		left.maxDepth(max_depth);
+		right.maxDepth(max_depth);
 	}
 
 	public int[] attributeSplitCounts() {

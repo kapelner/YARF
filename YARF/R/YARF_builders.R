@@ -1,7 +1,7 @@
 #' Builds a YARF Model. There are many custom functions
 #' 
 #' @param X 								The data frame of training data
-#' @param y 								The training responses
+#' @param y 								The vector of training responses
 #' @param Xy 								The data frame of training data where the last column is responses
 #' @param Xother 							Other data that is used in the training but the RF doesn't split on it
 #' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
@@ -38,18 +38,18 @@
 #' @param node_assign_script				A custom node assignment function in Javascript. This function is run after RF greedily finds the 
 #' 											"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
 #' 											in regression or the modal class during classification. 
-#' @param after_node_birth_function_str		A custom function in Javascript which is executed after a node is given birth to. The default is 
+#' @param after_node_birth_function_script	A custom function in Javascript which is executed after a node is given birth to. The default is 
 #' 											\code{NULL} which implies nothing special is done, the Random Forest default.
 #' @param aggregation_script				A custom javascript function which aggregates the predictions in the trees for one observations 
 #' 											into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
 #' 											regression and the modal category for classification.
+#' @param prune_if_script					A custom javascript function which prunes a node (i.e. deletes the node's children and
+#' 											sets the node to a leaf and sets a y_hat using the assign function). The default is \code{NULL}
+#' 											which means no pruning is performed, the random forest default.
 #' @param shared_scripts					Custom Javascript code that are always in scope when running all your custom methods. 
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 #' 											default is \code{TRUE}.	
-#' @param covariates_to_permute 			Indices of features to randomly permute when creating a YARF. The default is \code{NULL}
-#' 											indicating no features are permuted. This is an argument used mostly by other YARF functions.
-#' @param mem_cache_for_speed 
 #' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
 #' 											time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
 #' 											we will automatically serialize after other operations that add data (such as the OOB evaluation).
@@ -78,20 +78,20 @@ YARF = function(
 		nodesize_script = NULL,
 		cost_single_node_calc_script = NULL,
 		node_assign_script = NULL,
-		after_node_birth_function_str = NULL,
+		after_node_birth_function_script = NULL,
 		aggregation_script = NULL,
+		prune_if_script = NULL,
 		shared_scripts = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = TRUE,
 		replace_missing_data_with_x_j_bar = FALSE,
-		#other arguments
-		mem_cache_for_speed = TRUE,
-		covariates_to_permute = NULL, #PRIVATE
+		#other arguments for Java
 		serialize = FALSE,
 		seed = NULL,
 		wait = TRUE,
 		verbose = TRUE,
-		debug_log = FALSE){
+		debug_log = FALSE
+	){
 	
 	if (serialize && !wait){
 		stop("'serialize' can only by TRUE if 'wait' is TRUE (you cannot save a model that is not yet fully constructed).")
@@ -125,13 +125,23 @@ YARF = function(
 		}
 	}
 	
+	if (!is.null(after_node_birth_function_script)){
+		if (class(after_node_birth_function_script) != "character"){
+			stop("'after_node_birth_function_script' must be a character string of Javascript code")
+		}
+	}
+	
 	if (!is.null(aggregation_script)){
 		if (class(aggregation_script) != "character"){
 			stop("'aggregation_script' must be a character string of Javascript code")
 		}
 	}
 	
-	
+	if (!is.null(prune_if_script)){
+		if (class(prune_if_script) != "character"){
+			stop("'prune_if_script' must be a character string of Javascript code")
+		}
+	}
 	
 	if (!is.null(shared_scripts)){
 		if (class(shared_scripts) != "character"){
@@ -310,18 +320,6 @@ YARF = function(
 	if (verbose){
 		cat("YARF after preprocess...", ncol(model_matrix_training_data), "total features...\n")
 	}
-
-#	#this is a private parameter ONLY called by cov_importance_test
-#	if (!is.null(covariates_to_permute)){
-#		#first check if these covariates are even in the matrix to begin with
-#		for (cov in covariates_to_permute){
-#			if (!(cov %in% colnames(model_matrix_training_data)) && class(cov) == "character"){
-#				stop("Covariate \"", cov, "\" not found in design matrix.")
-#			}
-#		}
-#		permuted_order = sample(1 : nrow(model_matrix_training_data), nrow(model_matrix_training_data))
-#		model_matrix_training_data[, covariates_to_permute] = model_matrix_training_data[permuted_order, covariates_to_permute]
-#	}
 	
 	#now set whether we want the program to log to a file
 	if (debug_log & verbose){
@@ -340,7 +338,6 @@ YARF = function(
 	.jcall(java_YARF, "V", "setNumCores", as.integer(num_cores)) #this must be set FIRST!!!
 	.jcall(java_YARF, "V", "setNumTrees", as.integer(num_trees))
 	.jcall(java_YARF, "V", "setVerbose", verbose)
-	.jcall(java_YARF, "V", "setMemCacheForSpeed", mem_cache_for_speed)
 	.jcall(java_YARF, "V", "setPredType", pred_type)
 	
 	#now load data and/or scripts
@@ -366,6 +363,16 @@ YARF = function(
 	if (!is.null(aggregation_script)){
 		.jcall(java_YARF, "V", "setAggregation_function_str", aggregation_script)
 	}
+	
+	if (!is.null(after_node_birth_function_script)){
+		.jcall(java_YARF, "V", "setAfter_node_birth_function_str", after_node_birth_function_script)
+	}
+	
+	if (!is.null(prune_if_script)){
+		.jcall(java_YARF, "V", "setPrune_if_function_str", prune_if_script)
+	}
+	
+	
 	
 	if (!is.null(shared_scripts)){
 		.jcall(java_YARF, "V", "setShared_scripts_str", shared_scripts)
@@ -416,38 +423,40 @@ YARF = function(
 		}
 	}
 	.jcall(java_YARF, "V", "initTrees") #immediately follows
-	
+	#do we want to do this asynchronously?
+	.jcall(java_YARF, "V", "setWait", wait)
 	
 	#build the YARF model and let the user know what type of model this is
 	if (verbose){
 		cat("Beginning YARF", pred_type, "model construction...\n")
 	}
-	.jcall(java_YARF, "V", "setWait", wait)
-	.jcall(java_YARF, "V", "Build")
+	.jcall(java_YARF, "V", "Build") #Finally get it built
 	
-	####print(bootstrap_indices)
 	yarf_mod = list(
-		allow_missingness_in_y = allow_missingness_in_y,
+		X = X,
+		y = y,
+		Xother = Xother,
+		allow_missingness_in_y = allow_missingness_in_y,		
 		num_trees = num_trees,
-		bootstrap_indices = bootstrap_indices, 
+		bootstrap_indices = bootstrap_indices,
+		other_indices = other_indices,
 		mtry = mtry,
-		mtry_fun = mtry_script,
 		nodesize = nodesize,
-		nodesize_fun = nodesize_script,
-		cost_calc_fun = cost_single_node_calc_script,
-		node_assign_fun = node_assign_script,
-		aggregation_fun = aggregation_script,
+		mtry_script = mtry_script,
+		nodesize_script = nodesize_script,
+		cost_single_node_calc_script = cost_single_node_calc_script,
+		node_assign_script = node_assign_script,
+		after_node_birth_function_script = after_node_birth_function_script,
+		aggregation_script = aggregation_script,
+		prune_if_script = prune_if_script,
 		shared_scripts = shared_scripts, 
 		use_missing_data = use_missing_data,
 		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
-		mem_cache_for_speed = mem_cache_for_speed,
 		serialize = serialize,
 		seed = seed,
 		wait = wait,
 		verbose = verbose,
 		debug_log = debug_log,
-		X = X,
-		y = y,
 		pred_type = pred_type,
 		t0 = t0,
 		java_YARF = java_YARF,
@@ -495,8 +504,9 @@ set_YARF_num_cores = function(num_cores){
 #' @author Adam Kapelner
 #' @export
 YARF_serialize = function(yarf_mod){
-	cat("serializing in order to be saved for future R sessions...")
+	cat("serializing so that the YARF model could potentially be saved and transported to future R sessions...")
 	.jcache(yarf_mod$java_YARF)
 	cat("done\n")	
 }
+
 

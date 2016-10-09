@@ -32,23 +32,21 @@ summary.YARF = function(object, ...){
 			cat("No OOB results to show (no trees have been fit as of yet).\n")
 		}
 		else {
+			if (miss > 0){
+				cat("OOB results on ", pct_reporting, "% of the observations (", miss, " missing)", sep = "")
+			} else {
+				cat("OOB results on all observations")
+			}	
+			
 			if (object$pred_type == "regression"){
-				if (miss > 0){
-					cat("OOB results on ", pct_reporting, "% of the observations (", miss, " missing):\n", sep = "")
-				} else {
-					cat("OOB results on all observations:\n")
-				}				
+				cat(":\n")
 				cat("  R^2:", round(object$pseudo_rsq_oob, 5), "\n")
 				cat("  RMSE:", round(object$rmse_oob, 3), "\n")
 				cat("  MAE:", round(object$mae_oob, 3), "\n")
 				cat("  L2:", round(object$L2_err_oob, 2), "\n")
 				cat("  L1:", round(object$L1_err_oob, 2), "\n")
-			} else {		
-				if (miss > 0){
-					cat("OOB results on ", pct_reporting, "% of the observations (", miss, " missing) as a confusion matrix:\n", sep = "")
-				} else {
-					cat("OOB results on all observations as a confusion matrix:\n")
-				}
+			} else {
+				cat(" as a confusion matrix:")
 				print(object$confusion_matrix)
 			}			
 		}
