@@ -12,9 +12,10 @@ YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   nodesize = NULL, mtry_script = NULL, nodesize_script = NULL,
   cost_single_node_calc_script = NULL, node_assign_script = NULL,
   after_node_birth_function_script = NULL, aggregation_script = NULL,
-  prune_if_script = NULL, shared_scripts = NULL, use_missing_data = TRUE,
-  replace_missing_data_with_x_j_bar = FALSE, serialize = FALSE,
-  seed = NULL, wait = TRUE, verbose = TRUE, debug_log = FALSE)
+  oob_cost_calculation = NULL, shared_scripts = NULL,
+  use_missing_data = TRUE, replace_missing_data_with_x_j_bar = FALSE,
+  serialize = FALSE, seed = NULL, wait = TRUE, verbose = TRUE,
+  debug_log = FALSE)
 }
 \arguments{
 \item{X}{The data frame of training data}
@@ -43,17 +44,28 @@ specified in this list's values should be a subset of those in the values of \co
 The default is \code{NULL} indicating you do not wish to specify any "other" data records.}
 
 \item{mtry}{The number of variables tried at every split. The default is \code{NULL} which indicates
-the out-of-box RF default which is floor(p / 3) for regression and for classification,
-floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter.}
+the out-of-box RF default which is floor(p / 3) for regression and floor(sqrt(p)) for
+classification. If you want a custom function, leave this NULL and see next parameter.}
 
 \item{nodesize}{The minimum number of observations in a node. YARF will stop splitting at this point.
 If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
 will be used.}
 
-\item{mtry_script}{If you wish to create a custom number of mtry, pass in javascript code here as a string.}
+\item{mtry_script}{A custom javascript function which selects the variables to be greedily searched:
 
-\item{nodesize_script}{A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
-nodesize will be calculated as a static constant (see the \code{nodesize} argument).}
+                                                tryVars(node){ //node is of type YARFNode
+                                                    ...
+                                                    return indices; //an array of integer indices in 1,...,p indicating the variables to try
+                                                }
+
+                                            The default is \code{NULL} which employs the \code{mtry} argument.}
+
+\item{nodesize_script}{A custom javascript function to be used to calculate nodesize: 
+
+                                                
+
+                                            The default is \code{NULL} where nodesize will be calculated as a static constant (see the 
+                                            \code{nodesize} argument).}
 
 \item{cost_single_node_calc_script}{A custom cost calculation for a potential node (when considering a split) in Javascript. 
 The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
@@ -72,9 +84,9 @@ in regression or the modal class during classification.}
 into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
 regression and the modal category for classification.}
 
-\item{prune_if_script}{A custom javascript function which prunes a node (i.e. deletes the node's children and
-sets the node to a leaf and sets a y_hat using the assign function). The default is \code{NULL}
-which means no pruning is performed, the random forest default.}
+\item{oob_cost_calculation}{A custom Javascript function which calculates the cost of a prediction given the true
+value of the prediction. If is likely similar to \code{cost_single_node_calc_script}. It
+is recommended to share code between them by writing a function included in \code{shared_scripts}.}
 
 \item{shared_scripts}{Custom Javascript code that are always in scope when running all your custom methods. 
 The default is \code{NULL} for no shared scripts.}
@@ -115,10 +127,9 @@ Adam Kapelner
 \references{
 TK
 }
-\keyword{Design,}
-\keyword{Experimental}
-\keyword{Slope}
-\keyword{by}
-\keyword{divided}
-\keyword{intercept}
+\keyword{Learning,}
+\keyword{Machine}
+\keyword{Non-parametric}
+\keyword{Tree-based}
+\keyword{regression}
 

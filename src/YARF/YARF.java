@@ -247,7 +247,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		yarf_trees[t].setOutOfBagIndices(oob_indices);
 	}
 	
-	public double[] evaluateOutOfBagEstimates(int num_cores){
+	public double[] predictOutOfBag(int num_cores){
 		//first get the trees that have this observation out of bag
 		final HashMap<Integer, ArrayList<Integer>> index_to_oob_on_trees = new HashMap<Integer, ArrayList<Integer>>(n);
 		for (int i = 0; i < n; i++){
@@ -379,6 +379,12 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		}
 	
 		return interaction_count_matrix;
+	}
+	
+	public void pruneTree(int t){
+		if (yarf_trees[t].completed){
+			
+		}
 	}
 
 	/** Flush all unnecessary data from the Gibbs chains to conserve RAM */

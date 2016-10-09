@@ -1,5 +1,6 @@
-#' Tests the effect of H0: one, or two, ... or all covariates are not predictive via a permutation test. 
+#' Tests the effect of H0: one, or two, ... or all covariates are not predictive (out of sample) via a permutation test. 
 #' We permute the covariates column(s) and build YARF models \code{num_permutation_samples} times.
+#' The p-val is determined by a permutation-like test.
 #'  
 #' @param yarf_mod 					The fit model to test against permuted training data.
 #' @param covariates 				The covariates to permute as a vector of indices or names. If multiple covariates
@@ -14,7 +15,7 @@
 #' @return 							A list with the following components: \code{permutation_samples_of_error} whose value
 #' 									is a vector with entries being the error values for each permutation sample, 
 #' 									\code{observed_error_estimate} is the error value of the original model built with 
-#' 									unpermuted data and \code{pval} is the estimated significance level of the test.
+#' 									unpermuted data and \code{pval} is the estimated significance level of the permutation test.
 #' 
 #' @author Adam Kapelner
 #' @export
@@ -64,6 +65,8 @@ cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samp
 			yarf_samp = yarf_duplicate(yarf_mod, X = X_samp)
 		}
 		#record permutation result
+	
+		
 		permutation_samples_of_error[nsim] = ifelse(yarf_mod$pred_type == "regression", yarf_samp$PseudoRsq, yarf_samp$misclassification_error)	
 	}
 	cat("\n")
@@ -87,9 +90,10 @@ cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samp
 	))
 }
 
-#' Tests a model fit by building a YARF model from the residuals
-#' and doing an omnibus test of all covariates answering the question:
-#' "is there predictive information left over after another model was fit?"
+#' Convenience method for testing a model's fit. The strategy is simple: one builds a YARF model from the 
+#' residuals of the model you wish to fit and performs an omnibus test of all covariates against those 
+#' residuals. This effecticely answers the question: "is there out-of-sample predictive information left over after 
+#' this model was fit?" The p-val is determined by a permutation-like test.
 #' 
 #' @param X							The training data frame 
 #' @param y 						The vector of training responses
@@ -130,7 +134,7 @@ yarf_duplicate = function(yarf_mod, X = NULL, y = NULL){
 	}
 	if (is.null(y)){
 		y = yarf_mod$y
-	}	
+	}
 	YARF(X = X, y = y,
 		Xother = yarf_mod$Xother,
 		allow_missingness_in_y = yarf_mod$allow_missingness_in_y,		
@@ -145,7 +149,7 @@ yarf_duplicate = function(yarf_mod, X = NULL, y = NULL){
 		node_assign_script = yarf_mod$node_assign_script,
 		after_node_birth_function_script = yarf_mod$after_node_birth_function_script,
 		aggregation_script = yarf_mod$aggregation_script,
-		prune_if_script = yarf_mod$prune_if_script,
+		oob_cost_calculation = yarf_mod$oob_cost_calculation,
 		shared_scripts = yarf_mod$shared_scripts, 
 		use_missing_data = yarf_mod$use_missing_data,
 		replace_missing_data_with_x_j_bar = yarf_mod$replace_missing_data_with_x_j_bar,

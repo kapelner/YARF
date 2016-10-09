@@ -1,5 +1,3 @@
-
-
 #' Computes a response prediction for new data observation(s). Predictions are an aggregation from each of the 
 #' individual trees' predictions based on the function passed into the model creation step. If no function was 
 #' passed in, the default aggregation is the sample average for regression and the modal class for classification. 
@@ -37,7 +35,7 @@ predict.YARF = function(object, new_data, ...){
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
 	
 	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores)
-	if (object$pred_type == "classification"){	
+	if (object$pred_type == "classification"){ #convert back to the native factor representation
 		y_hats = factor(y_hats, labels = yarf_mod$y_levels)
 	}
 	y_hats

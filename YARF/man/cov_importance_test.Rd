@@ -2,8 +2,9 @@
 % Please edit documentation in R/YARF_hypothesis_tests.R
 \name{cov_importance_test}
 \alias{cov_importance_test}
-\title{Tests the effect of H0: one, or two, ... or all covariates are not predictive via a permutation test. 
-We permute the covariates column(s) and build YARF models \code{num_permutation_samples} times.}
+\title{Tests the effect of H0: one, or two, ... or all covariates are not predictive (out of sample) via a permutation test. 
+We permute the covariates column(s) and build YARF models \code{num_permutation_samples} times.
+The p-val is determined by a permutation-like test.}
 \usage{
 cov_importance_test(yarf_mod, covariates = NULL,
   num_permutation_samples = 100, plot = TRUE)
@@ -27,11 +28,12 @@ Default is \code{TRUE}.}
 A list with the following components: \code{permutation_samples_of_error} whose value
 									is a vector with entries being the error values for each permutation sample, 
 									\code{observed_error_estimate} is the error value of the original model built with 
-									unpermuted data and \code{pval} is the estimated significance level of the test.
+									unpermuted data and \code{pval} is the estimated significance level of the permutation test.
 }
 \description{
-Tests the effect of H0: one, or two, ... or all covariates are not predictive via a permutation test. 
+Tests the effect of H0: one, or two, ... or all covariates are not predictive (out of sample) via a permutation test. 
 We permute the covariates column(s) and build YARF models \code{num_permutation_samples} times.
+The p-val is determined by a permutation-like test.
 }
 \author{
 Adam Kapelner

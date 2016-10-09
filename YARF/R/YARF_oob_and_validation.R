@@ -13,7 +13,7 @@ YARF_update_with_oob_results = function(yarf_mod, indices = NULL){
 
 	#get it from java multithreaded
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
-	y_oob = .jcall(yarf_mod$java_YARF, "[D", "evaluateOutOfBagEstimates", num_cores)
+	y_oob = .jcall(yarf_mod$java_YARF, "[D", "predictOutOfBag", num_cores)
 	
 	if (!is.null(indices)){
 		y = y[indices]
@@ -25,7 +25,13 @@ YARF_update_with_oob_results = function(yarf_mod, indices = NULL){
 	yarf_mod$num_oob_obs_missing = sum(is.na(y_oob))
 	n = n - yarf_mod$num_oob_obs_missing
 	
-	if (yarf_mod$pred_type == "regression"){
+	if (!is.null(yarf_mod$oob_cost_calculation)){
+		yarf_mod$y_oob = y_oob
+		yarf_mod$y_oob_costs = .jcall(yarf_mod$java_YARF, "[D", "customOutOfBagCosts", y_oob, y)
+		yarf_mod$y_oob_total_cost = sum(yarf_mod$y_oob_costs)
+		yarf_mod$y_oob_average_cost = yarf_mod$y_oob_total_cost / n
+		yarf_mod$y_oob_median_cost = median(yarf_mod$y_oob_costs)
+	} else if (yarf_mod$pred_type == "regression"){
 		yarf_mod$y_oob = y_oob
 		yarf_mod$residuals = y - y_oob
 		yarf_mod$L1_err_oob = sum(abs(yarf_mod$residuals), na.rm = TRUE)
@@ -56,6 +62,7 @@ YARF_update_with_oob_results = function(yarf_mod, indices = NULL){
 		}
 		#set overall error
 		yarf_mod$misclassification_error = (sum(confusion_matrix[1 : n_levels, 1 : n_levels]) - sum(diag(as.matrix(confusion_matrix[1 : n_levels, 1 : n_levels])))) / n
+		yarf_mod$classification_accuracy = 1 - yarf_mod$misclassification_error
 		confusion_matrix[n_levels + 1, n_levels + 1] = round(yarf_mod$misclassification_error, 3)
 		#return the whole thing
 		yarf_mod$confusion_matrix = confusion_matrix

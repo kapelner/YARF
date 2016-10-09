@@ -28,6 +28,8 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public static final String AggregationScriptFunctionName = "aggregateYhatsIntoOneYhat";
 	private String prune_if_function_str;
 	public static final String PruneIfScriptFunctionName = "pruneIf";
+	private String oob_cost_calculation_str;
+	public static final String OobCostScriptFunctionName = "oobCost";
 	private String shared_scripts_str;
 	
 	//everything that has to do with scripts that's transient / lazy-loaded
@@ -42,6 +44,7 @@ public abstract class YARFCustomFunctions extends Classifier {
     private transient Invocable after_node_birth_fun;
     private transient Invocable aggregation_fun;
     private transient Invocable prune_if_fun;
+    private transient Invocable oob_cost_calculation_fun;
 
 	private Invocable stringToInvokableCompiledFunction(String script_as_string, String function_name) {
 
@@ -225,10 +228,25 @@ public abstract class YARFCustomFunctions extends Classifier {
 		return false;
 	}
 	
+	public double runOobCostCalculation(double y_hat, double y){
+		if (oob_cost_calculation_fun == null){
+			oob_cost_calculation_fun = stringToInvokableCompiledFunction(oob_cost_calculation_str, OobCostScriptFunctionName);	
+		}
+		try {
+			return (double)oob_cost_calculation_fun.invokeFunction(OobCostScriptFunctionName, y_hat, y);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your oob cost calculation script must include the function \"" + OobCostScriptFunctionName + "(y_hat, y)\" and return the aggregated prediction as a double.");
+			e.printStackTrace();
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + OobCostScriptFunctionName + "\" function:");
+			e.printStackTrace();		
+		}
+		return YARFNode.BAD_FLAG_double;		
+	}
 	
-	
-	
-	
+
 	public boolean customFunctionMtry(){
 		return mtry_function_str != null;
 	}
@@ -257,7 +275,21 @@ public abstract class YARFCustomFunctions extends Classifier {
 		return aggregation_function_str != null;
 	}
 	
+	public boolean customOobCostCalculation(){
+		return oob_cost_calculation_str != null;
+	}
 	
+
+	
+	public double[] customOutOfBagCosts(double[] y_oob, double[] y){
+		int n_oob = y_oob.length;
+		double[] costs = new double[n_oob];
+		for (int i = 0; i < n_oob; i++){
+			//no need for an error check for oob_cost_calculation_str here as it's done in R
+			costs[i] = runOobCostCalculation(y_oob[i], y[i]);
+		}
+		return costs;
+	}	
 	
 
 	public String getShared_scripts_str() {
@@ -332,5 +364,13 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setPrune_if_function_str(String prune_if_function_str) {
 		this.prune_if_function_str = prune_if_function_str;
+	}
+	
+	public String getOob_cost_calculation_str() {
+		return oob_cost_calculation_str;
+	}
+
+	public void setOob_cost_calculation_str(String oob_cost_calculation_str) {
+		this.oob_cost_calculation_str = oob_cost_calculation_str;
 	}
 }

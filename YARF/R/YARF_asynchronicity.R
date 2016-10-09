@@ -84,17 +84,23 @@ YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_
 			} else {
 				par(mfrow = c(1, 1))
 			}
-			if (yarf_mod$pred_type == "regression"){
+			if (!is.null(yarf_mod$oob_cost_calculation)){
+				fit_metrics = c(fit_metrics, yarf_mod$y_oob_average_cost)
+				plot(trees, fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob Average Cost")
+				if (!is.null(trail_pts) & length(trees) > trail_pts){
+					plot(trees[(num_samples - trail_pts) : num_samples], fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob Average Cost")
+				}				
+			} else if (yarf_mod$pred_type == "regression"){
 				fit_metrics = c(fit_metrics, yarf_mod$pseudo_rsq_oob)
 				plot(trees, fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob Pseudo-Rsq")
 				if (!is.null(trail_pts) & length(trees) > trail_pts){
 					plot(trees[(num_samples - trail_pts) : num_samples], fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob Pseudo-Rsq")
 				}
 			} else {
-				fit_metrics = c(fit_metrics, yarf_mod$misclassification_error * 100)
-				plot(trees, 100 - fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob % Correctly Classified")
+				fit_metrics = c(fit_metrics, yarf_mod$classification_accuracy * 100)
+				plot(trees, fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob Accuracy (%)")
 				if (!is.null(trail_pts) & length(trees) > trail_pts){
-					plot(trees[(num_samples - trail_pts) : num_samples], 100 - fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob % Correctly Classified")
+					plot(trees[(num_samples - trail_pts) : num_samples], fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob % Correctly Classified")
 				}
 			}
 

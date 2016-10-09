@@ -38,7 +38,12 @@ summary.YARF = function(object, ...){
 				cat("OOB results on all observations")
 			}	
 			
-			if (object$pred_type == "regression"){
+			if (!is.null(yarf_mod$oob_cost_calculation)){
+				cat(":\n")
+				cat("  average cost:", round(object$y_oob_average_cost, 5), "\n")
+				cat("  median cost:", round(object$y_oob_median_cost, 5), "\n")
+				cat("  total cost:", round(object$y_oob_total_cost, 5), "\n")
+			} else if (object$pred_type == "regression"){
 				cat(":\n")
 				cat("  R^2:", round(object$pseudo_rsq_oob, 5), "\n")
 				cat("  RMSE:", round(object$rmse_oob, 3), "\n")
@@ -48,6 +53,7 @@ summary.YARF = function(object, ...){
 			} else {
 				cat(" as a confusion matrix:")
 				print(object$confusion_matrix)
+				cat("    Accuracy: ", round(object$classification_accuracy * 100, 3), "%\n", sep = "")
 			}			
 		}
 	} else {

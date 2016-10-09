@@ -2,9 +2,10 @@
 % Please edit documentation in R/YARF_hypothesis_tests.R
 \name{model_fit_test}
 \alias{model_fit_test}
-\title{Tests a model fit by building a YARF model from the residuals
-and doing an omnibus test of all covariates answering the question:
-"is there predictive information left over after another model was fit?"}
+\title{Convenience method for testing a model's fit. The strategy is simple: one builds a YARF model from the 
+residuals of the model you wish to fit and performs an omnibus test of all covariates against those 
+residuals. This effecticely answers the question: "is there out-of-sample predictive information left over after 
+this model was fit?" The p-val is determined by a permutation-like test.}
 \usage{
 model_fit_test(X, y, model_fit = NULL, num_permutation_samples = 100,
   plot = TRUE, ...)
@@ -29,9 +30,10 @@ which indicates the standard linear model. Missingness not allowed.}
 The same as \link{cov_importance_test}.
 }
 \description{
-Tests a model fit by building a YARF model from the residuals
-and doing an omnibus test of all covariates answering the question:
-"is there predictive information left over after another model was fit?"
+Convenience method for testing a model's fit. The strategy is simple: one builds a YARF model from the 
+residuals of the model you wish to fit and performs an omnibus test of all covariates against those 
+residuals. This effecticely answers the question: "is there out-of-sample predictive information left over after 
+this model was fit?" The p-val is determined by a permutation-like test.
 }
 \author{
 Adam Kapelner

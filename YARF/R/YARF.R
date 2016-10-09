@@ -7,8 +7,8 @@ VERSION = "1.0"
 #' @title 		A fully customizable Random Forests implementation
 #' @author 		Adam Kapelner \email{kapelner@@qc.cuny.edu}
 #' @references 	TK
-#' @keywords 	Experimental Design, Slope divided by intercept
-#' @import      stats graphics rJava
+#' @keywords 	Machine Learning, Tree-based Non-parametric regression
+#' @import      stats graphics rJava readr
 ##### Run "library(roxygen2); roxygenise("YARF", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file
 ##### but make sure you are in the root directory of the project
 NULL

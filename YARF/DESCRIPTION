@@ -1,16 +1,17 @@
 Package: YARF
 Type: Package
-Title: Yet Another Random Forests
+Title: Yet Another Random Forests Package, but Not
 Version: 1.0
 Date: 2016-08-16
 Author: Adam Kapelner, Alex Goldstein, Justin Bleich (R package)
 Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
-Description: A fully customizable asynchronous and parallelized Random Forests implementation with missing-incorporated-in-attributes.
+Description: A fully customizable, asynchronous and parallelized Random Forests implementation with missing-incorporated-in-attributes and more.
 License: GPL-3
 Depends:
 	YARFJARs,
-    R (>= 3.2.0),
-    rJava (>= 0.9-8)
+    rJava (>= 0.9-8),
+	readr,
+    R (>= 3.2.0)
 Imports:
     graphics,
     grDevices,

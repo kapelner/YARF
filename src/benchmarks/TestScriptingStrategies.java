@@ -1,7 +1,6 @@
 package benchmarks;
 
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -11,7 +10,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import javax.script.SimpleScriptContext;
 
 public class TestScriptingStrategies {
 
@@ -68,18 +66,21 @@ public class TestScriptingStrategies {
 		double b = 3;
 		bindings.put("a", a);
 		bindings.put("b", b);
+		@SuppressWarnings("unused")
 		double res = (double)cscript.eval(bindings);
 	}
 
 	private static void benchmarkInvokeFunctionContextPreset(Invocable invocable) throws NoSuchMethodException, ScriptException {
 		double a = 5;
 		double b = 3;
+		@SuppressWarnings("unused")
 		double res = (double)invocable.invokeFunction("foo", a, b);
 	}
 
 	private static void benchmarkEvalNoCompiling(ScriptEngine nashorn_js_engine) throws ScriptException {
 		double a = 5;
 		double b = 3;
+		@SuppressWarnings("unused")
 		double res = (double)nashorn_js_engine.eval("foo(" + a + "," + b + ")");
 	}
 	
@@ -89,6 +90,7 @@ public class TestScriptingStrategies {
 		cscript.eval(nashorn_js_engine.getBindings(ScriptContext.ENGINE_SCOPE));
 		double a = 5;
 		double b = 3;
+		@SuppressWarnings("unused")
 		double res = (double)invocable.invokeFunction("foo", a, b);
 	}
 }

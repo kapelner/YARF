@@ -18,14 +18,25 @@
 #' 											specified in this list's values should be a subset of those in the values of \code{bootstrap_indices}.
 #' 											The default is \code{NULL} indicating you do not wish to specify any "other" data records. 
 #' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
-#' 											the out-of-box RF default which is floor(p / 3) for regression and for classification,
-#' 											floor(sqrt(p)). If you want a custom function, leave this NULL and see next parameter. 
-#' @param mtry_script						If you wish to create a custom number of mtry, pass in javascript code here as a string.
+#' 											the out-of-box RF default which is floor(p / 3) for regression and floor(sqrt(p)) for
+#' 											classification. If you want a custom function, leave this NULL and see next parameter. 
+#' @param mtry_script						A custom javascript function which selects the variables to be greedily searched:
+#' 
+#' 												tryVars(node){ //node is of type YARFNode
+#' 													...
+#' 													return indices; //an array of integer indices in 1,...,p indicating the variables to try
+#' 												}
+#' 
+#' 											The default is \code{NULL} which employs the \code{mtry} argument.
 #' @param nodesize							The minimum number of observations in a node. YARF will stop splitting at this point.
 #' 											If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
 #' 											will be used.
-#' @param nodesize_script					A custom javascript function to be used to calculate nodesize. The default is \code{NULL} where
-#' 											nodesize will be calculated as a static constant (see the \code{nodesize} argument).				
+#' @param nodesize_script					A custom javascript function to be used to calculate nodesize: 
+#' 
+#' 												
+#' 
+#' 											The default is \code{NULL} where nodesize will be calculated as a static constant (see the 
+#' 											\code{nodesize} argument).				
 #' @param cost_single_node_calc_script		A custom cost calculation for a potential node (when considering a split) in Javascript. 
 #' 											The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
 #' 											to the sample average (if regression) and sum of entropy (if classification). You may find it 
@@ -43,9 +54,9 @@
 #' @param aggregation_script				A custom javascript function which aggregates the predictions in the trees for one observations 
 #' 											into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
 #' 											regression and the modal category for classification.
-#' @param prune_if_script					A custom javascript function which prunes a node (i.e. deletes the node's children and
-#' 											sets the node to a leaf and sets a y_hat using the assign function). The default is \code{NULL}
-#' 											which means no pruning is performed, the random forest default.
+#' @param oob_cost_calculation				A custom Javascript function which calculates the cost of a prediction given the true
+#' 											value of the prediction. If is likely similar to \code{cost_single_node_calc_script}. It
+#' 											is recommended to share code between them by writing a function included in \code{shared_scripts}.
 #' @param shared_scripts					Custom Javascript code that are always in scope when running all your custom methods. 
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
@@ -80,7 +91,7 @@ YARF = function(
 		node_assign_script = NULL,
 		after_node_birth_function_script = NULL,
 		aggregation_script = NULL,
-		prune_if_script = NULL,
+		oob_cost_calculation = NULL,
 		shared_scripts = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = TRUE,
@@ -137,9 +148,9 @@ YARF = function(
 		}
 	}
 	
-	if (!is.null(prune_if_script)){
-		if (class(prune_if_script) != "character"){
-			stop("'prune_if_script' must be a character string of Javascript code")
+	if (!is.null(oob_cost_calculation)){
+		if (class(oob_cost_calculation) != "character"){
+			stop("'oob_cost_calculation' must be a character string of Javascript code")
 		}
 	}
 	
@@ -149,7 +160,18 @@ YARF = function(
 		}
 	}
 	
-	
+	#there are some scripts that depend on one another conceptually. The user should be aware of this...
+	if (!is.null(oob_cost_calculation) & is.null(cost_single_node_calc_script)){
+		cat("NOTE: You specified a custom oob cost calculation but you did")
+		cat("not specify a custom node cost script. The node cost will default")
+		cat("to SSE if y is numeric and negative entropy if y is a factor.\n")
+	}
+	if (!is.null(oob_cost_calculation) & is.null(aggregation_script)){
+		cat("NOTE: You specified a custom oob cost calculation but you did")
+		cat("not specify a custom aggregation script.")
+		cat("The aggregation will default to sample average")
+		cat("if y is numeric and sample mode if y is a factor.\n")
+	}	
 	
 	if (verbose){
 		cat("YARF initializing with", num_trees, "trees...\n")	
@@ -368,11 +390,9 @@ YARF = function(
 		.jcall(java_YARF, "V", "setAfter_node_birth_function_str", after_node_birth_function_script)
 	}
 	
-	if (!is.null(prune_if_script)){
-		.jcall(java_YARF, "V", "setPrune_if_function_str", prune_if_script)
+	if (!is.null(oob_cost_calculation)){
+		.jcall(java_YARF, "V", "setOob_cost_calculation_str", oob_cost_calculation)
 	}
-	
-	
 	
 	if (!is.null(shared_scripts)){
 		.jcall(java_YARF, "V", "setShared_scripts_str", shared_scripts)
@@ -448,7 +468,7 @@ YARF = function(
 		node_assign_script = node_assign_script,
 		after_node_birth_function_script = after_node_birth_function_script,
 		aggregation_script = aggregation_script,
-		prune_if_script = prune_if_script,
+		oob_cost_calculation = oob_cost_calculation,
 		shared_scripts = shared_scripts, 
 		use_missing_data = use_missing_data,
 		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
@@ -495,6 +515,8 @@ set_YARF_num_cores = function(num_cores){
 	assign("YARF_NUM_CORES", num_cores, YARF_globals)
 	cat("YARF now using", num_cores, "cores.\n")
 }
+
+#J("YARF.YARF")$MTryScriptFunctionName
 
 #' Serializes the model so the user can use \code{save} and \code{save.image}
 #' to write it to a file that can be then loaded into another and/or future R session.
