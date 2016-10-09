@@ -13,14 +13,13 @@ YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   cost_single_node_calc_script = NULL, node_assign_script = NULL,
   after_node_birth_function_script = NULL, aggregation_script = NULL,
   prune_if_script = NULL, shared_scripts = NULL, use_missing_data = TRUE,
-  replace_missing_data_with_x_j_bar = FALSE, mem_cache_for_speed = TRUE,
-  covariates_to_permute = NULL, serialize = FALSE, seed = NULL,
-  wait = TRUE, verbose = TRUE, debug_log = FALSE)
+  replace_missing_data_with_x_j_bar = FALSE, serialize = FALSE,
+  seed = NULL, wait = TRUE, verbose = TRUE, debug_log = FALSE)
 }
 \arguments{
 \item{X}{The data frame of training data}
 
-\item{y}{The training responses}
+\item{y}{The vector of training responses}
 
 \item{Xy}{The data frame of training data where the last column is responses}
 
@@ -82,11 +81,6 @@ The default is \code{NULL} for no shared scripts.}
 
 \item{use_missing_data}{Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 default is \code{TRUE}.}
-
-\item{mem_cache_for_speed}{}
-
-\item{covariates_to_permute}{Indices of features to randomly permute when creating a YARF. The default is \code{NULL}
-indicating no features are permuted. This is an argument used mostly by other YARF functions.}
 
 \item{serialize}{Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
 time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},

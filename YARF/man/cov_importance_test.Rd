@@ -2,21 +2,36 @@
 % Please edit documentation in R/YARF_hypothesis_tests.R
 \name{cov_importance_test}
 \alias{cov_importance_test}
+\title{Tests the effect of H0: one, or two, ... or all covariates are not predictive via a permutation test. 
+We permute the covariates column(s) and build YARF models \code{num_permutation_samples} times.}
 \usage{
 cov_importance_test(yarf_mod, covariates = NULL,
   num_permutation_samples = 100, plot = TRUE)
 }
 \arguments{
-\item{yarf_mod}{}
+\item{yarf_mod}{The fit model to test against permuted training data.}
 
-\item{covariates}{}
+\item{covariates}{The covariates to permute as a vector of indices or names. If multiple covariates
+they are permuted as a single block to not break collinearity. If this parameter is 
+specified as \code{NULL}, we test all the covariates by permuting y instead. 
+Default is \code{NULL}.}
 
-\item{num_permutation_samples}{}
+\item{num_permutation_samples}{How many different YARF models should be built - one for each different
+permutation of the variables tests. The is the resolution of the test. The 
+default is \code{100}.}
 
-\item{plot}{}
+\item{plot}{Plot a histogram of the permutation samples with the original sample displayed?
+Default is \code{TRUE}.}
 }
 \value{
-
+A list with the following components: \code{permutation_samples_of_error} whose value
+									is a vector with entries being the error values for each permutation sample, 
+									\code{observed_error_estimate} is the error value of the original model built with 
+									unpermuted data and \code{pval} is the estimated significance level of the test.
+}
+\description{
+Tests the effect of H0: one, or two, ... or all covariates are not predictive via a permutation test. 
+We permute the covariates column(s) and build YARF models \code{num_permutation_samples} times.
 }
 \author{
 Adam Kapelner
