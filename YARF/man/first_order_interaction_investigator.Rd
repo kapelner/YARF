@@ -25,7 +25,7 @@ can be large. The default is \code{50}. Use \code{Inf} to plot all p-choose-2.}
 \item{...}{Additional parameters to be passed into the \code{barplot} function.}
 }
 \value{
-A list with two components: (1) \code{interaction_counts} is a $p \times p$-sized matrix
+A list with two components: (1) \code{interaction_counts} is a p x p sized matrix
 							of interaction counts between the variables and (2) \code{sorted_counts} is a vector of
 							the top interactions in order. Returns invisibly.
 }

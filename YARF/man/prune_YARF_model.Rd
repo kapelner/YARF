@@ -10,8 +10,16 @@ prune_YARF_model(yarf_mod, prune_if_script, trees_to_prune = NULL)
 \arguments{
 \item{yarf_mod}{The YARF model whose trees are to be pruned.}
 
-\item{prune_if_script}{A custom javascript function which determines the pruning og a node (i.e. deletes the node's children and
-sets the node to a leaf and sets a y_hat using the assign function).}
+\item{prune_if_script}{A custom javascript function (see below) which determines the pruning of 
+                            a node (i.e. deletes the node's children and sets the node to a leaf and 
+                            then sets a y_hat using the assign function).
+
+                            function pruneIf(node)\{ //node is of type YARF.YARFNode
+
+                                ...
+                                
+                                return boolean //true if this node is to be pruned
+                            \}}
 
 \item{trees_to_prune}{An array of indices which specify which of the trees to prune. The default is \code{NULL}
 which means all of them.}

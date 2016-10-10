@@ -20,43 +20,107 @@
 #' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
 #' 											the out-of-box RF default which is floor(p / 3) for regression and floor(sqrt(p)) for
 #' 											classification. If you want a custom function, leave this NULL and see next parameter. 
-#' @param mtry_script						A custom javascript function which selects the variables to be greedily searched:
-#' 
-#' 												tryVars(node){ //node is of type YARFNode
-#' 													...
-#' 													return indices; //an array of integer indices in 1,...,p indicating the variables to try
-#' 												}
-#' 
+#' @param mtry_script						A custom javascript function which selects the variables to be greedily searched (see below)
 #' 											The default is \code{NULL} which employs the \code{mtry} argument.
+#' 
+#' 											  function tryVars(node)\{ //node is of type YARF.YARFNode
+#' 
+#' 											    ...
+#' 
+#' 											    return int_array //indices in 1,...,p indicating the variables to perform the exhaustive search on
+#' 
+#' 											  \}
+#' 
 #' @param nodesize							The minimum number of observations in a node. YARF will stop splitting at this point.
 #' 											If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
 #' 											will be used.
-#' @param nodesize_script					A custom javascript function to be used to calculate nodesize: 
-#' 
-#' 												
-#' 
+#' @param make_node_to_leaf_script			A custom javascript function to be used to calculate nodesize (see below).
 #' 											The default is \code{NULL} where nodesize will be calculated as a static constant (see the 
-#' 											\code{nodesize} argument).				
-#' @param cost_single_node_calc_script		A custom cost calculation for a potential node (when considering a split) in Javascript. 
+#' 											\code{nodesize} argument).
+#' 
+#' 											  function makeNodeIntoLeaf(node)\{ //node is of type YARF.YARFNode
+#' 
+#' 											    ...
+#' 
+#' 											    return boolean //where true makes this node into a leaf
+#' 
+#' 											  \}
+#' 			
+#' @param cost_single_node_calc_script		A custom cost calculation for a potential node (when considering a split) in Javascript (see below). 
 #' 											The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
 #' 											to the sample average (if regression) and sum of entropy (if classification). You may find it 
 #' 											convenient to also made a node assignment here. If so, make sure you specify the node assignment
 #' 											function as a blank function (not \code{NULL}).
-#' @param cost_both_children_calc_script	A custom cost calculation for an entire split considering both the putative left and right children
-#' 											nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
+#' 
+#' 											  function nodeCost(node)\{ //node is of type YARF.YARFNode
+#' 
+#' 											    ...
+#' 
+#' 											    return double //where a higher number indicates a higher cost
+#' 
+#' 											  \}
+#' 
+#' @param cost_both_children_calc_script	A custom cost calculation in Javascript for an entire split considering both the putative left and right children
+#' 											nodes (see below). The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
 #' 											sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
-#' 											to the number of observations in each node).						 
-#' @param node_assign_script				A custom node assignment function in Javascript. This function is run after RF greedily finds the 
+#' 											to the number of observations in each node).
+#' 
+#' 											  function totalChildrenCost(leftNode, rightNode)\{ //both nodes are of type YARF.YARFNode
+#' 
+#' 											    ...
+#' 
+#' 											    return double //where a higher number indicates a higher cost
+#' 
+#' 											  \}
+#' 
+#' @param node_assign_script				A custom node assignment function in Javascript (see below). This function is run after RF greedily finds the 
 #' 											"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
 #' 											in regression or the modal class during classification. 
+#' 
+#' 											  function assignYhatToNode(node)\{ //node is of type YARF.YARFNode
+#' 
+#' 											    ...
+#' 
+#' 											    return double //assigned as this node's predicted value ("y_hat")
+#' 
+#' 											  \}
+#' 
 #' @param after_node_birth_function_script	A custom function in Javascript which is executed after a node is given birth to. The default is 
-#' 											\code{NULL} which implies nothing special is done, the Random Forest default.
+#' 											\code{NULL} which implies nothing special is done, the Random Forest default. This is particularly
+#' 											useful to record extra information in the node (e.g. by writing a hash to the \code{other_info} 
+#' 											field in the node).
+#' 
+#' 											  function nodeAfterNodeBirth(node)\{ //node is of type YARF.YARFNode
+#' 
+#' 											    ...
+#' 
+#' 											  \}
+#' 
 #' @param aggregation_script				A custom javascript function which aggregates the predictions in the trees for one observations 
-#' 											into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
+#' 											into one scalar prediction (see below). The default is \code{NULL} corresponding to the sample average for
 #' 											regression and the modal category for classification.
+#' 
+#' 											  function aggregateYhatsIntoOneYhat(y_hats, yarf)\{ //y_hats is an array of doubles 
+#' 												//and yarf provides access to the entire random forest object (of type YARF.YARF)
+#' 
+#' 											    ...
+#' 
+#' 											    return double //this is the final predicted value aggregated from all tree predictions
+#' 
+#' 											  \}
+#' 
 #' @param oob_cost_calculation				A custom Javascript function which calculates the cost of a prediction given the true
-#' 											value of the prediction. If is likely similar to \code{cost_single_node_calc_script}. It
+#' 											value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
 #' 											is recommended to share code between them by writing a function included in \code{shared_scripts}.
+#' 
+#' 											  function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are doubles)
+#' 
+#' 											    ...
+#' 
+#' 											    return double //where a higher number indicates a higher cost
+#' 
+#' 											  \}
+#' 
 #' @param shared_scripts					Custom Javascript code that are always in scope when running all your custom methods. 
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
@@ -69,7 +133,14 @@
 #' @param verbose 							Should we print out messages verbosely during construction? Default is \code{FALSE}.
 #' @param debug_log							Should we print out messages from Java? Default is \code{FALSE}.
 #' 
-#' @return									A list of all arguments passed in plus... 
+#' @return									A list that (a) reiterates all ob the above arguments passed in and (b) \code{pred_type} is the 
+#' 											guess as to modeling type: regression or classification (c) \code{java_YARF} is the Java object
+#' 											(d) \code{y_levels} is the unique values of the response variable (e) \code{model_matrix_training_data}
+#' 											is the data matrix with factor variables converted to dummies that is fed into YARF as the X variables
+#' 											(f) \code{training_data_features} is the names of the features (g) \code{predictors_which_are_factors}
+#' 											is a list of the variables that are factors and (h) \code{n} and \code{p} which are the dimensions of
+#' 											the training data model matrix and (i) various other convenient data and internal data of use to 
+#' 											other functions in this package.
 #' 
 #' @author Adam Kapelner
 #' @export
@@ -86,7 +157,7 @@ YARF = function(
 		nodesize = NULL,
 		#all custom scripts/function
 		mtry_script = NULL,
-		nodesize_script = NULL,
+		make_node_to_leaf_script = NULL,
 		cost_single_node_calc_script = NULL,
 		node_assign_script = NULL,
 		after_node_birth_function_script = NULL,
@@ -118,9 +189,9 @@ YARF = function(
 		}
 	}
 	
-	if (!is.null(nodesize_script)){
-		if (class(nodesize_script) != "character"){
-			stop("'nodesize_script' must be a character string of Javascript code")
+	if (!is.null(make_node_to_leaf_script)){
+		if (class(make_node_to_leaf_script) != "character"){
+			stop("'make_node_to_leaf_script' must be a character string of Javascript code")
 		}
 	}
 	
@@ -370,8 +441,8 @@ YARF = function(
 	}
 	if (!is.null(nodesize)){
 		.jcall(java_YARF, "V", "setNodesize", as.integer(nodesize))
-	} else if (!is.null(nodesize_script)) {
-		.jcall(java_YARF, "V", "setNodesizeFunction", nodesize_script)
+	} else if (!is.null(make_node_to_leaf_script)) {
+		.jcall(java_YARF, "V", "setMake_node_into_leaf_function_str", make_node_to_leaf_script)
 	}
 	
 	if (!is.null(cost_single_node_calc_script)){
@@ -463,7 +534,7 @@ YARF = function(
 		mtry = mtry,
 		nodesize = nodesize,
 		mtry_script = mtry_script,
-		nodesize_script = nodesize_script,
+		node_to_leaf_script = make_node_to_leaf_script,
 		cost_single_node_calc_script = cost_single_node_calc_script,
 		node_assign_script = node_assign_script,
 		after_node_birth_function_script = after_node_birth_function_script,

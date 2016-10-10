@@ -48,7 +48,7 @@ query_variable_proportions_across_trees = function(yarf_mod, type = "splits"){
 #' 							\code{NULL} for no cutting.
 #' @param bottom_margin 	Allow for larger bottom margins. This is useful when the variables have long names.
 #' @param ... 				Additional parameters to be passed into the \code{barplot} function.
-#' @return 					A list with two components: (1) \code{interaction_counts} is a $p \times p$-sized matrix
+#' @return 					A list with two components: (1) \code{interaction_counts} is a p x p sized matrix
 #' 							of interaction counts between the variables and (2) \code{sorted_counts} is a vector of
 #' 							the top interactions in order. Returns invisibly.
 #' 

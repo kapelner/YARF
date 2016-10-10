@@ -140,7 +140,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 			cost_both_children_calc_fun = stringToInvokableCompiledFunction(cost_both_children_calc_function_str, TotalNodeCostScriptFunctionName);	
 		}
 		try {
-			return (double)cost_both_children_calc_fun.invokeFunction("splitCost", leftNode, rightNode);
+			return (double)cost_both_children_calc_fun.invokeFunction(TotalNodeCostScriptFunctionName, leftNode, rightNode);
 		} catch (NoSuchMethodException e) {
 			StopBuilding();
 			System.err.println("Your total cost script must include the function \"" + TotalNodeCostScriptFunctionName + "(leftNode, rightNode)\" and return the total cost of both nodes as a double.");
@@ -173,12 +173,12 @@ public abstract class YARFCustomFunctions extends Classifier {
 		return YARFNode.BAD_FLAG_double;
 	}
 	
-	public double runAfterNodeBirth(YARFNode node){
+	public void runAfterNodeBirth(YARFNode node){
 		if (after_node_birth_fun == null){
 			after_node_birth_fun = stringToInvokableCompiledFunction(after_node_birth_function_str, AfterNodeBirthScriptFunctionName);
 		}
 		try {
-			return (double)after_node_birth_fun.invokeFunction(AfterNodeBirthScriptFunctionName, node);
+			after_node_birth_fun.invokeFunction(AfterNodeBirthScriptFunctionName, node);
 		} catch (NoSuchMethodException e) {
 			StopBuilding();
 			System.err.println("Your after node birth script must include the function \"" + AfterNodeBirthScriptFunctionName + "(node)\" and return nothing.");
@@ -189,15 +189,14 @@ public abstract class YARFCustomFunctions extends Classifier {
 			System.err.println("There was a problem evaluating your \"" + AfterNodeBirthScriptFunctionName + "\" function:");
 			e.printStackTrace();		
 		}
-		return YARFNode.BAD_FLAG_double;
 	}
 	
-	public double runAggregation(double[] y_hats, YARFTree[] yarf_trees){
+	public double runAggregation(double[] y_hats, YARF yarf){
 		if (aggregation_fun == null){
 			aggregation_fun = stringToInvokableCompiledFunction(aggregation_function_str, AggregationScriptFunctionName);	
 		}
 		try {
-			return (double)aggregation_fun.invokeFunction(AggregationScriptFunctionName, y_hats, yarf_trees);
+			return (double)aggregation_fun.invokeFunction(AggregationScriptFunctionName, y_hats, yarf);
 		} catch (NoSuchMethodException e) {
 			StopBuilding();
 			System.err.println("Your aggregation script must include the function \"" + AggregationScriptFunctionName + "(y_hats, yarf_trees)\" and return the aggregated prediction as a double.");
@@ -251,7 +250,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 		return mtry_function_str != null;
 	}
 	
-	public boolean customFunctionNodesize(){
+	public boolean customFunctionMakeNodeIntoLeaf(){
 		return make_node_into_leaf_function_str != null;
 	}
 	
@@ -275,7 +274,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 		return aggregation_function_str != null;
 	}
 	
-	public boolean customOobCostCalculation(){
+	public boolean customFunctionOobCostCalculation(){
 		return oob_cost_calculation_str != null;
 	}
 	
@@ -338,8 +337,8 @@ public abstract class YARFCustomFunctions extends Classifier {
 		return make_node_into_leaf_function_str;
 	}
 
-	public void setMake_node_into_leaf_function_str(String nodesize_function_str) {
-		this.make_node_into_leaf_function_str = nodesize_function_str;
+	public void setMake_node_into_leaf_function_str(String make_node_into_leaf_function_str) {
+		this.make_node_into_leaf_function_str = make_node_into_leaf_function_str;
 	}
 
 	public String getNode_assignment_function_str() {

@@ -9,7 +9,7 @@
 YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   allow_missingness_in_y = FALSE, num_trees = 500,
   bootstrap_indices = NULL, other_indices = NULL, mtry = NULL,
-  nodesize = NULL, mtry_script = NULL, nodesize_script = NULL,
+  nodesize = NULL, mtry_script = NULL, make_node_to_leaf_script = NULL,
   cost_single_node_calc_script = NULL, node_assign_script = NULL,
   after_node_birth_function_script = NULL, aggregation_script = NULL,
   oob_cost_calculation = NULL, shared_scripts = NULL,
@@ -51,42 +51,90 @@ classification. If you want a custom function, leave this NULL and see next para
 If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
 will be used.}
 
-\item{mtry_script}{A custom javascript function which selects the variables to be greedily searched:
+\item{mtry_script}{A custom javascript function which selects the variables to be greedily searched (see below)
+                                            The default is \code{NULL} which employs the \code{mtry} argument.
 
-                                                tryVars(node){ //node is of type YARFNode
-                                                    ...
-                                                    return indices; //an array of integer indices in 1,...,p indicating the variables to try
-                                                }
+                                              function tryVars(node)\{ //node is of type YARF.YARFNode
 
-                                            The default is \code{NULL} which employs the \code{mtry} argument.}
+                                                ...
 
-\item{nodesize_script}{A custom javascript function to be used to calculate nodesize: 
+                                                return int_array //indices in 1,...,p indicating the variables to perform the exhaustive search on
 
-                                                
+                                              \}}
 
+\item{make_node_to_leaf_script}{A custom javascript function to be used to calculate nodesize (see below).
                                             The default is \code{NULL} where nodesize will be calculated as a static constant (see the 
-                                            \code{nodesize} argument).}
+                                            \code{nodesize} argument).
 
-\item{cost_single_node_calc_script}{A custom cost calculation for a potential node (when considering a split) in Javascript. 
-The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
-to the sample average (if regression) and sum of entropy (if classification). You may find it 
-convenient to also made a node assignment here. If so, make sure you specify the node assignment
-function as a blank function (not \code{NULL}).}
+                                              function makeNodeIntoLeaf(node)\{ //node is of type YARF.YARFNode
 
-\item{node_assign_script}{A custom node assignment function in Javascript. This function is run after RF greedily finds the 
-"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
-in regression or the modal class during classification.}
+                                                ...
+
+                                                return boolean //where true makes this node into a leaf
+
+                                              \}}
+
+\item{cost_single_node_calc_script}{A custom cost calculation for a potential node (when considering a split) in Javascript (see below). 
+                                            The default is \code{NULL} which means the out-of-the-box default of sum of squared error relative
+                                            to the sample average (if regression) and sum of entropy (if classification). You may find it 
+                                            convenient to also made a node assignment here. If so, make sure you specify the node assignment
+                                            function as a blank function (not \code{NULL}).
+
+                                              function nodeCost(node)\{ //node is of type YARF.YARFNode
+
+                                                ...
+
+                                                return double //where a higher number indicates a higher cost
+
+                                              \}}
+
+\item{node_assign_script}{A custom node assignment function in Javascript (see below). This function is run after RF greedily finds the 
+                                            "lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
+                                            in regression or the modal class during classification. 
+
+                                              function assignYhatToNode(node)\{ //node is of type YARF.YARFNode
+
+                                                ...
+
+                                                return double //assigned as this node's predicted value ("y_hat")
+
+                                              \}}
 
 \item{after_node_birth_function_script}{A custom function in Javascript which is executed after a node is given birth to. The default is 
-\code{NULL} which implies nothing special is done, the Random Forest default.}
+                                            \code{NULL} which implies nothing special is done, the Random Forest default. This is particularly
+                                            useful to record extra information in the node (e.g. by writing a hash to the \code{other_info} 
+                                            field in the node).
+
+                                              function nodeAfterNodeBirth(node)\{ //node is of type YARF.YARFNode
+
+                                                ...
+
+                                              \}}
 
 \item{aggregation_script}{A custom javascript function which aggregates the predictions in the trees for one observations 
-into one scalar prediction. The default is \code{NULL} corresponding to the sample average for
-regression and the modal category for classification.}
+                                            into one scalar prediction (see below). The default is \code{NULL} corresponding to the sample average for
+                                            regression and the modal category for classification.
+
+                                              function aggregateYhatsIntoOneYhat(y_hats, yarf)\{ //y_hats is an array of doubles 
+                                                //and yarf provides access to the entire random forest object (of type YARF.YARF)
+
+                                                ...
+
+                                                return double //this is the final predicted value aggregated from all tree predictions
+
+                                              \}}
 
 \item{oob_cost_calculation}{A custom Javascript function which calculates the cost of a prediction given the true
-value of the prediction. If is likely similar to \code{cost_single_node_calc_script}. It
-is recommended to share code between them by writing a function included in \code{shared_scripts}.}
+                                            value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
+                                            is recommended to share code between them by writing a function included in \code{shared_scripts}.
+
+                                              function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are doubles)
+
+                                                ...
+
+                                                return double //where a higher number indicates a higher cost
+
+                                              \}}
 
 \item{shared_scripts}{Custom Javascript code that are always in scope when running all your custom methods. 
 The default is \code{NULL} for no shared scripts.}
@@ -106,13 +154,28 @@ we will automatically serialize after other operations that add data (such as th
 
 \item{debug_log}{Should we print out messages from Java? Default is \code{FALSE}.}
 
-\item{cost_both_children_calc_script}{A custom cost calculation for an entire split considering both the putative left and right children
-nodes. The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
-sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
-to the number of observations in each node).}
+\item{cost_both_children_calc_script}{A custom cost calculation in Javascript for an entire split considering both the putative left and right children
+                                            nodes (see below). The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
+                                            sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
+                                            to the number of observations in each node).
+
+                                              function totalChildrenCost(leftNode, rightNode)\{ //both nodes are of type YARF.YARFNode
+
+                                                ...
+
+                                                return double //where a higher number indicates a higher cost
+
+                                              \}}
 }
 \value{
-A list of all arguments passed in plus...
+A list that (a) reiterates all ob the above arguments passed in and (b) \code{pred_type} is the 
+											guess as to modeling type: regression or classification (c) \code{java_YARF} is the Java object
+											(d) \code{y_levels} is the unique values of the response variable (e) \code{model_matrix_training_data}
+											is the data matrix with factor variables converted to dummies that is fed into YARF as the X variables
+											(f) \code{training_data_features} is the names of the features (g) \code{predictors_which_are_factors}
+											is a list of the variables that are factors and (h) \code{n} and \code{p} which are the dimensions of
+											the training data model matrix and (i) various other convenient data and internal data of use to 
+											other functions in this package.
 }
 \description{
 Software which helps practitioners optimally design experiments that measure the slope divided by the intercept.

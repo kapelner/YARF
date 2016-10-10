@@ -15,6 +15,7 @@
 
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
+?YARF
 
 n = 100
 X = data.frame(x1 = 0 : (n - 1))

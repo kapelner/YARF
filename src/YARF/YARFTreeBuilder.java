@@ -28,7 +28,7 @@ public class YARFTreeBuilder {
 		//if this node is too small (or whatever other reason), ditch from splitting and make it a leaf
 		if (makeNodeLeaf(node)){
 			node.is_leaf = true;
-			assignYHat(node);
+			node.assignYHat();
 			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return; //ditch... because we're done...
 		}
@@ -128,7 +128,7 @@ public class YARFTreeBuilder {
 		if (lowest_total_split_cost >= node.cost){
 			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));}
 			node.is_leaf = true;
-			assignYHat(node);
+			node.assignYHat();
 			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return;
 		}
@@ -161,24 +161,6 @@ public class YARFTreeBuilder {
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
 		splitNode(node.right);
-	}
-	
-
-	
-	public void assignYHat(YARFNode node) {
-		//System.out.println("assignYHat");
-		if (yarf.customFunctionNodeAssignment()){
-			//System.out.println("yarf.customFunctionNodeAssignment");
-			node.y_pred = yarf.runNodeAssignment(node);
-		}
-		else {
-			if (tree.yarf.is_a_regression){ //the default is the sample average
-				node.y_pred = StatToolbox.sample_average(node.node_ys());
-			}
-			else { //and for a classification, it's just the modal value among the y's
-				node.y_pred = StatToolbox.sample_mode(node.node_ys());
-			}
-		}
 	}
 
 	private double totalChildrenCost(YARFNode putative_left, YARFNode putative_right) {
@@ -214,7 +196,7 @@ public class YARFTreeBuilder {
 	private boolean makeNodeLeaf(YARFNode node) {
 //		System.out.println("makeNodeLeaf nodesize = " + node.nodeSize() + " yarfnodesize = " + yarf.nodesize);
 	
-		if (yarf.customFunctionNodesize()){
+		if (yarf.customFunctionMakeNodeIntoLeaf()){
 			return yarf.runNodesizeLegal(node);
 		//the default is if it's less than the minimum node size as specified by the user at build time
 		} else if (node.nodeSize() < yarf.nodesize){

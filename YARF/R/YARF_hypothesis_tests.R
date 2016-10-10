@@ -37,6 +37,20 @@ cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samp
 		title = paste("YARF test for importance of", length(covariates), "covariates", "\n")
 	}
 	cat(title)
+	
+	#get this model's results if necessary
+	if (is.null(yarf_mod$y_oob)){
+		yarf_mod = YARF_update_with_oob_results(yarf_mod)
+	}
+	
+	#the error in the true, unpermuted model - the yardstick we'll be comparing to
+	if (!is.null(yarf_mod$oob_cost_calculation)){
+		permutation_samples_of_error[nsim] = yarf_mod$y_oob_average_cost
+	} else if (object$pred_type == "regression"){
+		permutation_samples_of_error[nsim] = yarf_mod$pseudo_rsq_oob
+	} else {
+		permutation_samples_of_error[nsim] = yarf_mod$misclassification_error
+	}
 	observed_error_estimate = ifelse(yarf_mod$pred_type == "regression", yarf_mod$PseudoRsq, yarf_mod$misclassification_error)
 	
 	permutation_samples_of_error = array(NA, num_permutation_samples)
@@ -62,12 +76,18 @@ cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samp
 				}
 			}
 			
+			#build a model then get its oob results
 			yarf_samp = yarf_duplicate(yarf_mod, X = X_samp)
+			yarf_samp = YARF_update_with_oob_results(yarf_samp)
 		}
 		#record permutation result
-	
-		
-		permutation_samples_of_error[nsim] = ifelse(yarf_mod$pred_type == "regression", yarf_samp$PseudoRsq, yarf_samp$misclassification_error)	
+		if (!is.null(yarf_mod$oob_cost_calculation)){
+			permutation_samples_of_error[nsim] = yarf_samp$y_oob_average_cost
+		} else if (object$pred_type == "regression"){
+			permutation_samples_of_error[nsim] = yarf_samp$pseudo_rsq_oob
+		} else {
+			permutation_samples_of_error[nsim] = yarf_samp$misclassification_error
+		}
 	}
 	cat("\n")
 	
@@ -144,7 +164,7 @@ yarf_duplicate = function(yarf_mod, X = NULL, y = NULL){
 		mtry = yarf_mod$mtry,
 		nodesize = yarf_mod$nodesize,
 		mtry_script = yarf_mod$mtry_script,
-		nodesize_script = yarf_mod$nodesize_script,
+		node_to_leaf_script = yarf_mod$node_to_leaf_script,
 		cost_single_node_calc_script = yarf_mod$cost_single_node_calc_script,
 		node_assign_script = yarf_mod$node_assign_script,
 		after_node_birth_function_script = yarf_mod$after_node_birth_function_script,

@@ -282,6 +282,22 @@ public class YARFNode implements Cloneable {
 		left.maxDepth(max_depth);
 		right.maxDepth(max_depth);
 	}
+	
+	public void assignYHat() {
+		//System.out.println("assignYHat");
+		if (tree.yarf.customFunctionNodeAssignment()){
+			//System.out.println("yarf.customFunctionNodeAssignment");
+			y_pred = tree.yarf.runNodeAssignment(this);
+		}
+		else {
+			if (tree.yarf.is_a_regression){ //the default is the sample average
+				y_pred = StatToolbox.sample_average(node_ys());
+			}
+			else { //and for a classification, it's just the modal value among the y's
+				y_pred = StatToolbox.sample_mode(node_ys());
+			}
+		}
+	}
 
 	public int[] attributeSplitCounts() {
 		int[] attribute_split_counts = new int[tree.yarf.p];
@@ -335,5 +351,19 @@ public class YARFNode implements Cloneable {
 		//now recurse
 		this.left.findSplitAttributesUsedUnderneath(interacted_attribute, set_of_interaction_pairs);
 		this.right.findSplitAttributesUsedUnderneath(interacted_attribute, set_of_interaction_pairs);
+	}
+
+	public void prune() {
+		if (!this.is_leaf){
+			if (tree.yarf.runPruneIf(this)){
+				left = null;
+				right = null;
+				assignYHat();
+				return;
+			}
+			left.prune();
+			right.prune();
+		}
+
 	}	
 }

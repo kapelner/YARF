@@ -383,7 +383,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	
 	public void pruneTree(int t){
 		if (yarf_trees[t].completed){
-			
+			yarf_trees[t].root.prune();
 		}
 	}
 
@@ -450,7 +450,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	
 	private double nodeAssignmentAggregation(double[] y_preds){
 		if (customFunctionAggregation()){
-			return runAggregation(y_preds, yarf_trees);
+			return runAggregation(y_preds, this);
 		}
 		if (is_a_regression){
 			return StatUtils.mean(y_preds); //the sample average
