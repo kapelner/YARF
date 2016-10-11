@@ -58,16 +58,18 @@ yarf_mod = YARF(X, y, num_trees = 500)
 yarf_mod
 yarf_mod = YARF_update_with_oob_results(yarf_mod)
 yarf_mod
-y_hat = predict(yarf_mod, X)
+y_hat_yarf = predict(yarf_mod, X)
 
-plot(y, y_hat)
+plot(y, y_hat_yarf)
 
 library(randomForest)
 rf_mod = randomForest(X, y, num_trees = 500)
-y_hat = predict(rf_mod, X)
+y_hat_rf = predict(rf_mod, X)
 
-plot(y, y_hat)
+plot(y, y_hat_rf)
 rf_mod
+
+plot(y_hat_rf, y_hat_yarf)
 
 ##verify on classification it works
 options(java.parameters = c("-Xmx4000m"))
@@ -118,6 +120,7 @@ YARF_update_with_oob_results(yarf_mod)
 #If you would like to wait until the model is built, you
 #can set up a process to notify you about the progress which
 #will return to the prompt when the model is completed
+#and you can also see a illustration of the convergence
 YARF_progress_reports(yarf_mod, time_delay_in_seconds = 4, plot_oob_error = TRUE, trail = 30)
 #you can "stop" this function at any time without stopping the
 #model construction if you would like to return to the console

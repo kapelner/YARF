@@ -63,8 +63,7 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 #' @export
 YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_error = FALSE, trail_pts = 5){
 	if (.jcall(yarf_mod$java_YARF, "Z", "stopped")){
-		YARF_progress(yarf_mod)
-		return
+		return(YARF_progress(yarf_mod))
 	}
 	previous_num_trees_completed = 0
 	trees = c()
@@ -107,7 +106,7 @@ YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_
 		}
 		Sys.sleep(time_delay_in_seconds)
 	}
-	list(trees = trees, fit_metrics = fit_metrics)
+	invisible(list(trees = trees, fit_metrics = fit_metrics))
 }
 
 #' Halts the model building.

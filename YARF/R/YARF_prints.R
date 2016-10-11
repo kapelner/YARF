@@ -51,7 +51,7 @@ summary.YARF = function(object, ...){
 				cat("  L2:", round(object$L2_err_oob, 2), "\n")
 				cat("  L1:", round(object$L1_err_oob, 2), "\n")
 			} else {
-				cat(" as a confusion matrix:")
+				cat(" as a confusion matrix:\n")
 				print(object$confusion_matrix)
 				cat("    Accuracy: ", round(object$classification_accuracy * 100, 3), "%\n", sep = "")
 			}			
