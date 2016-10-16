@@ -15,7 +15,6 @@
 
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
-?YARF
 
 n = 100
 X = data.frame(x1 = 0 : (n - 1))
@@ -24,6 +23,8 @@ plot(X[,1], y)
 
 yarf_mod = YARF(X, y, num_trees = 100, use_missing_data = TRUE)
 yarf_mod
+illustrate_trees(yarf_mod, trees = c(1))
+
 yarf_mod = YARF_update_with_oob_results(yarf_mod)
 yarf_mod
 xstar = seq(-20,120, by = 0.01)

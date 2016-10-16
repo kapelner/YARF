@@ -12,9 +12,9 @@ public class YARFNode implements Cloneable {
 	public static final boolean DEBUG_NODES = false;
 	
 	/** a flag that represents an invalid double value */
-	protected static final double BAD_FLAG_double = -Double.MAX_VALUE;
+	public static final double BAD_FLAG_double = -Double.MAX_VALUE;
 	/** a flag that represents an invalid integer value */
-	protected static final int BAD_FLAG_int = -Integer.MAX_VALUE;
+	public static final int BAD_FLAG_int = -Integer.MAX_VALUE;
 	
 	/** the parent node of this node */
 	protected YARFNode parent;
@@ -272,7 +272,7 @@ public class YARFNode implements Cloneable {
 		return node_Xs;
 	}
 	
-	public void maxDepth(int[] max_depth) {
+	protected void maxDepth(int[] max_depth) {
 		if (this.depth > max_depth[0]){
 			max_depth[0] = this.depth;
 		}
@@ -281,6 +281,10 @@ public class YARFNode implements Cloneable {
 		}
 		left.maxDepth(max_depth);
 		right.maxDepth(max_depth);
+	}
+	
+	public int maxDepth() {
+		return this.tree.maxDepth();
 	}
 	
 	public void assignYHat() {

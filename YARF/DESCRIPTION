@@ -11,6 +11,7 @@ Depends:
 	YARFJARs,
     rJava (>= 0.9-8),
 	readr,
+	stringr,
     R (>= 3.2.0)
 Imports:
     graphics,

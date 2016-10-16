@@ -8,7 +8,7 @@ VERSION = "1.0"
 #' @author 		Adam Kapelner \email{kapelner@@qc.cuny.edu}
 #' @references 	TK
 #' @keywords 	Machine Learning, Tree-based Non-parametric regression
-#' @import      stats graphics rJava readr
+#' @import      stats graphics rJava readr stringr
 ##### Run "library(roxygen2); roxygenise("YARF", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file
 ##### but make sure you are in the root directory of the project
 NULL

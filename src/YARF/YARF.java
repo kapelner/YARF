@@ -386,6 +386,37 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			yarf_trees[t].root.prune();
 		}
 	}
+	
+	public void illustrateTree(int t, 			
+			int[] background_color, 
+			int[] line_color, 
+			int[] text_color, 
+			String font_family,
+			int font_size, 
+			int margin_in_px, 
+			double character_width_in_px,
+			int length_in_px_per_half_split,
+			int depth_in_px_per_split,
+			String title){
+		
+		YARFTree tree = yarf_trees[t];
+		if (tree.completed){
+			new YARFTreeIllustrate(tree.root, 
+					background_color, 
+					line_color,  
+					text_color, 
+					font_family,
+					font_size, 
+					margin_in_px, 
+					character_width_in_px, 
+					length_in_px_per_half_split, 
+					depth_in_px_per_split,
+					title);
+		}
+		else {
+			System.err.println("Tree #" + t + " not completed yet.");
+		}
+	}
 
 	/** Flush all unnecessary data from the Gibbs chains to conserve RAM */
 	protected void FlushData() {
