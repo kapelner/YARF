@@ -39,6 +39,10 @@ predict.YARF = function(object, new_data, ...){
 		y_hats = factor(y_hats, labels = yarf_mod$y_levels)
 	}
 	y_hats
+	
+	###needs type = raw and type = prob
+	
+	###needs impurity measures of var importance
 }
 
 #private method to see if the user saved the Java object within the R object and throw an error if not.

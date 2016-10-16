@@ -387,7 +387,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		}
 	}
 	
-	public void illustrateTree(int t, 			
+	public void illustrateTree(int t, 
+			int max_depth,
 			int[] background_color, 
 			int[] line_color, 
 			int[] text_color, 
@@ -402,6 +403,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		YARFTree tree = yarf_trees[t];
 		if (tree.completed){
 			new YARFTreeIllustrate(tree.root, 
+					max_depth,
 					background_color, 
 					line_color,  
 					text_color, 

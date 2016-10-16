@@ -35,8 +35,6 @@ public class YARFNode implements Cloneable {
 	public int split_attribute = BAD_FLAG_int;
 	/** the value this node makes a decision on */
 	public double split_value = BAD_FLAG_double;
-	/** this split is only due to missingness and not a value */
-	public boolean missingness_split = false;
 	/** send missing data to the right? */ 
 	public boolean send_missing_data_right;
 	/** if this is a leaf node, then the result of the prediction for regression, otherwise null */

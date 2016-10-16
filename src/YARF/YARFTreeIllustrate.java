@@ -19,6 +19,7 @@ import javax.imageio.ImageIO;
  */
 public class YARFTreeIllustrate {
 
+	/** customization parameters set by the user */
 	private String font_family;
 	private Color background_color;
 	private Color line_color;
@@ -45,6 +46,7 @@ public class YARFTreeIllustrate {
 	private int image_type;
 
 	public YARFTreeIllustrate(YARFNode root, 
+			Integer max_depth,
 			int[] background_color, 
 			int[] line_color, 
 			int[] text_color, 
@@ -66,7 +68,7 @@ public class YARFTreeIllustrate {
 		this.length_in_px_per_half_split = length_in_px_per_half_split;
 		this.depth_in_px_per_split = depth_in_px_per_split;
 		
-		depth_in_num_splits = root.maxDepth();
+		depth_in_num_splits = max_depth <= 0 ? root.maxDepth() : Math.min(max_depth, root.maxDepth());
 		
 		initializeCanvas();
 		//recursively draw all splits, start drawing on top and horizontally in the middle
@@ -75,41 +77,41 @@ public class YARFTreeIllustrate {
 		saveImageFile(canvas, title);
 	}
 	
-	private BufferedImage cropCanvas() {
-		int x_min = Integer.MAX_VALUE;
-		int x_max = Integer.MIN_VALUE;
-		
-		//first get min and max
-		for (int i = 0; i < canvas.getWidth(); i++){
-			for (int j = 0; j < canvas.getHeight(); j++){
-				if (canvas.getRGB(i, j) == line_color.getRGB()){
-					if (i > x_max){
-						x_max = i;
-					}
-					if (i < x_min){
-						x_min = i;
-					}
-				}
-			}
-		}
-		//create the new image
-		int new_width = x_max - x_min + 2 * margin_in_px;
-		BufferedImage new_canvas = new BufferedImage(new_width, canvas.getHeight(), image_type);
-		//first do the background
-		for (int i = 0; i < new_width; i++){
-			for (int j = 0; j < canvas.getHeight(); j++){
-				new_canvas.setRGB(i, j, background_color.getRGB());
-			}		
-		}
-		//now copy the old into the new
-		for (int i = x_min; i <= x_max; i++){
-			for (int j = 0; j < canvas.getHeight(); j++){
-				new_canvas.setRGB(i - x_min + margin_in_px, j, canvas.getRGB(i, j));
-			}
-		}
-		//and send it to be saved
-		return new_canvas;
-	}
+//	private BufferedImage cropCanvas() {
+//		int x_min = Integer.MAX_VALUE;
+//		int x_max = Integer.MIN_VALUE;
+//		
+//		//first get min and max
+//		for (int i = 0; i < canvas.getWidth(); i++){
+//			for (int j = 0; j < canvas.getHeight(); j++){
+//				if (canvas.getRGB(i, j) == line_color.getRGB()){
+//					if (i > x_max){
+//						x_max = i;
+//					}
+//					if (i < x_min){
+//						x_min = i;
+//					}
+//				}
+//			}
+//		}
+//		//create the new image
+//		int new_width = x_max - x_min + 2 * margin_in_px;
+//		BufferedImage new_canvas = new BufferedImage(new_width, canvas.getHeight(), image_type);
+//		//first do the background
+//		for (int i = 0; i < new_width; i++){
+//			for (int j = 0; j < canvas.getHeight(); j++){
+//				new_canvas.setRGB(i, j, background_color.getRGB());
+//			}		
+//		}
+//		//now copy the old into the new
+//		for (int i = x_min; i <= x_max; i++){
+//			for (int j = 0; j < canvas.getHeight(); j++){
+//				new_canvas.setRGB(i - x_min + margin_in_px, j, canvas.getRGB(i, j));
+//			}
+//		}
+//		//and send it to be saved
+//		return new_canvas;
+//	}
 	
 	/**
 	 * This {@link java.io.FilenameFilter file filter} returns
@@ -169,7 +171,6 @@ public class YARFTreeIllustrate {
 	}	
 
 	private void drawSplit(YARFNode node, int x, int y) {
-//		System.out.println("node:" + node.stringID() + " leaf:" + node.isLeaf + " left: " + node.left + " right:" + node.right);
 		Graphics g = canvas.getGraphics();
 		//now set up canvas for drawing the foreground
 		g.setFont(new Font(font_family, Font.PLAIN, font_size));
@@ -180,10 +181,17 @@ public class YARFTreeIllustrate {
 			int draw_x = (int)Math.round(x - pred.length() / 2.0 * character_width_in_px);
 			g.drawString(pred + " (" + node.nodeSize() + ") ", draw_x, y + font_size);
 		}
-		else if (node.split_attribute != YARFNode.BAD_FLAG_int && node.split_value != YARFNode.BAD_FLAG_double) {
+		
+		if (node.depth >= depth_in_num_splits){
+			return;
+		}		
+		
+		if (node.split_attribute != YARFNode.BAD_FLAG_int && node.split_value != YARFNode.BAD_FLAG_double) {
 			int attr = node.split_attribute;
 			double val = node.split_value;
-			String rule_and_n = "X_" + (attr + 1) + " < " + two_digit_format.format(val) + " (" + node.nodeSize() + ") " + 
+			String rule_and_n = "X_" + (attr + 1) + " < " + two_digit_format.format(val) + 
+					(node.send_missing_data_right ? " M>" : " <M") +
+					" (" + node.nodeSize() + ") " + 
 					(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");
 			int draw_x = (int)Math.round(x - rule_and_n.length() / 2.0 * character_width_in_px);
 			g.drawString(rule_and_n, draw_x, y - font_size / 2);
