@@ -443,6 +443,8 @@ YARF = function(
 		.jcall(java_YARF, "V", "setNodesize", as.integer(nodesize))
 	} else if (!is.null(make_node_to_leaf_script)) {
 		.jcall(java_YARF, "V", "setMake_node_into_leaf_function_str", make_node_to_leaf_script)
+	} else { #Breiman defaults...
+		.jcall(java_YARF, "V", "setNodesize", as.integer(ifelse(pred_type == "regression", 5, 1)))
 	}
 	
 	if (!is.null(cost_single_node_calc_script)){

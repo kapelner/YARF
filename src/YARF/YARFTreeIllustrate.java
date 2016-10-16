@@ -72,7 +72,7 @@ public class YARFTreeIllustrate {
 		//recursively draw all splits, start drawing on top and horizontally in the middle
 		drawSplit(root, canvas.getWidth() / 2, margin_in_px);
 		//write to file
-		saveImageFile(cropCanvas(), title);
+		saveImageFile(canvas, title);
 	}
 	
 	private BufferedImage cropCanvas() {
