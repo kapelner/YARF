@@ -19,8 +19,32 @@
 #' @param character_width_in_px 		Estimate as to the size of the character width in pixels. Differs based on fonts.
 #' @param length_in_px_per_half_split 	The length of half of a split in pixels. Default is \code{20}.
 #' @param depth_in_px_per_split 		The length of the depth of a split in pixels. Default is \code{100}.
+#' @param print_at_split_script			A custom javascript function which creates a special custom message to be printed 
+#' 										at split nodes (see below). The default is \code{NULL} which prints no special message.
+#' 
+#' 										function printAtNode(node)\{ //node is of type YARF.YARFNode
+#' 
+#' 											...
+#' 
+#' 											return message; //a string
+#' 
+#' 										\}
+#' 
+#' @param print_at_leaf_script			A custom javascript function which creates a special custom message to be printed 
+#' 										at leaf nodes (see below). The default is \code{NULL} which prints no special message.
+#' 
+#' 										function printAtLeaf(node)\{ //node is of type YARF.YARFNode
+#' 
+#' 											...
+#' 
+#' 											return message; //a string
+#' 
+#' 										\}
+#' 
 #' @param title 						The name of the file. Note that "_00t.png" will be added where "t"
-#' 										is the tree index. Default is "yarf_mod_tree".
+#' 										is the tree index and "00" is an appropriate number of leading zeroes.
+#' 										Default is "yarf_mod_tree".
+#' @param open_file						Should the first file be opened by the current system? Default is \code{FALSE}.
 #' 
 #' @author Adam Kapelner
 #' @export
@@ -36,7 +60,10 @@ illustrate_trees = function(yarf_mod,
 		character_width_in_px = 4.2,
 		length_in_px_per_half_split = 20,
 		depth_in_px_per_split = 100,
-		title = "yarf_mod_tree"
+		print_at_split_script = NULL,
+		print_at_leaf_script = NULL,
+		title = "yarf_mod_tree",
+		open_file = FALSE
 	){
 	
 	if (is.null(trees)){
@@ -44,7 +71,22 @@ illustrate_trees = function(yarf_mod,
 	}
 	num_tree_digits = nchar(as.character(yarf_mod$num_trees))
 	
+	if (!is.null(print_at_split_script)){
+		if (class(print_at_split_script) != "character"){
+			stop("'print_at_split_script' must be a character string of Javascript code")
+		}
+	}
+	.jcall(java_YARF, "V", "setPrint_at_split_str", print_at_split_script)
+	
+	if (!is.null(print_at_leaf_script)){
+		if (class(print_at_leaf_script) != "character"){
+			stop("'print_at_leaf_script' must be a character string of Javascript code")
+		}
+	}
+	.jcall(java_YARF, "V", "setPrint_at_leaf_str", print_at_leaf_script)
+	
 	for (t in trees){
+		filename = paste(title, "_", str_pad(t, num_tree_digits, pad = "0"), sep = "")
 		.jcall(yarf_mod$java_YARF, "V", "illustrateTree",
 			as.integer(t - 1), #Java indexes from 0 not 1
 			as.integer(max_depth),
@@ -57,8 +99,11 @@ illustrate_trees = function(yarf_mod,
 			character_width_in_px,
 			as.integer(length_in_px_per_half_split),
 			as.integer(depth_in_px_per_split),
-			paste(title, "_", str_pad(t, num_tree_digits, pad = "0"), sep = "")
+			filename
 		)
+		if (open_file & t == trees[t]){
+			openFileInOS(paste(filename, ".png", sep = ""))
+		}
 	}
 }
 

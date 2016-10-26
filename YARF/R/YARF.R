@@ -1,6 +1,8 @@
 VERSION = "1.0"
 
-#' Software which helps practitioners optimally design experiments that measure the slope divided by the intercept.
+#' Random Forests with (1) the ability to customize almost every algorithmic decions (2)
+#' parallelization with asynchronicity (3) missingness incorporated in attributes and (4)
+#' variable importance, interaction detection, variable(s) testing, tree illustrations et al.
 #'
 #' @name 		YARF
 #' @docType 	package
@@ -8,7 +10,7 @@ VERSION = "1.0"
 #' @author 		Adam Kapelner \email{kapelner@@qc.cuny.edu}
 #' @references 	TK
 #' @keywords 	Machine Learning, Tree-based Non-parametric regression
-#' @import      stats graphics rJava readr stringr
+#' @import      stats graphics rJava readr stringr pander
 ##### Run "library(roxygen2); roxygenise("YARF", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file
 ##### but make sure you are in the root directory of the project
 NULL

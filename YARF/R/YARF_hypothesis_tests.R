@@ -169,7 +169,7 @@ yarf_duplicate = function(yarf_mod, X = NULL, y = NULL){
 		node_assign_script = yarf_mod$node_assign_script,
 		after_node_birth_function_script = yarf_mod$after_node_birth_function_script,
 		aggregation_script = yarf_mod$aggregation_script,
-		oob_cost_calculation = yarf_mod$oob_cost_calculation,
+		oob_cost_calculation_script = yarf_mod$oob_cost_calculation_script,
 		shared_scripts = yarf_mod$shared_scripts, 
 		use_missing_data = yarf_mod$use_missing_data,
 		replace_missing_data_with_x_j_bar = yarf_mod$replace_missing_data_with_x_j_bar,

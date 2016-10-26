@@ -30,6 +30,10 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public static final String PruneIfScriptFunctionName = "pruneIf";
 	private String oob_cost_calculation_str;
 	public static final String OobCostScriptFunctionName = "oobCost";
+	private String print_at_node_str;
+	public static final String PrintAtNodeScriptFunctionName = "printAtNode";
+	private String print_at_leaf_str;
+	public static final String PrintAtLeafScriptFunctionName = "printAtLeaf";
 	private String shared_scripts_str;
 	
 	//everything that has to do with scripts that's transient / lazy-loaded
@@ -44,6 +48,8 @@ public abstract class YARFCustomFunctions extends Classifier {
     private transient Invocable after_node_birth_fun;
     private transient Invocable aggregation_fun;
     private transient Invocable prune_if_fun;
+    private transient Invocable print_at_node_fun;
+    private transient Invocable print_at_leaf_fun;
     private transient Invocable oob_cost_calculation_fun;
 
 	private Invocable stringToInvokableCompiledFunction(String script_as_string, String function_name) {
@@ -245,6 +251,42 @@ public abstract class YARFCustomFunctions extends Classifier {
 		return YARFNode.BAD_FLAG_double;		
 	}
 	
+	public String runPrintAtSplitNode(YARFNode node){
+		if (print_at_node_fun == null){
+			print_at_node_fun = stringToInvokableCompiledFunction(print_at_node_str, PrintAtNodeScriptFunctionName);	
+		}
+		try {
+			return (String)print_at_node_fun.invokeFunction(PrintAtNodeScriptFunctionName, node);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your print at split node script must include the function \"" + PrintAtNodeScriptFunctionName + "(node)\" and return a String.");
+			e.printStackTrace();
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + PrintAtNodeScriptFunctionName + "\" function:");
+			e.printStackTrace();		
+		}
+		return null;
+	}
+	
+	public String runPrintAtLeafNode(YARFNode node){
+		if (print_at_leaf_fun == null){
+			print_at_leaf_fun = stringToInvokableCompiledFunction(print_at_leaf_str, PrintAtLeafScriptFunctionName);	
+		}
+		try {
+			return (String)print_at_leaf_fun.invokeFunction(PrintAtLeafScriptFunctionName, node);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your print at leaf node must include the function \"" + PrintAtLeafScriptFunctionName + "(node)\" and return a String.");
+			e.printStackTrace();
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + PrintAtLeafScriptFunctionName + "\" function:");
+			e.printStackTrace();		
+		}
+		return null;
+	}
+	
 
 	public boolean customFunctionMtry(){
 		return mtry_function_str != null;
@@ -276,6 +318,14 @@ public abstract class YARFCustomFunctions extends Classifier {
 	
 	public boolean customFunctionOobCostCalculation(){
 		return oob_cost_calculation_str != null;
+	}
+	
+	public boolean customFunctionPrintAtSplitNode(){
+		return print_at_node_str != null;
+	}
+	
+	public boolean customFunctionPrintAtLeafNode(){
+		return print_at_leaf_str != null;
 	}
 	
 
@@ -371,5 +421,26 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setOob_cost_calculation_str(String oob_cost_calculation_str) {
 		this.oob_cost_calculation_str = oob_cost_calculation_str;
+		//the function itself should be reset here
+		oob_cost_calculation_fun = null;
+	}
+	public String getPrint_at_node_str() {
+		return print_at_node_str;
+	}
+
+	public void setPrint_at_node_str(String print_at_node_str) {
+		this.print_at_node_str = print_at_node_str;
+		//the function itself should be reset here
+		print_at_node_fun = null;
+	}
+
+	public String getPrint_at_leaf_str() {
+		return print_at_leaf_str;
+	}
+
+	public void setPrint_at_leaf_str(String print_at_leaf_str) {
+		this.print_at_leaf_str = print_at_leaf_str;
+		//the function itself should be reset here
+		print_at_leaf_fun = null;
 	}
 }

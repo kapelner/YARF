@@ -109,18 +109,6 @@
 #' 
 #' 											  \}
 #' 
-#' @param oob_cost_calculation				A custom Javascript function which calculates the cost of a prediction given the true
-#' 											value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
-#' 											is recommended to share code between them by writing a function included in \code{shared_scripts}.
-#' 
-#' 											  function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are doubles)
-#' 
-#' 											    ...
-#' 
-#' 											    return double //where a higher number indicates a higher cost
-#' 
-#' 											  \}
-#' 
 #' @param shared_scripts					Custom Javascript code that are always in scope when running all your custom methods. 
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
@@ -162,7 +150,6 @@ YARF = function(
 		node_assign_script = NULL,
 		after_node_birth_function_script = NULL,
 		aggregation_script = NULL,
-		oob_cost_calculation = NULL,
 		shared_scripts = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = TRUE,
@@ -219,29 +206,10 @@ YARF = function(
 		}
 	}
 	
-	if (!is.null(oob_cost_calculation)){
-		if (class(oob_cost_calculation) != "character"){
-			stop("'oob_cost_calculation' must be a character string of Javascript code")
-		}
-	}
-	
 	if (!is.null(shared_scripts)){
 		if (class(shared_scripts) != "character"){
 			stop("'shared_scripts' must be a character string of Javascript code")
 		}
-	}
-	
-	#there are some scripts that depend on one another conceptually. The user should be aware of this...
-	if (!is.null(oob_cost_calculation) & is.null(cost_single_node_calc_script)){
-		cat("NOTE: You specified a custom oob cost calculation but you did")
-		cat("not specify a custom node cost script. The node cost will default")
-		cat("to SSE if y is numeric and negative entropy if y is a factor.\n")
-	}
-	if (!is.null(oob_cost_calculation) & is.null(aggregation_script)){
-		cat("NOTE: You specified a custom oob cost calculation but you did")
-		cat("not specify a custom aggregation script.")
-		cat("The aggregation will default to sample average")
-		cat("if y is numeric and sample mode if y is a factor.\n")
 	}	
 	
 	if (verbose){
@@ -463,10 +431,6 @@ YARF = function(
 		.jcall(java_YARF, "V", "setAfter_node_birth_function_str", after_node_birth_function_script)
 	}
 	
-	if (!is.null(oob_cost_calculation)){
-		.jcall(java_YARF, "V", "setOob_cost_calculation_str", oob_cost_calculation)
-	}
-	
 	if (!is.null(shared_scripts)){
 		.jcall(java_YARF, "V", "setShared_scripts_str", shared_scripts)
 	}
@@ -516,7 +480,7 @@ YARF = function(
 		}
 	}
 	.jcall(java_YARF, "V", "initTrees") #immediately follows
-	#do we want to do this asynchronously?
+	#do we want to do the YARF model building asynchronously?
 	.jcall(java_YARF, "V", "setWait", wait)
 	
 	#build the YARF model and let the user know what type of model this is
@@ -541,7 +505,6 @@ YARF = function(
 		node_assign_script = node_assign_script,
 		after_node_birth_function_script = after_node_birth_function_script,
 		aggregation_script = aggregation_script,
-		oob_cost_calculation = oob_cost_calculation,
 		shared_scripts = shared_scripts, 
 		use_missing_data = use_missing_data,
 		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,

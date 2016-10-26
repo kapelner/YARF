@@ -2,14 +2,35 @@
 #' This gives a good sense of out-of-sample performance in the future.
 #' 
 #' @param yarf_mod 							The yarf model object
+#' @param oob_cost_calculation_script		An optional custom Javascript function which calculates the cost of a prediction given the true
+#' 											value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
+#' 											is recommended to share code between them by writing a function included in \code{shared_scripts} which is
+#' 											passed into \code{YARF} upon construction.
+#' 
+#' 											  function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are doubles)
+#' 
+#' 											    ...
+#' 
+#' 											    return double //where a larger number indicates a higher cost to this error.
+#' 
+#' 											  \}
+#' 
 #' @param indices							The indices to compute OOB performance. This is generally a private argument
 #' 											for use by the validation / test functions.
 #' 
 #' @author Adam Kapelner
 #' @export
-YARF_update_with_oob_results = function(yarf_mod, indices = NULL){
+YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = NULL, indices = NULL){
 	y = yarf_mod$y
 	n = yarf_mod$n
+	
+	if (!is.null(oob_cost_calculation_script)){
+		if (class(oob_cost_calculation_script) != "character"){
+			stop("'oob_cost_calculation_script' must be a character string of Javascript code")
+		}
+		.jcall(yarf_mod$java_YARF, "V", "setOob_cost_calculation_str", oob_cost_calculation_script)
+	}
+	yarf_mod$oob_cost_calculation_script = oob_cost_calculation_script
 
 	#get it from java multithreaded
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))

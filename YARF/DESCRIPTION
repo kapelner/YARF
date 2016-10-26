@@ -12,6 +12,7 @@ Depends:
     rJava (>= 0.9-8),
 	readr,
 	stringr,
+	pander,
     R (>= 3.2.0)
 Imports:
     graphics,

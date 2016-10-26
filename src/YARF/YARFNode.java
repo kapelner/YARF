@@ -44,7 +44,7 @@ public class YARFNode implements Cloneable {
 	/** the number of training observations in this node */
 	private Integer node_size;
 	/** what tree is this node part of? */
-	private YARFTree tree;
+	protected YARFTree tree;
 
 	//convenience functions for looking at the data in this node
 	private double[] node_ys;

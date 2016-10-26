@@ -1,32 +1,44 @@
-# install.packages("rJava")
-
-# Sys.getenv("JAVA_HOME")
-
-# library(rJava)
-# .jinit()
-# .jcall("java/lang/System", "S", "getProperty", "java.runtime.version")
-# 
-# Sys.setenv(JAVA_HOME="C:\\Program Files\\Java\\jdk1.8.0_102")
-# options(java.home="/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/")
-# Sys.setenv(DYLD_FALLBACK_LIBRARY_PATH="/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/server/")
-
-#-Xrunjdwp:server=y,transport=dt_socket,address=8000, suspend=n
-# options(java.parameters = c("-Xmx3000m", "-Xdebug", "-Xrunjdwp:server=y,transport=dt_socket,address=8000"))
-
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
 
-n = 100
+#test #1 --- ensure the algorthim predicts as well as randomForest
+library(BlandAltmanLeh)
+
+#test 1a - linear model
+n = 1000
 X = data.frame(x1 = 0 : (n - 1))
 y = 0 + 1 * X[,1] + rnorm(n, 0, 0.1)
 plot(X[,1], y)
 
-yarf_mod = YARF(X, y, num_trees = 100, use_missing_data = TRUE)
-yarf_mod
-illustrate_trees(yarf_mod, trees = c(1))
+yarf_mod = YARF(X, y, num_trees = 1)
+# yarf_mod = YARF_update_with_oob_results(yarf_mod)
 
-yarf_mod = YARF_update_with_oob_results(yarf_mod)
-yarf_mod
+rf_mod = randomForest(X, y, num_trees = 1)
+rf_mod
+
+noos = 200
+Xoos = data.frame(x1 = runif(noos, 0, 100))
+yoos_expe = Xoos[, 1]
+yoos_yarf = predict(yarf_mod, Xoos)
+yoos_rf = predict(rf_mod, Xoos)
+sum((yoos_yarf - yoos_expe)^2) / noos
+sum((yoos_rf - yoos_expe)^2) / noos
+
+plot(yoos_expe, yoos_yarf)
+abline(a = 0, b = 1, col = "blue")
+plot(yoos_expe, yoos_rf)
+abline(a = 0, b = 1, col = "blue")
+plot(yoos_yarf, yoos_rf)
+abline(a = 0, b = 1, col = "blue")
+bland.altman.plot(yoos_yarf, yoos_rf, 
+  main = "", xlab = "Means", ylab = "Differences (YARF - RF)")
+bland.altman.stats(yoos_yarf, yoos_rf)
+
+illustrate_trees(yarf_mod, trees = c(1), max_depth = 8)
+
+
+
+
 xstar = seq(-20,120, by = 0.01)
 xstar[1] = NA
 y_hat = predict(yarf_mod, data.frame(x1 = xstar))
