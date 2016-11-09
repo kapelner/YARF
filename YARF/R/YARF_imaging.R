@@ -19,10 +19,10 @@
 #' @param character_width_in_px 		Estimate as to the size of the character width in pixels. Differs based on fonts.
 #' @param length_in_px_per_half_split 	The length of half of a split in pixels. Default is \code{20}.
 #' @param depth_in_px_per_split 		The length of the depth of a split in pixels. Default is \code{100}.
-#' @param print_at_split_script			A custom javascript function which creates a special custom message to be printed 
+#' @param print_at_split_node_script	A custom javascript function which creates a special custom message to be printed 
 #' 										at split nodes (see below). The default is \code{NULL} which prints no special message.
 #' 
-#' 										function printAtNode(node)\{ //node is of type YARF.YARFNode
+#' 										function printAtSplitNode(node)\{ //node is of type YARF.YARFNode
 #' 
 #' 											...
 #' 
@@ -60,7 +60,7 @@ illustrate_trees = function(yarf_mod,
 		character_width_in_px = 4.2,
 		length_in_px_per_half_split = 20,
 		depth_in_px_per_split = 100,
-		print_at_split_script = NULL,
+		print_at_split_node_script = NULL,
 		print_at_leaf_script = NULL,
 		title = "yarf_mod_tree",
 		open_file = FALSE
@@ -71,19 +71,19 @@ illustrate_trees = function(yarf_mod,
 	}
 	num_tree_digits = nchar(as.character(yarf_mod$num_trees))
 	
-	if (!is.null(print_at_split_script)){
-		if (class(print_at_split_script) != "character"){
-			stop("'print_at_split_script' must be a character string of Javascript code")
+	if (!is.null(print_at_split_node_script)){
+		if (class(print_at_split_node_script) != "character"){
+			stop("'print_at_split_node_script' must be a character string of Javascript code")
 		}
 	}
-	.jcall(java_YARF, "V", "setPrint_at_split_str", print_at_split_script)
+	.jcall(yarf_mod$java_YARF, "V", "setPrint_at_split_node_str", print_at_split_node_script)
 	
 	if (!is.null(print_at_leaf_script)){
 		if (class(print_at_leaf_script) != "character"){
 			stop("'print_at_leaf_script' must be a character string of Javascript code")
 		}
 	}
-	.jcall(java_YARF, "V", "setPrint_at_leaf_str", print_at_leaf_script)
+	.jcall(yarf_mod$java_YARF, "V", "setPrint_at_leaf_str", print_at_leaf_script)
 	
 	for (t in trees){
 		filename = paste(title, "_", str_pad(t, num_tree_digits, pad = "0"), sep = "")

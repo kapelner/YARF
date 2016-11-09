@@ -5,13 +5,13 @@
 #' @param oob_cost_calculation_script		An optional custom Javascript function which calculates the cost of a prediction given the true
 #' 											value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
 #' 											is recommended to share code between them by writing a function included in \code{shared_scripts} which is
-#' 											passed into \code{YARF} upon construction.
+#' 											passed into \code{YARF} upon construction and can be referenced when calculating OOB results.
 #' 
-#' 											  function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are doubles)
+#' 											  function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are of type double)
 #' 
 #' 											    ...
 #' 
-#' 											    return double //where a larger number indicates a higher cost to this error.
+#' 											    return double //where a larger number indicates a higher cost to the error(y_hat, y).
 #' 
 #' 											  \}
 #' 

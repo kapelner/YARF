@@ -125,8 +125,7 @@ public class YARFTreeIllustrate {
 			int draw_x = (int)Math.round(x - pred.length() / 2.0 * character_width_in_px);
 			g.drawString(pred + " (" + node.nodeSize() + ") ", draw_x, y + font_size);
 			if (yarf.customFunctionPrintAtLeafNode()){
-				g.drawString("\n" + , draw_x, y + font_size);
-				
+				g.drawString("\n" + yarf.runPrintAtLeafNode(node), draw_x, y + font_size);
 			}
 		}
 		
@@ -144,9 +143,12 @@ public class YARFTreeIllustrate {
 					(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");
 			int draw_x = (int)Math.round(x - rule_and_n.length() / 2.0 * character_width_in_px);
 			g.drawString(rule_and_n, draw_x, y - font_size / 2);
+			if (yarf.customFunctionPrintAtLeafNode()){
+				g.drawString("\n" + yarf.runPrintAtSplitNode(node), draw_x, y + font_size);
+			}
 
 		}
-		//now we have to draw the left and right
+		//now we have to recurse to draw the left and right
 		g.setColor(line_color);
 		int x_offset = length_in_px_per_half_split * (int)Math.pow(2, depth_in_num_splits - node.depth);
 		if (node.left != null){

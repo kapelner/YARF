@@ -1,9 +1,6 @@
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
 
-#test #1 --- ensure the algorthim predicts as well as randomForest
-library(BlandAltmanLeh)
-
 #test 1a - linear model
 n = 1000
 X = data.frame(x1 = 0 : (n - 1))
@@ -11,6 +8,15 @@ y = 0 + 1 * X[,1] + rnorm(n, 0, 0.1)
 plot(X[,1], y)
 
 yarf_mod = YARF(X, y, num_trees = 1)
+print_at_split_node_script = "function printAtSplitNode(node){return '' + StatToolbox.sample_average(node.node_ys())}";
+print_at_leaf_script = "function printAtLeaf(node){return '' + StatToolbox.sample_average(node.node_ys())}";
+
+illustrate_trees(yarf_mod, trees = c(1), max_depth = 8,
+                 print_at_split_node_script = print_at_split_node_script,
+                 print_at_leaf_script = print_at_leaf_script,
+                 open_file = TRUE)
+
+
 # yarf_mod = YARF_update_with_oob_results(yarf_mod)
 
 rf_mod = randomForest(X, y, num_trees = 1)
@@ -30,11 +36,15 @@ plot(yoos_expe, yoos_rf)
 abline(a = 0, b = 1, col = "blue")
 plot(yoos_yarf, yoos_rf)
 abline(a = 0, b = 1, col = "blue")
+
+
+#test #1 --- ensure the algorthim predicts as well as randomForest
+library(BlandAltmanLeh)
 bland.altman.plot(yoos_yarf, yoos_rf, 
   main = "", xlab = "Means", ylab = "Differences (YARF - RF)")
 bland.altman.stats(yoos_yarf, yoos_rf)
 
-illustrate_trees(yarf_mod, trees = c(1), max_depth = 8)
+
 
 
 
