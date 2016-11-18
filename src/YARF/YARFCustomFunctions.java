@@ -54,21 +54,29 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	private Invocable stringToInvokableCompiledFunction(String script_as_string, String function_name) {
 
+//		System.out.println("stringToInvokableCompiledFunction");
         //lazy load for this stuff for serialization to work properly
 		if (nashorn_js_engine == null){
 			nashorn_js_engine = new ScriptEngineManager().getEngineByName("nashorn");
 		}
+//		System.out.println("got nashorn: " + nashorn_js_engine);
 		if (compilingEngine == null){
 			compilingEngine = (Compilable) nashorn_js_engine;
 		}
-		try { //try the shared scripts first so if it fails... the user knows where to look
-			compilingEngine.compile(shared_scripts_str);
-		} catch (ScriptException e) {
-			StopBuilding();
-			System.err.println("There was a problem compiling the shared script:");
-			e.printStackTrace();
+//		System.out.println("got compilingEngine: " + compilingEngine);
+		if (shared_scripts_str != null){
+			try { //try the shared scripts first so if it fails... the user knows where to look
+//				System.out.println("try compile shared_scripts_str: " + shared_scripts_str);
+				compilingEngine.compile(shared_scripts_str);
+			} catch (ScriptException e) {
+				StopBuilding();
+				System.err.println("There was a problem compiling the shared script:");
+				e.printStackTrace();
+			}
+//			System.out.println("compiled shared scripts");
+		} else {
+			shared_scripts_str = "";
 		}
-		
 		CompiledScript cscript = null;
 		try {
 			cscript = compilingEngine.compile(script_as_string + shared_scripts_str);
@@ -252,9 +260,11 @@ public abstract class YARFCustomFunctions extends Classifier {
 	}
 	
 	public String runPrintAtSplitNode(YARFNode node){
+//		System.out.println("runPrintAtSplitNode" + node.stringLocation(true));
 		if (print_at_split_node_fun == null){
 			print_at_split_node_fun = stringToInvokableCompiledFunction(print_at_split_node_str, PrintAtSplitNodeScriptFunctionName);	
 		}
+//		System.out.println("compiled");
 		try {
 			return (String)print_at_split_node_fun.invokeFunction(PrintAtSplitNodeScriptFunctionName, node);
 		} catch (NoSuchMethodException e) {
@@ -262,6 +272,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 			System.err.println("Your print at split node script must include the function \"" + PrintAtSplitNodeScriptFunctionName + "(node)\" and return a String.");
 			e.printStackTrace();
 		} catch (ScriptException e) {
+			System.out.println("ScriptException");
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + PrintAtSplitNodeScriptFunctionName + "\" function:");
 			e.printStackTrace();		
@@ -270,9 +281,11 @@ public abstract class YARFCustomFunctions extends Classifier {
 	}
 	
 	public String runPrintAtLeafNode(YARFNode node){
+//		System.out.println("runPrintAtLeafNode" + node.stringLocation(true));
 		if (print_at_leaf_fun == null){
 			print_at_leaf_fun = stringToInvokableCompiledFunction(print_at_leaf_str, PrintAtLeafScriptFunctionName);	
 		}
+//		System.out.println("compiled");
 		try {
 			return (String)print_at_leaf_fun.invokeFunction(PrintAtLeafScriptFunctionName, node);
 		} catch (NoSuchMethodException e) {
@@ -280,6 +293,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 			System.err.println("Your print at leaf node must include the function \"" + PrintAtLeafScriptFunctionName + "(node)\" and return a String.");
 			e.printStackTrace();
 		} catch (ScriptException e) {
+			System.out.println("ScriptException");
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + PrintAtLeafScriptFunctionName + "\" function:");
 			e.printStackTrace();		
@@ -429,9 +443,11 @@ public abstract class YARFCustomFunctions extends Classifier {
 	}
 
 	public void setPrint_at_split_node_str(String print_at_split_node_str) {
+//		System.out.println("begin setPrint_at_split_node_str");
 		this.print_at_split_node_str = print_at_split_node_str;
 		//the function itself should be reset here
 		print_at_split_node_fun = null;
+//		System.out.println("after setPrint_at_split_node_str");
 	}
 
 	public String getPrint_at_leaf_str() {

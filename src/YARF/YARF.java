@@ -402,6 +402,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		
 		YARFTree tree = yarf_trees[t];
 		if (tree.completed){
+//			System.out.println("illustrateTree " + tree);
 			new YARFTreeIllustrate(this,
 					tree.root, 
 					max_depth,

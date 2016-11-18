@@ -5,15 +5,19 @@ library(YARF)
 n = 1000
 X = data.frame(x1 = 0 : (n - 1))
 y = 0 + 1 * X[,1] + rnorm(n, 0, 0.1)
-plot(X[,1], y)
 
 yarf_mod = YARF(X, y, num_trees = 1)
-print_at_split_node_script = "function printAtSplitNode(node){return '' + StatToolbox.sample_average(node.node_ys())}";
-print_at_leaf_script = "function printAtLeaf(node){return '' + StatToolbox.sample_average(node.node_ys())}";
+yarf_mod
+YARF_update_with_oob_results(yarf_mod)
+print_at_split_node_script = "function printAtSplitNode(node){
+  return '' + Java.type('YARF.StatToolbox').sample_average(node.node_ys()).toFixed(2);
+}";
+print_at_leaf_script = "function printAtLeaf(node){
+  return '' + Java.type('YARF.StatToolbox').sample_average(node.node_ys()).toFixed(2);
+}";
 
-illustrate_trees(yarf_mod, trees = c(1), max_depth = 8,
+illustrate_trees(yarf_mod, trees = c(1), max_depth = 7,
                  print_at_split_node_script = print_at_split_node_script,
-                 print_at_leaf_script = print_at_leaf_script,
                  open_file = TRUE)
 
 

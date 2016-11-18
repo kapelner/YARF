@@ -71,19 +71,23 @@ illustrate_trees = function(yarf_mod,
 	}
 	num_tree_digits = nchar(as.character(yarf_mod$num_trees))
 	
-	if (!is.null(print_at_split_node_script)){
+	if (is.null(print_at_split_node_script)){
+		.jcall(yarf_mod$java_YARF, "V", "setPrint_at_split_node_str", .jnull(class = "java/lang/String"))
+	} else {
 		if (class(print_at_split_node_script) != "character"){
 			stop("'print_at_split_node_script' must be a character string of Javascript code")
 		}
+		.jcall(yarf_mod$java_YARF, "V", "setPrint_at_split_node_str", print_at_split_node_script)
 	}
-	.jcall(yarf_mod$java_YARF, "V", "setPrint_at_split_node_str", print_at_split_node_script)
 	
-	if (!is.null(print_at_leaf_script)){
+	if (is.null(print_at_leaf_script)){
+		.jcall(yarf_mod$java_YARF, "V", "setPrint_at_leaf_str", .jnull(class = "java/lang/String"))
+	} else {
 		if (class(print_at_leaf_script) != "character"){
 			stop("'print_at_leaf_script' must be a character string of Javascript code")
 		}
+		.jcall(yarf_mod$java_YARF, "V", "setPrint_at_leaf_str", print_at_leaf_script)
 	}
-	.jcall(yarf_mod$java_YARF, "V", "setPrint_at_leaf_str", print_at_leaf_script)
 	
 	for (t in trees){
 		filename = paste(title, "_", str_pad(t, num_tree_digits, pad = "0"), sep = "")

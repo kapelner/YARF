@@ -74,6 +74,7 @@ public class YARFTreeIllustrate {
 		this.depth_in_px_per_split = depth_in_px_per_split;
 		
 		depth_in_num_splits = max_depth <= 0 ? root.maxDepth() : Math.min(max_depth, root.maxDepth());
+//		System.out.println("YARFTreeIllustrate with depth: " + depth_in_num_splits);
 		
 		initializeCanvas();
 		//recursively draw all splits, start drawing on top and horizontally in the middle
@@ -84,7 +85,9 @@ public class YARFTreeIllustrate {
 
 	private void saveImageFile(BufferedImage image, String title) {
 		try {
-			ImageIO.write(image, "PNG", new File(title + ".png"));
+			File f = new File(title + ".png");
+			ImageIO.write(image, "PNG", f);
+//			System.out.println("after write: " + f.getAbsolutePath());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -114,6 +117,7 @@ public class YARFTreeIllustrate {
 	}	
 
 	private void drawSplit(YARFNode node, int x, int y) {
+//		System.out.println("drawSplit at " + node.stringLocation(true));
 		Graphics g = canvas.getGraphics();
 		//now set up canvas for drawing the foreground
 		g.setFont(new Font(font_family, Font.PLAIN, font_size));
@@ -125,11 +129,13 @@ public class YARFTreeIllustrate {
 			int draw_x = (int)Math.round(x - pred.length() / 2.0 * character_width_in_px);
 			g.drawString(pred + " (" + node.nodeSize() + ") ", draw_x, y + font_size);
 			if (yarf.customFunctionPrintAtLeafNode()){
-				g.drawString("\n" + yarf.runPrintAtLeafNode(node), draw_x, y + font_size);
+				g.drawString(yarf.runPrintAtLeafNode(node), draw_x, y + font_size * 2);
 			}
+//			System.out.println("leaf node painted");
 		}
 		
 		if (node.depth >= depth_in_num_splits){
+//			System.out.println("depth greater than called for... jet");
 			return;
 		}		
 		
@@ -146,7 +152,7 @@ public class YARFTreeIllustrate {
 			if (yarf.customFunctionPrintAtLeafNode()){
 				g.drawString("\n" + yarf.runPrintAtSplitNode(node), draw_x, y + font_size);
 			}
-
+//			System.out.println("split node painted");
 		}
 		//now we have to recurse to draw the left and right
 		g.setColor(line_color);
