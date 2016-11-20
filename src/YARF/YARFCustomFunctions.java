@@ -335,14 +335,13 @@ public abstract class YARFCustomFunctions extends Classifier {
 	}
 	
 	public boolean customFunctionPrintAtSplitNode(){
+//		System.out.println("customFunctionPrintAtSplitNode " +  print_at_split_node_str);
 		return print_at_split_node_str != null;
 	}
 	
 	public boolean customFunctionPrintAtLeafNode(){
 		return print_at_leaf_str != null;
 	}
-	
-
 	
 	public double[] customOutOfBagCosts(double[] y_oob, double[] y){
 		int n_oob = y_oob.length;

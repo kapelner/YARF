@@ -2,21 +2,34 @@ options(java.parameters = c("-Xmx4000m"))
 library(YARF)
 
 #test 1a - linear model
-n = 1000
+n = 100
 X = data.frame(x1 = 0 : (n - 1))
 y = 0 + 1 * X[,1] + rnorm(n, 0, 0.1)
 
 yarf_mod = YARF(X, y, num_trees = 1)
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
+
 print_at_split_node_script = "function printAtSplitNode(node){
-  return '' + Java.type('YARF.StatToolbox').sample_average(node.node_ys()).toFixed(2);
+  return '' + 
+    Java.type('YARF.StatToolbox').sample_minimum(node.node_ys()).toFixed(2)
+    + '-' +
+    Java.type('YARF.StatToolbox').sample_average(node.node_ys()).toFixed(2)
+    + '-' +
+    Java.type('YARF.StatToolbox').sample_maximum(node.node_ys()).toFixed(2);
 }";
 print_at_leaf_script = "function printAtLeaf(node){
-  return '' + Java.type('YARF.StatToolbox').sample_average(node.node_ys()).toFixed(2);
+  return '' + 
+    Java.type('YARF.StatToolbox').sample_minimum(node.node_ys()).toFixed(2)
+    + '\\n' +
+    Java.type('YARF.StatToolbox').sample_average(node.node_ys()).toFixed(2)
+    + '\\n' +
+    Java.type('YARF.StatToolbox').sample_maximum(node.node_ys()).toFixed(2);
 }";
 
-illustrate_trees(yarf_mod, trees = c(1), max_depth = 7,
+illustrate_trees(yarf_mod, trees = c(1), max_depth = 8,
+                 length_in_px_per_half_split = 40,
+                 print_at_leaf_script = print_at_leaf_script,
                  print_at_split_node_script = print_at_split_node_script,
                  open_file = TRUE)
 

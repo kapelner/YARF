@@ -33,12 +33,10 @@ public class YARFTreeIllustrate {
 	private int length_in_px_per_half_split;
 	private int depth_in_px_per_split;
 	
-	public static NumberFormat one_digit_format = NumberFormat.getInstance();
 	public static NumberFormat two_digit_format = NumberFormat.getInstance();
 	static {
-		one_digit_format.setMaximumFractionDigits(1);
-		one_digit_format.setGroupingUsed(false);
 		two_digit_format.setMaximumFractionDigits(2);
+		two_digit_format.setMinimumFractionDigits(2);
 		two_digit_format.setGroupingUsed(false);
 	}
 	
@@ -129,13 +127,11 @@ public class YARFTreeIllustrate {
 			int draw_x = (int)Math.round(x - pred.length() / 2.0 * character_width_in_px);
 			g.drawString(pred + " (" + node.nodeSize() + ") ", draw_x, y + font_size);
 			if (yarf.customFunctionPrintAtLeafNode()){
-				g.drawString(yarf.runPrintAtLeafNode(node), draw_x, y + font_size * 2);
+				drawStringWithBreaklines(g, "\n" + yarf.runPrintAtLeafNode(node), draw_x, y);
 			}
-//			System.out.println("leaf node painted");
 		}
 		
 		if (node.depth >= depth_in_num_splits){
-//			System.out.println("depth greater than called for... jet");
 			return;
 		}		
 		
@@ -149,10 +145,9 @@ public class YARFTreeIllustrate {
 					(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");
 			int draw_x = (int)Math.round(x - rule_and_n.length() / 2.0 * character_width_in_px);
 			g.drawString(rule_and_n, draw_x, y - font_size / 2);
-			if (yarf.customFunctionPrintAtLeafNode()){
-				g.drawString("\n" + yarf.runPrintAtSplitNode(node), draw_x, y + font_size);
+			if (yarf.customFunctionPrintAtSplitNode()){
+				drawStringWithBreaklines(g, "\n" + yarf.runPrintAtSplitNode(node), draw_x, y);
 			}
-//			System.out.println("split node painted");
 		}
 		//now we have to recurse to draw the left and right
 		g.setColor(line_color);
@@ -168,4 +163,10 @@ public class YARFTreeIllustrate {
 			drawSplit(node.right, x + x_offset, y + depth_in_px_per_split);
 		}
 	}
+	
+    private void drawStringWithBreaklines(Graphics g, String text, int x, int y) {
+        for (String line : text.split("\n")){
+            g.drawString(line, x, y += g.getFontMetrics().getHeight());
+        }
+    }
 }
