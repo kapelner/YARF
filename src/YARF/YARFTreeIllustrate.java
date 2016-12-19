@@ -139,8 +139,8 @@ public class YARFTreeIllustrate {
 		if (node.split_attribute != YARFNode.BAD_FLAG_int && node.split_value != YARFNode.BAD_FLAG_double) {
 			int attr = node.split_attribute;
 			double val = node.split_value;
-			String rule_and_n = "X_" + (attr + 1) + " < " + two_digit_format.format(val) + 
-					(node.send_missing_data_right ? " M>" : " <M") +
+			String rule_and_n = "X_" + (attr + 1) + " <= " + two_digit_format.format(val) + 
+					(node.send_missing_data_right ? " M->" : " <-M") +
 					" (" + node.nodeSize() + ") " + 
 					(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");
 			int draw_x = (int)Math.round(x - rule_and_n.length() / 2.0 * character_width_in_px);

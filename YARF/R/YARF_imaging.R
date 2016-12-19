@@ -44,7 +44,7 @@
 #' @param title 						The name of the file. Note that "_00t.png" will be added where "t"
 #' 										is the tree index and "00" is an appropriate number of leading zeroes.
 #' 										Default is "yarf_mod_tree".
-#' @param open_file						Should the first file be opened by the current system? Default is \code{FALSE}.
+#' @param open_file						Should the first file be opened by the operating system? Default is \code{FALSE}.
 #' 
 #' @author Adam Kapelner
 #' @export

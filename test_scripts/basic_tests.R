@@ -4,7 +4,7 @@ library(YARF)
 #test 1a - linear model
 n = 100
 X = data.frame(x1 = 0 : (n - 1))
-y = 0 + 1 * X[,1] + rnorm(n, 0, 0.1)
+y = 0 + 1 * X[,1] #+ rnorm(n, 0, 0.1)
 
 yarf_mod = YARF(X, y, num_trees = 1)
 yarf_mod
@@ -36,10 +36,11 @@ illustrate_trees(yarf_mod, trees = c(1), max_depth = 8,
 
 # yarf_mod = YARF_update_with_oob_results(yarf_mod)
 
-rf_mod = randomForest(X, y, num_trees = 1)
+library(randomForest)
+rf_mod = randomForest(X, y, ntree = 1)
 rf_mod
 
-noos = 200
+noos = 500
 Xoos = data.frame(x1 = runif(noos, 0, 100))
 yoos_expe = Xoos[, 1]
 yoos_yarf = predict(yarf_mod, Xoos)
@@ -47,9 +48,9 @@ yoos_rf = predict(rf_mod, Xoos)
 sum((yoos_yarf - yoos_expe)^2) / noos
 sum((yoos_rf - yoos_expe)^2) / noos
 
-plot(yoos_expe, yoos_yarf)
+plot(yoos_expe, yoos_yarf, pch = ".")
 abline(a = 0, b = 1, col = "blue")
-plot(yoos_expe, yoos_rf)
+plot(yoos_expe, yoos_rf, pch = ".")
 abline(a = 0, b = 1, col = "blue")
 plot(yoos_yarf, yoos_rf)
 abline(a = 0, b = 1, col = "blue")

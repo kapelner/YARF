@@ -13,19 +13,20 @@ public class YARFTreeBuilder {
 		this.yarf = tree.yarf;
 		//the root node has a overall cost which we need to compute
 		computeNodeCost(tree.root);
+		//technically the root node was just birthed, so if there's a custom function,
+		//we should run it now
 		if (yarf.customFunctionAfterBirth()){
 			yarf.runAfterNodeBirth(tree.root);
 		}
-		//now we start splitting recursively
+		//now we start building this tree via recursive splitting
 		splitNode(tree.root);
 	}
 
 	private void splitNode(YARFNode node) {
-		
 		if (tree.stop){
 			return; //user hit the brakes so ditch
 		}
-		//if this node is too small (or whatever other reason), ditch from splitting and make it a leaf
+		//if this node is too small (or whatever other reason), ditch from splitting and make it into a leaf
 		if (makeNodeLeaf(node)){
 			node.is_leaf = true;
 			node.assignYHat();
@@ -55,33 +56,43 @@ public class YARFTreeBuilder {
 		double r = StatToolbox.rand();
 		boolean[] trueFalseRandomOrder = {r > 0.5, r <= 0.5};
 		
-		
+		//we will check each attribute
 		for (int j : features_to_split_on){	
 			//first get the indices for this note sorted on attribute j and get the missings as well
 			TIntArrayList ordered_nonmissing_indices_j = new TIntArrayList();
-			TIntHashSet missing_indices_j = new TIntHashSet();
+			TIntHashSet missing_indices_j = new TIntHashSet(); //order is not necessary here since there is no order
 			yarf.sortedIndices(j, node.indices, ordered_nonmissing_indices_j, missing_indices_j);
 			if (YARF.DEBUG){System.out.println("node.indices: " + Tools.StringJoin(node.indices));}
 			if (YARF.DEBUG){System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));}
 			if (YARF.DEBUG){System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));}
 
-			int num_max_split_points = ordered_nonmissing_indices_j.size();
+			int num_split_points = node.indices.size();
 
 			double[] xj = yarf.getXj(j);
 			
 			missing_search : for (boolean send_missing_data_right : trueFalseRandomOrder){
 				//iterate over all the cut points!
-				for (int i_cut = 0; i_cut < num_max_split_points; i_cut++){
-					double split_value = xj[ordered_nonmissing_indices_j.get(i_cut)];
-					if (i_cut < num_max_split_points - 1 && 
-							split_value == xj[ordered_nonmissing_indices_j.get(i_cut + 1)]){ //this is not a split point since the next in the sequence is the same
-						continue;
-					}
+				for (int i = 0; i < num_split_points; i++){
+					double split_value = xj[node.indices.get(i)];
+
 					//set up zygotes
 					YARFNode putative_left = new YARFNode(node);
 					YARFNode putative_right = new YARFNode(node);
-					putative_left.indices = (TIntArrayList)ordered_nonmissing_indices_j.subList(0, i_cut + 1);
-					putative_right.indices = (TIntArrayList)ordered_nonmissing_indices_j.subList(i_cut + 1, num_max_split_points);		
+					putative_left.indices = new TIntArrayList();
+					putative_right.indices = new TIntArrayList();
+
+					for (int i0 = 0; i0 < num_split_points; i0++){
+						int index = node.indices.get(i0);
+						if (xj[index] <= split_value){
+							putative_left.indices.add(index);
+						}
+						else {
+							putative_right.indices.add(index);
+						}
+					}
+					
+					//putative_left.indices = (TIntArrayList)node.indices.subList(0, i + 1);
+					//putative_right.indices = (TIntArrayList)node.indices.subList(i + 1, num_split_points);		
 					
 					//handle the indices from missingness L/R now
 					if (!missing_indices_j.isEmpty()){ 
@@ -124,7 +135,7 @@ public class YARFTreeBuilder {
 		
 		
 
-		//if we have been unsuccessful in finding an advantageous split, we should not split
+		//if we have been unsuccessful in finding an advantageous split, we should let this node be a leaf and ditch
 		if (lowest_total_split_cost >= node.cost){
 			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));}
 			node.is_leaf = true;
@@ -136,7 +147,7 @@ public class YARFTreeBuilder {
 		if (YARF.DEBUG){System.out.println("greedy search successful!! for node: " + node.stringLocation(true)
 				+ "\n previous cost: " + node.cost 
 				+ "\n new cost: " + lowest_total_split_cost
-				+ "\n lowest_cost_split_attribute: " + lowest_cost_split_attribute
+				+ "\n lowest_cost_split: X_" + lowest_cost_split_attribute + " <= " + lowest_cost_split_value
 				+ "\n lowest_left_node: " + lowest_left_node
 				+ "\n lowest_right_node: " + lowest_right_node
 				+ "\n send_missing: " + (lowest_send_missing_data_right ? "R" : "L")
@@ -158,6 +169,7 @@ public class YARFTreeBuilder {
 		}
 		
 		if (YARF.DEBUG){node.printNodeDebugInfo("");}
+		
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
 		splitNode(node.right);
@@ -209,7 +221,7 @@ public class YARFTreeBuilder {
 		if (yarf.customFunctionMtry()){
 			return yarf.runMtry(node);
 		}
-		return StatToolbox.pickNRandomElements(yarf.indices_one_to_p_min_1, yarf.defaultMtry());
+		return StatToolbox.pickNRandomElements(yarf.indices_zero_to_p_minus_1, yarf.defaultMtry());
 	}
 
 }

@@ -29,7 +29,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	private static final long serialVersionUID = -6984205353140981153L;
 
 	/** debug mode -- prints lots of messages that are useful */
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
 	
 	/** the number of CPU cores to build many different trees in a YARF model */
 	protected int num_cores;
@@ -63,7 +63,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	//convenient pre-computed data to have around
 	protected transient TIntObjectHashMap<int[]> all_attribute_sorts;
 	private transient TIntHashSet indices_one_to_n;
-	protected transient int[] indices_one_to_p_min_1;
+	protected transient int[] indices_zero_to_p_minus_1;
 	
 	
 	
@@ -543,11 +543,10 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			indices_one_to_n.add(i);
 		}
 		//System.out.println("indices_one_to_n" + indices_one_to_n);
-		indices_one_to_p_min_1 = new int[p];
+		indices_zero_to_p_minus_1 = new int[p];
 		for (int j = 0; j < p; j++){
-			indices_one_to_p_min_1[j] = j;
+			indices_zero_to_p_minus_1[j] = j;
 		}
-		//System.out.println("indices_one_to_p_min_1" + indices_one_to_p_min_1);
 
 		sorter_locks = new Object[p];
 		for (int j = 0; j < p; j++){
@@ -622,7 +621,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	}
 	
 	protected void sortedIndices(int j, TIntArrayList sub_indices, TIntArrayList ordered_nonmissing_indices_j, TIntHashSet missing_indices_j){
-		//we only do the sorting ONCE per attribute... this ensures this with a minimal 
+		//we only do the sorting ONCE per attribute... this ensures this runs with a minimal 
 		//amount of thread butting
 		synchronized(sorter_locks[j]){
 			int[] indices_sorted_j = all_attribute_sorts.get(j);
@@ -644,10 +643,10 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			}
 			else {
 				non_missing_pairs.add(new SortPair(sub_ind, x_j[sub_ind]));
-			}
-			
+			}	
 		}
 		Collections.sort(non_missing_pairs);
+		
 		ordered_nonmissing_indices_j.ensureCapacity(non_missing_pairs.size());
 		for (int i_s = 0; i_s < non_missing_pairs.size(); i_s++){
 			ordered_nonmissing_indices_j.add(non_missing_pairs.get(i_s).ind);
