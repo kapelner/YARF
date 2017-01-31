@@ -68,8 +68,8 @@ public class YARFTree extends Classifier {
 		return index_to_y_hat;
 	}
 
-	public double Evaluate(double[] record) {
-		return root.Evaluate(record);
+	public double Evaluate(double[] x_star) {
+		return root.Evaluate(x_star);
 	}
 
 	@Override

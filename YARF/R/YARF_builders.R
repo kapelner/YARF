@@ -444,7 +444,7 @@ YARF = function(
 	
 	#now load the training data into YARF
 	for (i in 1 : n){
-		row_as_char = as.character(model_matrix_training_data[i, ])
+		row_as_char = as.character(model_matrix_training_data[i, ]) ######FIX THIS
 		row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
 		.jcall(java_YARF, "V", "addTrainingDataRow", row_as_char)
 	}
@@ -479,7 +479,6 @@ YARF = function(
 			.jcall(java_YARF, "V", "addOtherIndices", as.integer(other_indices[[t]] - 1), as.integer(t - 1)) ##Java is minus 1 from R's indexing on all fronts
 		}
 	}
-	.jcall(java_YARF, "V", "initTrees") #immediately follows
 	#do we want to do the YARF model building asynchronously?
 	.jcall(java_YARF, "V", "setWait", wait)
 	
