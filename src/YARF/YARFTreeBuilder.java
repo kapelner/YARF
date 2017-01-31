@@ -38,7 +38,7 @@ public class YARFTreeBuilder {
 		double lowest_total_split_cost = node.cost; //if you can't beat this... don't bother!!
 		int lowest_cost_split_attribute = Integer.MIN_VALUE; //bad flag!
 		double lowest_cost_split_value = Double.NaN; //bad flag!
-		boolean lowest_send_missing_data_right = false;
+		boolean lowest_send_missing_data_right = false; //not necessary but for completeness...
 		
 		//which features can we split on in this node?
 		int[] features_to_split_on = selectAttributesToTry(node);
@@ -69,10 +69,10 @@ public class YARFTreeBuilder {
 			int num_split_points = node.indices.size();
 
 			double[] xj = yarf.getXj(j);
-			
-			missing_search : for (boolean send_missing_data_right : trueFalseRandomOrder){
+
+			split_value_search : for (int i = 0; i < num_split_points; i++){
+				for (boolean send_missing_data_right : trueFalseRandomOrder){
 				//iterate over all the cut points!
-				for (int i = 0; i < num_split_points; i++){
 					double split_value = xj[node.indices.get(i)];
 
 					//set up zygotes
@@ -108,7 +108,14 @@ public class YARFTreeBuilder {
 					if (makeNodeLeaf(putative_left) || makeNodeLeaf(putative_right)){
 //						System.out.println(" !! makeNodeLeaf(putative_left) " + makeNodeLeaf(putative_left)
 //								+ " || makeNodeLeaf(putative_right) " + makeNodeLeaf(putative_right));
-						continue;
+						
+//						if (missing_indices_j.isEmpty()){ //for efficiency only!!
+//							continue split_value_search;
+//						} 
+//						else {
+							continue;
+//						}
+						
 					}
 					
 					//these are now viable splits, so we compute cost
@@ -127,9 +134,11 @@ public class YARFTreeBuilder {
 						lowest_right_node = putative_right;
 						lowest_send_missing_data_right = send_missing_data_right;
 					}
+
+					//(this enforces randomness of L/R missingness sending)
+					if (missing_indices_j.isEmpty()){break;} //no need to check the other because it will be the same 
 				}
-				if (missing_indices_j.isEmpty()){break missing_search;} //no need to check the other because it will be the same 
-				//(this enforces randomness of L/R missingness sending)
+				
 			}
 		}
 		
@@ -199,7 +208,7 @@ public class YARFTreeBuilder {
 				node.cost = StatToolbox.sample_sum_sq_err(ys, StatToolbox.sample_average(ys));
 			}
 			else { //it's a classification - the "cost" is the negative entropy which is the negative of the gain...
-				node.cost = StatToolbox.natural_negative_entropy(ys);
+				node.cost = StatToolbox.natural_negative_entropy(ys); ////maybe use Gini instead???
 			}
 		}
 		//System.out.println("computeNodeCost node " + node + " cost = " + node.cost + " pred = " + node.y_pred + " size = " + node.nodeSize());

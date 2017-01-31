@@ -6,7 +6,7 @@ n = 100
 X = data.frame(x1 = 0 : (n - 1))
 y = 0 + 1 * X[,1] #+ rnorm(n, 0, 0.1)
 
-yarf_mod = YARF(X, y, num_trees = 1)
+yarf_mod = YARF(X, y, num_trees = 1, mtry = ncol(X))
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
 

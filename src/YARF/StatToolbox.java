@@ -274,9 +274,10 @@ public class StatToolbox {
 	
 	//http://lemire.me/blog/2013/08/16/picking-n-distinct-numbers-at-random-how-to-do-it-fast/
 	public static int[] pickNRandomElements(int[] arr, int subset_size) {
+		////try this with naive algorithm
 		BitSet bs = new BitSet(arr.length);
         int cardinality = 0;
-        while(cardinality < subset_size) {
+        while (cardinality < subset_size) {
         	int v = randInt(arr.length);
         	if (!bs.get(v)) {
         		bs.set(v);

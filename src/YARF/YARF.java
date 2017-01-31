@@ -630,6 +630,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 				all_attribute_sorts.put(j, indices_sorted_j);
 			}			
 		}
+		//////the above code is not used anywhere.... why???
 
 		//System.out.println("sortedIndices j = " + j + " indices_sorted_j = " + Tools.StringJoin(indices_sorted_j));
 		int n_sub = sub_indices.size();
