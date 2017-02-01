@@ -127,6 +127,8 @@ public class StatToolbox {
 		for (int i = 0; i < ys.length; i++){
 			sum_sqd_deviations += Math.pow(ys[i] - y_center_point, 2);
 		}
+		if (YARF.DEBUG){System.out.println("        SSE calc ybar = " + y_center_point + " ys = " + Tools.StringJoin(ys));}
+		
 		return sum_sqd_deviations;
 	}
 	
