@@ -125,7 +125,11 @@ public class YARFTreeBuilder {
 					computeNodeCost(putative_left);
 					computeNodeCost(putative_right);
 					
+					
 					double total_split_cost = totalChildrenCost(putative_left, putative_right);
+					
+					if (YARF.DEBUG){System.out.println("   viable split cost = " + total_split_cost + " at split X_" + j + " < " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")");}
+					
 					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
 						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost + " with split X_" + j + " < " + split_value);}
