@@ -33,6 +33,8 @@ public class YARFTreeBuilder {
 			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return; //ditch... because we're done...
 		}
+
+		if (YARF.DEBUG){System.out.println("greedy search BEGINNING for node: " + node.stringLocation(true));}
 		
 		//greedy search... set up the horses
 		double lowest_total_split_cost = node.cost; //if you can't beat this... don't bother!!
