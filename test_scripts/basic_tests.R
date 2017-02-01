@@ -6,7 +6,15 @@ n = 100
 X = data.frame(x1 = 0 : (n - 1))
 y = 0 + 1 * X[,1] #+ rnorm(n, 0, 0.1)
 
+## split choice ##
+set.seed(123)
+n = 100
+p = 20
+X = data.frame(matrix(rnorm(n*p), n))
+names(X) = paste('x', 1:20, sep='')
+y = 50*X[,1]
 yarf_mod = YARF(X, y, num_trees = 1, mtry = ncol(X))
+
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
 
@@ -27,7 +35,7 @@ print_at_leaf_script = "function printAtLeaf(node){
     Java.type('YARF.StatToolbox').sample_maximum(node.node_ys()).toFixed(2);
 }";
 
-illustrate_trees(yarf_mod, trees = c(1), max_depth = 8,
+illustrate_trees(yarf_mod, trees = c(1), max_depth = 2,
                  length_in_px_per_half_split = 40,
                  print_at_leaf_script = print_at_leaf_script,
                  print_at_split_node_script = print_at_split_node_script,
@@ -37,7 +45,7 @@ illustrate_trees(yarf_mod, trees = c(1), max_depth = 8,
 # yarf_mod = YARF_update_with_oob_results(yarf_mod)
 
 library(randomForest)
-rf_mod = randomForest(X, y, ntree = 1)
+rf_mod = randomForest(X, y, ntree = 50)
 rf_mod
 
 noos = 500

@@ -62,9 +62,9 @@ public class YARFTreeBuilder {
 			TIntArrayList ordered_nonmissing_indices_j = new TIntArrayList();
 			TIntHashSet missing_indices_j = new TIntHashSet(); //order is not necessary here since there is no order
 			yarf.sortedIndices(j, node.indices, ordered_nonmissing_indices_j, missing_indices_j);
-			if (YARF.DEBUG){System.out.println("node.indices: " + Tools.StringJoin(node.indices));}
-			if (YARF.DEBUG){System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));}
-			if (YARF.DEBUG){System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));}
+//			if (YARF.DEBUG){System.out.println("node.indices: " + Tools.StringJoin(node.indices));}
+//			if (YARF.DEBUG){System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));}
+//			if (YARF.DEBUG){System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));}
 
 			int num_split_points = node.indices.size();
 
@@ -149,7 +149,7 @@ public class YARFTreeBuilder {
 			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));}
 			node.is_leaf = true;
 			node.assignYHat();
-			if (YARF.DEBUG){node.printNodeDebugInfo("");}
+//			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return;
 		}
 		
@@ -177,7 +177,7 @@ public class YARFTreeBuilder {
 			yarf.runAfterNodeBirth(node.right);
 		}
 		
-		if (YARF.DEBUG){node.printNodeDebugInfo("");}
+//		if (YARF.DEBUG){node.printNodeDebugInfo("");}
 		
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
