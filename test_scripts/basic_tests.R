@@ -1,6 +1,21 @@
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
 
+
+
+###basic test... stump
+n = 50
+p = 20
+X = data.frame(runif(n * p), nrow = n)
+y = 100 * X[, 1]
+
+yarf_mod = YARF(X, y, num_trees = 1, mtry = p)
+yarf_mod
+YARF_update_with_oob_results(yarf_mod)
+
+illustrate_trees(yarf_mod, open_file = TRUE)
+
+
 #test 1a - linear model
 n = 100
 X = data.frame(x1 = 0 : (n - 1))
