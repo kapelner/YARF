@@ -126,7 +126,7 @@ public class YARFTreeBuilder {
 					double total_split_cost = totalChildrenCost(putative_left, putative_right);
 					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
-						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost);}
+						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost + " with split X_" + j + " < " + split_value);}
 						lowest_total_split_cost = total_split_cost;
 						lowest_cost_split_attribute = j;
 						lowest_cost_split_value = split_value;
