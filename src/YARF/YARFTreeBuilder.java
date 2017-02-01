@@ -18,6 +18,7 @@ public class YARFTreeBuilder {
 		if (yarf.customFunctionAfterBirth()){
 			yarf.runAfterNodeBirth(tree.root);
 		}
+		if (YARF.DEBUG){System.out.println("BEGIN YARF TREE BUILDING ON A MODEL " + (yarf.is_a_regression ? "regression" : "classification"));}
 		//now we start building this tree via recursive splitting
 		splitNode(tree.root);
 	}
