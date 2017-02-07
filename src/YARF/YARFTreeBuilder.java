@@ -138,11 +138,11 @@ public class YARFTreeBuilder {
 					
 					double total_split_cost = totalChildrenCost(putative_left, putative_right);
 					
-					if (YARF.DEBUG){System.out.println("   viable split cost = " + total_split_cost + " at split X_" + j + " < " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")\n");}
+					if (YARF.DEBUG){System.out.println("   viable split cost = " + total_split_cost + " at split X_" + j + " <= " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")\n");}
 					
 					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
-						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost + " with split X_" + j + " <= " + split_value);}
+						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost + " with split X_" + j + " <= " + split_value +"\n\n");}
 						lowest_total_split_cost = total_split_cost;
 						lowest_cost_split_attribute = j;
 						lowest_cost_split_value = split_value;
@@ -162,7 +162,7 @@ public class YARFTreeBuilder {
 
 		//if we have been unsuccessful in finding an advantageous split, we should let this node be a leaf and ditch
 		if (lowest_total_split_cost >= node.cost){
-			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true));}
+			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true) + "\n\n");}
 			node.is_leaf = true;
 			node.assignYHat();
 //			if (YARF.DEBUG){node.printNodeDebugInfo("");}
