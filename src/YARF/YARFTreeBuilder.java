@@ -125,9 +125,11 @@ public class YARFTreeBuilder {
 					}
 					
 					//these are now viable splits, so we compute cost
-					
+
+					if (YARF.DEBUG){System.out.print("putative_left");}
 					computeNodeCost(putative_left);
 					if (YARF.DEBUG){System.out.println("left indices: " + Tools.StringJoin(putative_left.indices));}
+					if (YARF.DEBUG){System.out.print("putative_right");}
 					computeNodeCost(putative_right);
 					if (YARF.DEBUG){System.out.println("right indices: " + Tools.StringJoin(putative_right.indices));}
 					
