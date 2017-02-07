@@ -1,5 +1,7 @@
 package YARF;
 
+import com.sun.java.swing.plaf.windows.WindowsBorders.ToolBarBorder;
+
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -69,11 +71,12 @@ public class YARFTreeBuilder {
 //			if (YARF.DEBUG){System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));}
 //			if (YARF.DEBUG){System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));}
 
-			int num_split_points = node.indices.size();
+			int node_size = node.indices.size();
 
 			double[] xj = yarf.getXj(j);
+			System.out.println("xj: " + Tools.StringJoin(xj));
 
-			split_value_search : for (int i = 0; i < num_split_points; i++){
+			split_value_search : for (int i = 0; i < node_size; i++){
 				for (boolean send_missing_data_right : trueFalseRandomOrder){
 				//iterate over all the cut points!
 					double split_value = xj[node.indices.get(i)];
@@ -84,7 +87,7 @@ public class YARFTreeBuilder {
 					putative_left.indices = new TIntArrayList();
 					putative_right.indices = new TIntArrayList();
 
-					for (int i0 = 0; i0 < num_split_points; i0++){
+					for (int i0 = 0; i0 < node_size; i0++){
 						int index = node.indices.get(i0);
 						if (xj[index] <= split_value){
 							putative_left.indices.add(index);
@@ -133,7 +136,7 @@ public class YARFTreeBuilder {
 					
 					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
-						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost + " with split X_" + j + " < " + split_value);}
+						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost + " with split X_" + j + " <= " + split_value);}
 						lowest_total_split_cost = total_split_cost;
 						lowest_cost_split_attribute = j;
 						lowest_cost_split_value = split_value;
