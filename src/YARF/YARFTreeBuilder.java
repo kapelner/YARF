@@ -74,7 +74,7 @@ public class YARFTreeBuilder {
 			int node_size = node.indices.size();
 
 			double[] xj = yarf.getXj(j);
-			System.out.println("xj: " + Tools.StringJoin(xj));
+			if (YARF.DEBUG){System.out.println("xj: " + Tools.StringJoin(xj));}
 
 			split_value_search : for (int i = 0; i < node_size; i++){
 				for (boolean send_missing_data_right : trueFalseRandomOrder){
@@ -127,7 +127,9 @@ public class YARFTreeBuilder {
 					//these are now viable splits, so we compute cost
 					
 					computeNodeCost(putative_left);
+					if (YARF.DEBUG){System.out.println("left indices: " + Tools.StringJoin(putative_left.indices));}
 					computeNodeCost(putative_right);
+					if (YARF.DEBUG){System.out.println("right indices: " + Tools.StringJoin(putative_right.indices));}
 					
 					
 					double total_split_cost = totalChildrenCost(putative_left, putative_right);
