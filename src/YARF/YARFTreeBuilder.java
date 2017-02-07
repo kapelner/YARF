@@ -96,19 +96,23 @@ public class YARFTreeBuilder {
 							putative_right.indices.add(index);
 						}
 					}
+					if (YARF.DEBUG){System.out.println("left indices: " + Tools.StringJoin(putative_left.indices));}
+					if (YARF.DEBUG){System.out.println("left ys: " + Tools.StringJoin(putative_left.node_ys()));}
+					if (YARF.DEBUG){System.out.println("right indices: " + Tools.StringJoin(putative_right.indices));}
+					if (YARF.DEBUG){System.out.println("right ys: " + Tools.StringJoin(putative_right.node_ys()));}
 					
 					//putative_left.indices = (TIntArrayList)node.indices.subList(0, i + 1);
 					//putative_right.indices = (TIntArrayList)node.indices.subList(i + 1, num_split_points);		
 					
 					//handle the indices from missingness L/R now
-					if (!missing_indices_j.isEmpty()){ 
-						if (send_missing_data_right){
-							putative_right.indices.addAll(missing_indices_j);
-						}
-						else {
-							putative_left.indices.addAll(missing_indices_j);
-						}
-					}
+//					if (!missing_indices_j.isEmpty()){ 
+//						if (send_missing_data_right){
+//							putative_right.indices.addAll(missing_indices_j);
+//						}
+//						else {
+//							putative_left.indices.addAll(missing_indices_j);
+//						}
+//					}
 
 					//we should ditch if these don't work out
 					if (makeNodeLeaf(putative_left) || makeNodeLeaf(putative_right)){
@@ -128,15 +132,13 @@ public class YARFTreeBuilder {
 
 					if (YARF.DEBUG){System.out.print("putative_left");}
 					computeNodeCost(putative_left);
-					if (YARF.DEBUG){System.out.println("left indices: " + Tools.StringJoin(putative_left.indices));}
 					if (YARF.DEBUG){System.out.print("putative_right");}
 					computeNodeCost(putative_right);
-					if (YARF.DEBUG){System.out.println("right indices: " + Tools.StringJoin(putative_right.indices));}
 					
 					
 					double total_split_cost = totalChildrenCost(putative_left, putative_right);
 					
-					if (YARF.DEBUG){System.out.println("   viable split cost = " + total_split_cost + " at split X_" + j + " < " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")");}
+					if (YARF.DEBUG){System.out.println("   viable split cost = " + total_split_cost + " at split X_" + j + " < " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")\n");}
 					
 					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
