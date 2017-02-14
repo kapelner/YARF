@@ -82,10 +82,10 @@ public class YARFTreeBuilder {
 			
 			if (YARF.DEBUG){System.out.println("xj: " + Tools.StringJoin(xj));}
 
-			split_value_search : for (int i = 0; i < node_size; i++){
+			split_value_search : for (int i = 0; i < xj_unique_sorted_midpoints.length; i++){
 				for (boolean send_missing_data_right : trueFalseRandomOrder){
 				//iterate over all the cut points!
-					double split_value = xj[node.indices.get(i)];
+					double split_value = xj_unique_sorted_midpoints[i];
 
 					//set up zygotes
 					YARFNode putative_left = new YARFNode(node);
