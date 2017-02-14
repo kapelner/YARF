@@ -80,7 +80,7 @@ public class YARFTreeBuilder {
 			double[] xj_unique_sorted_midpoints = Tools.sorted_and_midpointed(Tools.unique_values(xj));
 			//get midpoints between unique values
 			
-			if (YARF.DEBUG){System.out.println("xj: " + Tools.StringJoin(xj));}
+//			if (YARF.DEBUG){System.out.println("xj: " + Tools.StringJoin(xj));}
 
 			split_value_search : for (int i = 0; i < xj_unique_sorted_midpoints.length; i++){
 				for (boolean send_missing_data_right : trueFalseRandomOrder){
@@ -146,9 +146,16 @@ public class YARFTreeBuilder {
 					
 					if (YARF.DEBUG){System.out.println("   viable split cost = " + total_split_cost + " at split X_" + j + " <= " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")\n");}
 					
+					if (node.stringLocation(false) == "LLL"){
+						System.out.println("   viable split cost = " + total_split_cost + " at split X_" + j + " <= " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")\n");
+					}
+					
 					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
 						if (YARF.DEBUG){System.out.println("beat cost @ " + total_split_cost + " with split X_" + j + " <= " + split_value +"\n\n");}
+						if (node.stringLocation(false) == "LLL"){
+							System.out.println("beat cost @ " + total_split_cost + " with split X_" + j + " <= " + split_value +"\n\n");
+						}
 						lowest_total_split_cost = total_split_cost;
 						lowest_cost_split_attribute = j;
 						lowest_cost_split_value = split_value;
