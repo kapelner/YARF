@@ -121,7 +121,7 @@ public class YARFTreeBuilder {
 //					}
 
 					//we should ditch if these don't work out
-					if (makeNodeLeaf(putative_left) || makeNodeLeaf(putative_right)){
+//					if (makeNodeLeaf(putative_left) || makeNodeLeaf(putative_right)){
 //						System.out.println(" !! makeNodeLeaf(putative_left) " + makeNodeLeaf(putative_left)
 //								+ " || makeNodeLeaf(putative_right) " + makeNodeLeaf(putative_right));
 						
@@ -129,10 +129,10 @@ public class YARFTreeBuilder {
 //							continue split_value_search;
 //						} 
 //						else {
-							continue;
+//							continue;
 //						}
 						
-					}
+//					}
 					
 					//these are now viable splits, so we compute cost
 
