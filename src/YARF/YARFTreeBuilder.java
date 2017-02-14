@@ -53,9 +53,7 @@ public class YARFTreeBuilder {
 		//this will house the optimal split
 		YARFNode lowest_left_node = null;
 		YARFNode lowest_right_node = null;
-//		if (YARF.DEBUG){
-			System.out.println("features_to_split_on: " + Tools.StringJoin(features_to_split_on));
-//			}
+		if (YARF.DEBUG){System.out.println("features_to_split_on: " + Tools.StringJoin(features_to_split_on));}
 //		System.out.println("n_n: " + n_n);
 		
 		//two options about missingness (a) there is no missingness in this feature (b) there is
