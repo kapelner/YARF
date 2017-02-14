@@ -3,6 +3,7 @@ package YARF;
 import com.sun.java.swing.plaf.windows.WindowsBorders.ToolBarBorder;
 
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 public class YARFTreeBuilder {
@@ -71,9 +72,14 @@ public class YARFTreeBuilder {
 //			if (YARF.DEBUG){System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));}
 //			if (YARF.DEBUG){System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));}
 
-			int node_size = node.indices.size();
+			int node_size = node.nodeSize();
 
 			double[] xj = yarf.getXj(j);
+			
+			//get unique values
+			double[] xj_unique_sorted_midpoints = Tools.sorted_and_midpointed(Tools.unique_values(xj));
+			//get midpoints between unique values
+			
 			if (YARF.DEBUG){System.out.println("xj: " + Tools.StringJoin(xj));}
 
 			split_value_search : for (int i = 0; i < node_size; i++){

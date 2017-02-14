@@ -3,9 +3,11 @@ package YARF;
 
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 /**
  * A class that contains many generally useful convenience methods.
@@ -378,5 +380,27 @@ public class Tools {
 			sub_array[i] = arr[indices.get(i)];
 		}
 		return sub_array;
+	}
+
+	public static TDoubleHashSet unique_values(double[] vals) {
+		TDoubleHashSet unique_values = new TDoubleHashSet();
+		for (int i = 0; i < vals.length; i++){
+			unique_values.add(vals[i]);
+		}
+		return unique_values;
+	}
+
+	public static double[] sorted_and_midpointed(TDoubleHashSet vals) {
+		int n = vals.size();
+		double[] sorted_and_midpointed = new double[n - 1];
+		double[] vals_arr = vals.toArray();
+		Arrays.sort(vals_arr);
+		if (YARF.DEBUG){System.out.println("vals_arr: " + Tools.StringJoin(vals_arr));}
+		
+		for (int i = 0; i < n - 1; i++){
+			sorted_and_midpointed[i] = (vals_arr[i] + vals_arr[i + 1]) / 2;
+		}
+		if (YARF.DEBUG){System.out.println("sorted_and_midpointed: " + Tools.StringJoin(sorted_and_midpointed));}
+		return sorted_and_midpointed;
 	}
 }
