@@ -48,7 +48,8 @@ public class YARFTreeBuilder {
 		
 		//which features can we split on in this node?
 		int[] features_to_split_on = selectAttributesToTry(node);
-		
+		//randomize the order of the features to randomly select ties
+		Tools.shuffleArray(features_to_split_on);
 		
 		//this will house the optimal split
 		YARFNode lowest_left_node = null;
@@ -76,16 +77,17 @@ public class YARFTreeBuilder {
 
 			double[] xj = yarf.getXj(j);
 			
-			//get unique values
-			double[] xj_unique_sorted_midpoints = Tools.sorted_and_midpointed(Tools.unique_values(node.node_Xs_by_feature(j)));
+			//get unique values in random order
+			double[] xj_unique_midpoints_random_order = getUniqueXjVals(node, j);
+					
 			//get midpoints between unique values
 			
 //			if (YARF.DEBUG){System.out.println("xj: " + Tools.StringJoin(xj));}
 
-			split_value_search : for (int i = 0; i < xj_unique_sorted_midpoints.length; i++){
+			split_value_search : for (int i = 0; i < xj_unique_midpoints_random_order.length; i++){
 				for (boolean send_missing_data_right : trueFalseRandomOrder){
 				//iterate over all the cut points!
-					double split_value = xj_unique_sorted_midpoints[i];
+					double split_value = xj_unique_midpoints_random_order[i];
 
 					//set up zygotes
 					YARFNode putative_left = new YARFNode(node);
@@ -211,6 +213,12 @@ public class YARFTreeBuilder {
 		//and now recurse and split on the new children just created
 		splitNode(node.left);
 		splitNode(node.right);
+	}
+
+	private double[] getUniqueXjVals(YARFNode node, int j) {
+		double[] xj_uniques = Tools.midpointed(Tools.unique_values(node.node_Xs_by_feature(j)));
+		Tools.shuffleArray(xj_uniques);
+		return xj_uniques;
 	}
 
 	private double totalChildrenCost(YARFNode putative_left, YARFNode putative_right) {

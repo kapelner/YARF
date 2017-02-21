@@ -390,11 +390,11 @@ public class Tools {
 		return unique_values;
 	}
 
-	public static double[] sorted_and_midpointed(TDoubleHashSet vals) {
+	public static double[] midpointed(TDoubleHashSet vals) {
 		int n = vals.size();
 		double[] sorted_and_midpointed = new double[n - 1];
 		double[] vals_arr = vals.toArray();
-		Arrays.sort(vals_arr);
+//		Arrays.sort(vals_arr);
 //		if (YARF.DEBUG){System.out.println("vals_arr: " + Tools.StringJoin(vals_arr));}
 		
 		for (int i = 0; i < n - 1; i++){
@@ -402,5 +402,30 @@ public class Tools {
 		}
 //		if (YARF.DEBUG){System.out.println("sorted_and_midpointed: " + Tools.StringJoin(sorted_and_midpointed));}
 		return sorted_and_midpointed;
+	}
+	
+	public static void shuffleArray(int[] array)
+	{
+	    int index, temp;
+	    for (int i = array.length - 1; i > 0; i--)
+	    {
+	        index = StatToolbox.randInt(i + 1);
+	        temp = array[index];
+	        array[index] = array[i];
+	        array[i] = temp;
+	    }
+	}
+	
+	public static void shuffleArray(double[] array)
+	{
+	    int index;
+	    double temp;
+	    for (int i = array.length - 1; i > 0; i--)
+	    {
+	        index = StatToolbox.randInt(i + 1);
+	        temp = array[index];
+	        array[index] = array[i];
+	        array[i] = temp;
+	    }
 	}
 }
