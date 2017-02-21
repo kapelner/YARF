@@ -74,10 +74,10 @@ public class YARFTreeBuilder {
 
 			int node_size = node.nodeSize();
 
-			double[] xj = node.node_Xs_by_feature(j);
+			double[] xj = yarf.getXj(j);
 			
 			//get unique values
-			double[] xj_unique_sorted_midpoints = Tools.sorted_and_midpointed(Tools.unique_values(xj));
+			double[] xj_unique_sorted_midpoints = Tools.sorted_and_midpointed(Tools.unique_values(node.node_Xs_by_feature(j)));
 			//get midpoints between unique values
 			
 //			if (YARF.DEBUG){System.out.println("xj: " + Tools.StringJoin(xj));}
