@@ -48,7 +48,8 @@ public class YARFNode implements Cloneable {
 
 	//convenience functions for looking at the data in this node
 	private double[] node_ys;
-	private ArrayList<double[]> node_Xs;
+	private ArrayList<double[]> node_Xs_by_obs;
+	private ArrayList<double[]> node_Xs_by_feature;
 	private ArrayList<double[]> node_X_others;
 
 	
@@ -114,7 +115,7 @@ public class YARFNode implements Cloneable {
 		indices = null;
 		node_ys = null;
 		node_X_others = null;
-		node_Xs = null;
+		node_Xs_by_obs = null;
 		
 		if (this.left != null)
 			this.left.flushNodeData();
@@ -250,14 +251,25 @@ public class YARFNode implements Cloneable {
 		return node_ys;
 	}
 	
-	public ArrayList<double[]> node_Xs(){
-		if (node_Xs == null){
-			node_Xs = new ArrayList<double[]>(nodeSize());
+	public ArrayList<double[]> node_Xs_by_obs(){
+		if (node_Xs_by_obs == null){
+			node_Xs_by_obs = new ArrayList<double[]>(nodeSize());
 			for (int i = 0; i < nodeSize(); i++){
-				node_Xs.add(tree.yarf.X.get(indices.get(i)));
+				node_Xs_by_obs.add(tree.yarf.X.get(indices.get(i)));
 			}
 		}
-		return node_Xs;
+		return node_Xs_by_obs;
+	}	
+	
+	public ArrayList<double[]> node_Xs_by_feature(){
+		if (node_Xs_by_feature == null){
+			node_Xs_by_feature = new ArrayList<double[]>(tree.yarf.p);
+			for (int j = 0; j < tree.yarf.p; j++){
+				double[] x_j = tree.yarf.getXj(j);
+				node_Xs_by_feature.add(Tools.subArr(x_j, indices));
+			}
+		}
+		return node_Xs_by_feature;
 	}	
 	
 	public ArrayList<double[]> node_X_others(){
@@ -267,7 +279,7 @@ public class YARFNode implements Cloneable {
 				node_X_others.add(tree.yarf.Xother.get(indices.get(i)));
 			}
 		}
-		return node_Xs;
+		return node_Xs_by_obs;
 	}
 	
 	protected void maxDepth(int[] max_depth) {
