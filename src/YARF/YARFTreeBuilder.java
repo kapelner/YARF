@@ -74,7 +74,7 @@ public class YARFTreeBuilder {
 
 			int node_size = node.nodeSize();
 
-			double[] xj = node.node_Xs_by_feature().get(j);
+			double[] xj = node.node_Xs_by_feature(j);
 			
 			//get unique values
 			double[] xj_unique_sorted_midpoints = Tools.sorted_and_midpointed(Tools.unique_values(xj));

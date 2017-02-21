@@ -261,16 +261,26 @@ public class YARFNode implements Cloneable {
 		return node_Xs_by_obs;
 	}	
 	
-	public ArrayList<double[]> node_Xs_by_feature(){
-		if (node_Xs_by_feature == null){
-			node_Xs_by_feature = new ArrayList<double[]>(tree.yarf.p);
-			for (int j = 0; j < tree.yarf.p; j++){
-				double[] x_j = tree.yarf.getXj(j);
-				node_Xs_by_feature.add(Tools.subArr(x_j, indices));
-			}
+	public double[] node_Xs_by_feature(int j){
+		
+		double[] x_j_s = new double[nodeSize()];
+		for (int i = 0; i < nodeSize(); i++){
+			double[] x_i = node_Xs_by_obs().get(i);
+			x_j_s[i] = x_i[j];
 		}
-		return node_Xs_by_feature;
-	}	
+		return x_j_s;
+	}
+	
+//	public ArrayList<double[]> node_Xs_by_feature(){
+//		if (node_Xs_by_feature == null){
+//			node_Xs_by_feature = new ArrayList<double[]>(tree.yarf.p);
+//			for (int j = 0; j < tree.yarf.p; j++){
+//				double[] x_j = tree.yarf.getXj(j);
+//				node_Xs_by_feature.add(Tools.subArr(x_j, indices));
+//			}
+//		}
+//		return node_Xs_by_feature;
+//	}	
 	
 	public ArrayList<double[]> node_X_others(){
 		if (node_X_others == null){
