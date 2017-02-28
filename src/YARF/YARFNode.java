@@ -304,7 +304,7 @@ public class YARFNode implements Cloneable {
 	}
 	
 	public int maxDepth() {
-		return this.tree.maxDepth();
+		return this.tree.depth();
 	}
 	
 	public void assignYHat() {

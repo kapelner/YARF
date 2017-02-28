@@ -736,14 +736,26 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	}
 	
 	public int[] getNumLeaves(){
-		return Arrays.stream(((Integer[]) Arrays.stream(yarf_trees).map(t -> t.root.numLeaves()).toArray())).mapToInt(Integer::intValue).toArray();
+		int[] num_leaves = new int[num_trees];
+		for (int t = 0; t < num_trees; t++){
+			num_leaves[t] = yarf_trees[t].numLeaves();
+		}
+		return num_leaves;		
 	}
 	
 	public int[] getNumNodes(){
-		return Arrays.stream(((Integer[]) Arrays.stream(yarf_trees).map(t -> t.root.numNodes()).toArray())).mapToInt(Integer::intValue).toArray();
+		int[] num_nodes = new int[num_trees];
+		for (int t = 0; t < num_trees; t++){
+			num_nodes[t] = yarf_trees[t].numNodes();
+		}
+		return num_nodes;
 	}
 	
 	public int[] getMaxDepths(){
-		return Arrays.stream(((Integer[]) Arrays.stream(yarf_trees).map(t -> t.maxDepth()).toArray())).mapToInt(Integer::intValue).toArray();
+		int[] depths = new int[num_trees];
+		for (int t = 0; t < num_trees; t++){
+			depths[t] = yarf_trees[t].depth();
+		}
+		return depths;		
 	}
 }
