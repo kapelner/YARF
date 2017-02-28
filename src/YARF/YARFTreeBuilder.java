@@ -272,7 +272,7 @@ public class YARFTreeBuilder {
 			return yarf.runMtry(node);
 		}
 //		return yarf.indices_zero_to_p_minus_1;
-		return StatToolbox.pickNRandomElements(yarf.indices_zero_to_p_minus_1, yarf.defaultMtry());
+		return StatToolbox.pickNRandomElements(yarf.indices_zero_to_p_minus_1, (yarf.mtry == 0 ? yarf.defaultMtry() : yarf.mtry));
 	}
 
 }
