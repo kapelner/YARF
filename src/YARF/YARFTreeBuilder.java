@@ -50,6 +50,7 @@ public class YARFTreeBuilder {
 		
 		//which features can we split on in this node?
 		int[] features_to_split_on = selectAttributesToTry(node);
+		
 		//randomize the order of the features to randomly select ties
 		Tools.shuffleArray(features_to_split_on);
 		

@@ -500,16 +500,32 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		}
 		return y_preds;		
 	}
-	
-	/**
-	 * After burn in, find the depth (greatest generation of a terminal node) of each tree for each Gibbs sample
-	 * 
-	 * @param thread_num	which CPU core (which Gibbs chain) to return results for
-	 * @return				for each Gibbs chain return a vector of depths for all <code>num_trees</code> chains
-	 */
-	public int[] getDepthsForTrees(int thread_num){
-		return null;
-	}	
+//	
+//	/**
+//	 * Find depth of all trees
+//	 * 
+//	 * @return	Depths of all trees
+//	 */
+//	public int[] getDepthsForTrees(){
+//		int[] depths = new int[num_trees];
+//		for (int t = 0; t < num_trees; t++){
+//			depths[t] = yarf_trees[t].maxDepth();
+//		}
+//		return depths;	
+//	}	
+//	
+//	/**
+//	 * Find num leaves of all trees
+//	 * 
+//	 * @return	Num Leaves of all trees
+//	 */
+//	public int[] geNumLeavesForTrees(){
+//		int[] depths = new int[num_trees];
+//		for (int t = 0; t < num_trees; t++){
+//			depths[t] = yarf_trees[t].numLeaves();
+//		}
+//		return depths;	
+//	}
 	
 	/**
 	 * After burn in, return the number of total nodes (internal plus terminal) of each tree for each Gibbs sample
@@ -719,15 +735,15 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		return (YARFTree[]) Arrays.stream(yarf_trees).filter(t -> t.completed).toArray();
 	}
 	
-	public Integer[] getNumLeaves(){
-		return (Integer[]) Arrays.stream(yarf_trees).map(t -> t.root.numLeaves()).toArray();
+	public int[] getNumLeaves(){
+		return Arrays.stream(((Integer[]) Arrays.stream(yarf_trees).map(t -> t.root.numLeaves()).toArray())).mapToInt(Integer::intValue).toArray();
 	}
 	
-	public Integer[] getNumNodes(){
-		return (Integer[]) Arrays.stream(yarf_trees).map(t -> t.root.numNodes()).toArray();
+	public int[] getNumNodes(){
+		return Arrays.stream(((Integer[]) Arrays.stream(yarf_trees).map(t -> t.root.numNodes()).toArray())).mapToInt(Integer::intValue).toArray();
 	}
 	
-	public Integer[] getMaxDepths(){
-		return (Integer[]) Arrays.stream(yarf_trees).map(t -> t.maxDepth()).toArray();
+	public int[] getMaxDepths(){
+		return Arrays.stream(((Integer[]) Arrays.stream(yarf_trees).map(t -> t.maxDepth()).toArray())).mapToInt(Integer::intValue).toArray();
 	}
 }

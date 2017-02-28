@@ -87,4 +87,8 @@ public class YARFTree extends Classifier {
 		return d[0];
 	}
 
+	public int numLeaves() {
+		return root.numLeaves();
+	}
+
 }
