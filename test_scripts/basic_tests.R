@@ -4,15 +4,14 @@ library(YARF)
 
 
 ###basic test... stump
-n = 50
-p = 20
-X = data.frame(runif(n * p), nrow = n)
-y = 100 * X[, 1]
+n = 100
+p = 1
+X = data.frame(1:n, matrix(runif(n * (p-1)), nrow = n))
+y = X[, 1]
 
-yarf_mod = YARF(X, y, num_trees = 1, mtry = p)
+yarf_mod = YARF(X, y, num_trees = 1, mtry = 1)
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
-
 illustrate_trees(yarf_mod, open_file = TRUE)
 
 
