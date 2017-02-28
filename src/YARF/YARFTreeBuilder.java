@@ -82,7 +82,9 @@ public class YARFTreeBuilder {
 					
 			//get midpoints between unique values
 			
-//			if (YARF.DEBUG){System.out.println("xj: " + Tools.StringJoin(xj));}
+//			if (YARF.DEBUG){
+				System.out.println("xj_unique_midpoints_random_order: " + Tools.StringJoin(xj_unique_midpoints_random_order));
+//			}
 
 			split_value_search : for (int i = 0; i < xj_unique_midpoints_random_order.length; i++){
 				for (boolean send_missing_data_right : trueFalseRandomOrder){

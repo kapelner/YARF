@@ -19,6 +19,22 @@ illustrate_trees(yarf_mod, open_file = TRUE)
 n = 100
 X = data.frame(x1 = 0 : (n - 1))
 y = 0 + 1 * X[,1] #+ rnorm(n, 0, 0.1)
+yarf_mod = YARF(X, y, 
+              num_trees = 1, 
+              bootstrap_indices = list("1" = 1:n),
+              mtry = ncol(X))
+yarf_mod
+
+illustrate_trees(yarf_mod, open_file = TRUE)
+
+library(randomForest)
+rf_mod = randomForest(X, y, ntree = 1, replace = FALSE)
+rf_mod
+getTree(rf_mod)
+
+library(reprtree)
+reprtree:::plot.getTree(rf_mod, depth=1)
+?reprtree:::plot.getTree
 
 ## split choice ##
 set.seed(123)
@@ -30,6 +46,9 @@ y = 50*X[,1]
 yarf_mod = YARF(X, y, num_trees = 1, mtry = ncol(X))
 
 yarf_mod
+
+illustrate_trees(yarf_mod, open_file = TRUE)
+
 YARF_update_with_oob_results(yarf_mod)
 
 print_at_split_node_script = "function printAtSplitNode(node){
@@ -61,6 +80,9 @@ illustrate_trees(yarf_mod, trees = c(1), max_depth = 2,
 library(randomForest)
 rf_mod = randomForest(X, y, ntree = 50)
 rf_mod
+
+library(reprtree)
+reprtree:::plot.getTree(rf_mod)
 
 noos = 500
 Xoos = data.frame(x1 = runif(noos, 0, 100))
