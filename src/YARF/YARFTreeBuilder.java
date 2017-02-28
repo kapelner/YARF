@@ -1,5 +1,7 @@
 package YARF;
 
+import java.util.Arrays;
+
 import com.sun.java.swing.plaf.windows.WindowsBorders.ToolBarBorder;
 
 import gnu.trove.list.array.TIntArrayList;
@@ -75,10 +77,14 @@ public class YARFTreeBuilder {
 
 			int node_size = node.nodeSize();
 
+			//get all possible values of x_j (not just at this node)
 			double[] xj = yarf.getXj(j);
-			
-			//get unique values in random order
-			double[] xj_unique_midpoints_random_order = getUniqueXjVals(node, j);
+			//find the unique values at this node
+			double[] xj_node_unique = Tools.unique_values(node.node_Xs_by_feature(j)).toArray();
+			//sort them
+			Arrays.sort(xj_node_unique);
+			//now get their midpoints
+			double[] xj_unique_midpoints_random_order = Tools.midpointed(xj_node_unique);
 					
 			//get midpoints between unique values
 			
@@ -217,11 +223,6 @@ public class YARFTreeBuilder {
 		splitNode(node.right);
 	}
 
-	private double[] getUniqueXjVals(YARFNode node, int j) {
-		double[] xj_uniques = Tools.midpointed(Tools.unique_values(node.node_Xs_by_feature(j)));
-		Tools.shuffleArray(xj_uniques);
-		return xj_uniques;
-	}
 
 	private double totalChildrenCost(YARFNode putative_left, YARFNode putative_right) {
 		if (yarf.customFunctionBothChildrenCostCalc()){

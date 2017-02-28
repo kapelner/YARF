@@ -390,15 +390,14 @@ public class Tools {
 		return unique_values;
 	}
 
-	public static double[] midpointed(TDoubleHashSet vals) {
-		int n = vals.size();
+	public static double[] midpointed(double[] xs_sorted) {
+		int n = xs_sorted.length;
 		double[] sorted_and_midpointed = new double[n - 1];
-		double[] vals_arr = vals.toArray();
 //		Arrays.sort(vals_arr);
 //		if (YARF.DEBUG){System.out.println("vals_arr: " + Tools.StringJoin(vals_arr));}
 		
 		for (int i = 0; i < n - 1; i++){
-			sorted_and_midpointed[i] = (vals_arr[i] + vals_arr[i + 1]) / 2;
+			sorted_and_midpointed[i] = (xs_sorted[i] + xs_sorted[i + 1]) / 2;
 		}
 //		if (YARF.DEBUG){System.out.println("sorted_and_midpointed: " + Tools.StringJoin(sorted_and_midpointed));}
 		return sorted_and_midpointed;
