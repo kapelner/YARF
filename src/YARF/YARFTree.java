@@ -81,7 +81,7 @@ public class YARFTree extends Classifier {
 		return completed;
 	}
 
-	public int maxDepth() {
+	public int depth() {
 		int[] d = {0};
 		root.maxDepth(d);
 		return d[0];
@@ -89,6 +89,10 @@ public class YARFTree extends Classifier {
 
 	public int numLeaves() {
 		return root.numLeaves();
+	}
+
+	public int numNodes() {
+		return root.numNodes();
 	}
 
 }
