@@ -271,8 +271,8 @@ public class YARFTreeBuilder {
 		if (yarf.customFunctionMtry()){
 			return yarf.runMtry(node);
 		}
-		return yarf.indices_zero_to_p_minus_1;
-//		return StatToolbox.pickNRandomElements(yarf.indices_zero_to_p_minus_1, yarf.defaultMtry());
+//		return yarf.indices_zero_to_p_minus_1;
+		return StatToolbox.pickNRandomElements(yarf.indices_zero_to_p_minus_1, yarf.defaultMtry());
 	}
 
 }
