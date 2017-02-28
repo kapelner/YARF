@@ -116,9 +116,9 @@ first_order_interaction_investigator = function(yarf_mod, plot = TRUE, num_var_p
 #' @export
 get_tree_num_nodes_leaves_max_depths = function(yarf_mod){
 	list(
-		num_nodes = sapply(.jcall(yarf_mod$java_YARF, "[I", "getNumNodes"), .jevalArray),
-		num_leaves = sapply(.jcall(yarf_mod$java_YARF, "[I", "getNumLeaves"), .jevalArray),
-		max_depths = sapply(.jcall(yarf_mod$java_YARF, "[I", "getMaxDepths"), .jevalArray)
+		num_nodes = .jcall(yarf_mod$java_YARF, "[I", "getNumNodes"),
+		num_leaves = .jcall(yarf_mod$java_YARF, "[I", "getNumLeaves"),
+		max_depths = .jcall(yarf_mod$java_YARF, "[I", "getMaxDepths")
 	)
 }
 
