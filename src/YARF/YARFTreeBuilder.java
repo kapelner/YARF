@@ -163,9 +163,9 @@ public class YARFTreeBuilder {
 					//System.out.println("total_split_cost: " + total_split_cost);
 					if (total_split_cost < lowest_total_split_cost){
 						if (YARF.DEBUG){System.out.println("beat with cost: " + total_split_cost + " < " + lowest_total_split_cost + " using split X_" + (j + 1) + " <= " + split_value +"\n\n");}
-						if (node.stringLocation(false).equals("RLLR")){
-							System.out.println("beat with cost: " + total_split_cost + "<" + lowest_total_split_cost + " using split X_" + (j + 1) + " <= " + split_value +"\n\n");
-						}
+//						if (node.stringLocation(false).equals("RLLR")){
+//							System.out.println("beat with cost: " + total_split_cost + "<" + lowest_total_split_cost + " using split X_" + (j + 1) + " <= " + split_value +"\n\n");
+//						}
 						lowest_total_split_cost = total_split_cost;
 						lowest_cost_split_attribute = j;
 						lowest_cost_split_value = split_value;
