@@ -121,3 +121,4 @@ get_tree_num_nodes_leaves_max_depths = function(yarf_mod){
 		max_depths = sapply(.jcall(yarf_mod$java_YARF, "[I", "getMaxDepths"), .jevalArray)
 	)
 }
+
