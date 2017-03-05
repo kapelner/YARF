@@ -1,274 +1,184 @@
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
-library(randomForest)
 library(mlbench)
-library(reprtree) 
+library(randomForest)
 
 # ------------------------------------------------------------------------------
-#                              Pure Signal (Debug)
+#                               Helper Funcs
 # ------------------------------------------------------------------------------
 
+pure_signal_train = function(n, n_noise){
+    x = cbind(0:(n-1), matrix(runif(n_noise*n, 0, 1), n))
+    colnames(x) = paste0('x', 1:dim(x)[2])
+    y = x[,1]
+    list(x=x,y=y)
+}
 
-set.seed(1234)
-#set.seed(12345)
-n = 100
-p = 1
-X = data.frame(0:(n-1), matrix(runif(n * (p-1)), nrow = n))
-y = X[, 1]
-names(X) = paste0('x', 1:ncol(X))
-
-# yarf
-boot_ind = list()
-boot_ind[[1]] = 1:n
-yarf_mod = YARF(X, y, num_trees = 1, mtry = ncol(X), bootstrap_indices=boot_ind)
-illustrate_trees(yarf_mod, open_file = TRUE)
-
-# rf
-rf = randomForest(X, y, ntree = 1, mtry=ncol(X), replace=FALSE,
-    sampsize=nrow(X), nodesize=5)
-randomForest::getTree(rf, 1, labelVar=TRUE)
-# reprtree:::plot.getTree(rf, k=1)
-
-# rf_vis
-dat = data.frame(x=X, y=y)
-rf = randomForest(y ~ ., data=dat, ntree = 1, mtry=ncol(X), replace=FALSE,
-    sampsize=nrow(X), nodesize=5)
-randomForest::getTree(rf, 1, labelVar=TRUE)
-reprtree:::plot.getTree(rf, k=1)
+pure_signal_test = function(n, n_noise){
+    x1 = runif(n)*100
+    x = cbind(x1, matrix(runif(n_noise*n, 0, 1), n))
+    colnames(x) = paste0('x', 1:dim(x)[2])
+    y = x[,1]
+    list(x=x,y=y)
+}
 
 
-# test
-n_test = 5000
-X_test = as.data.frame(matrix(100*runif(n_test*p), nrow=n_test))
-names(X_test) = paste0('x', 1:ncol(X))
-y_test = X_test[, 1]
+linear_regression = function(n, n_signal, n_noise, sigma){
+    p = n_signal + n_noise
+    x = matrix(rnorm(p*n), n)
+    colnames(x) = paste0('x', 1:dim(x)[2])
+    y = rowSums(x[,1:n_signal]) + sigma*rnorm(n)
+    list(x=x,y=y)
+}
 
-rf_pred = predict(rf, X_test)
-yarf_pred = predict(yarf_mod, X_test)
-cbind(y_test, rf_pred, yarf_pred, ifelse(rf_pred == yarf_pred, 0, 1))
-mean((rf_pred - y_test))^2
-mean((yarf_pred - y_test))^2
+simulation_run = function(x_train, y_train, x_test){
 
-# ------------------------------------------------------------------------------
-#                              Pure Signal
-# ------------------------------------------------------------------------------
-
-set.seed(123)
-
-nreps = 100
-mse_rf = rep(NA, nreps)
-mse_yarf = rep(NA, nreps)
-
-#get_tree_num_nodes_leaves_max_depths(yarf_mod)
-.jcall(yarf_mod$java_YARF, "[I", "getNumNodes")
-randomForest::treesize(rf, terminal=FALSE)
-
-for(i in 1:nreps){
-    n = 100
-    p = 5
-    X = data.frame(0:(n-1), matrix(runif(n * (p-1)), nrow = n))
-    y = as.numeric(X[, 1])
-    names(X) = paste0('x', 1:ncol(X))
-
-
-    # yarf
+    n = length(y_train)
+    p = ncol(x_train)
     boot_ind = list()
-    for(j in 1:500) boot_ind[[j]] = 1:n
-    yarf_mod = YARF(X, y, num_trees = 50, bootstrap_indices=boot_ind,
-        verbose=FALSE)
-
-    # rf
-    rf = randomForest(X, y, ntree = 50, replace=FALSE,
-        sampsize=nrow(X), nodesize=5)
+    boot_ind[[1]] = 1:n
+    out = list()
     
-    # test
-    n_test = 5000
-    X_test = as.data.frame(matrix(100*runif(n_test*p), nrow=n_test))
-    names(X_test) = paste0('x', 1:ncol(X))
-    y_test = X_test[, 1]
+    # no boot, 1 tree: mtry = ncol
+    yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 1, mtry = p,
+        verbose=F, bootstrap_indices=boot_ind)
+    yarf_pred = predict(yarf_mod, as.data.frame(x_test))
 
-    rf_pred = predict(rf, X_test)
-    yarf_pred = predict(yarf_mod, X_test)
-    mse_rf[i] = mean((rf_pred - y_test)^2)
-    mse_yarf[i] = mean((yarf_pred - y_test)^2)
-
-    if(i %% 5 == 0) cat(i, '\n')
-}
-
-mean(mse_rf - mse_yarf)
-t.test(mse_rf, mse_yarf)
-
-# ------------------------------------------------------------------------------
-#                              Friedman1
-# ------------------------------------------------------------------------------
-
-set.seed(123)
-
-nreps = 1e2
-n_train = 500
-n_test = 1e3
-
-mse_rf = rep(NA, nreps)
-mse_yarf = rep(NA, nreps)
-
-for(i in 1:nreps){
-
-    train = mlbench.friedman1(n=n_train)
-    #    mtry = ncol(train$x)
-    mtry = 1
-
-    # yarf
-    boot_ind = list()
-    for(j in 1:500) boot_ind[[j]] = 1:n_train
-    yarf_mod = YARF(as.data.frame(train$x), train$y, num_trees = 500,
-        mtry = mtry, bootstrap_indices=boot_ind, verbose=F)
-
-    # rf
-    rf = randomForest(train$x, train$y, ntree = 500, mtry=mtry,
-            replace=FALSE,sampsize=nrow(train$x), nodesize=5)
-
-    # test
-    test = mlbench.friedman1(n=n_test)
-
-    rf_pred = predict(rf, test$x)
-    yarf_pred = predict(yarf_mod, as.data.frame(test$x))
-    mse_rf[i] = mean((rf_pred - test$y)^2)
-    mse_yarf[i] = mean((yarf_pred - test$y)^2)
-
-    if(i %% 5 == 0) cat(i, '\n')
-}
-
-mean(mse_rf - mse_yarf)
-
-# ------------------------------------------------------------------------------
-#                              Friedman2
-# ------------------------------------------------------------------------------
-
-set.seed(123)
-
-nreps = 1e2
-n_train = 500
-n_test = 1e3
-
-mse_rf = rep(NA, nreps)
-mse_yarf = rep(NA, nreps)
-
-for(i in 1:nreps){
-
-    train = mlbench.friedman2(n=n_train)
-    #    mtry = ncol(train$x)
-    mtry = 1
-
-    # yarf
-    boot_ind = list()
-    boot_ind[[1]] = 1:n_train
-    yarf_mod = YARF(as.data.frame(train$x), train$y, num_trees = 1,
-        mtry = mtry, bootstrap_indices=boot_ind)
-
-    # rf
-    rf = randomForest(train$x, train$y, ntree = 1, mtry=mtry,
-        replace=FALSE,sampsize=nrow(train$x), nodesize=5)
-
-    # test
-    test = mlbench.friedman2(n=n_test)
-
-    rf_pred = predict(rf, test$x)
-    yarf_pred = predict(yarf_mod, as.data.frame(test$x))
-    mse_rf[i] = mean((rf_pred - test$y))^2
-    mse_yarf[i] = mean((yarf_pred - test$y))^2
-
-    if(i %% 5 == 0) cat(i, '\n')
-}
-
-mean(mse_rf - mse_yarf)
-
-# ------------------------------------------------------------------------------
-#                              Friedman3
-# ------------------------------------------------------------------------------
-
-set.seed(123)
-
-nreps = 1e2
-n_train = 500
-n_test = 1e3
-
-mse_rf = rep(NA, nreps)
-mse_yarf = rep(NA, nreps)
-
-for(i in 1:nreps){
-
-    train = mlbench.friedman3(n=n_train)
-    #    mtry = ncol(train$x)
-    mtry = 1
-
-    # yarf
-    boot_ind = list()
-    boot_ind[[1]] = 1:n_train
-    yarf_mod = YARF(as.data.frame(train$x), train$y, num_trees = 1,
-        mtry = mtry, bootstrap_indices=boot_ind)
-
-    # rf
-    rf = randomForest(train$x, train$y, ntree = 1, mtry=mtry,
-        replace=FALSE,sampsize=nrow(train$x), nodesize=5)
-
-    # test
-    test = mlbench.friedman3(n=n_test)
-
-    rf_pred = predict(rf, test$x)
-    yarf_pred = predict(yarf_mod, as.data.frame(test$x))
-    mse_rf[i] = mean((rf_pred - test$y))^2
-    mse_yarf[i] = mean((yarf_pred - test$y))^2
-
-    if(i %% 5 == 0) cat(i, '\n')
-}
-
-mean(mse_rf - mse_yarf)
-t.test(mse_rf, mse_yarf)
-
-# ------------------------------------------------------------------------------
-#                              Boston Housing
-# ------------------------------------------------------------------------------
-
-set.seed(123)
-
-nreps = 1e2
-
-data(BostonHousing)
-X = BostonHousing[,1:13]
-X = model.matrix(~., X)[,-1]
-y = BostonHousing[,14]
-train_frac = 0.8
-n = length(y)
-
-mse_rf = rep(NA, nreps)
-mse_yarf = rep(NA, nreps)
-
-for(i in 1:nreps){
-
-    mtry = ncol(X)
+    rf = randomForest(x_train, y_train, ntree=1, mtry=p, replace=F, sampsize=n)
+    rf_pred = predict(rf, x_test)
+    out[[1]] = cbind(yarf_pred, rf_pred)
     
-    train_ix = sample(1:n, floor(train_frac*n), replace=F)
-    train = list(y=y[train_ix], x=X[train_ix,])
-    test = list(y=y[-train_ix], x=X[-train_ix,])
+    # 500 trees: mtry = 1
+    yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = 1, num_trees = 500,
+            verbose=F)
+    yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+    
+    rf = randomForest(x_train, y_train, ntree=500, mtry = 1)
+    rf_pred = predict(rf, x_test)
+    out[[2]] = cbind(yarf_pred, rf_pred)
 
-    # yarf
-    boot_ind = list()
-    for(j in 1:500) boot_ind[[j]] = 1:length(train$y)
-    yarf_mod = YARF(as.data.frame(train$x), train$y, num_trees = 10,
-        mtry = mtry, bootstrap_indices=boot_ind, verbose=F)
+    # 500 trees: mtry = ncol
+    yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = p, num_trees = 500,
+            verbose=F)
+    yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+    
+    rf = randomForest(x_train, y_train, ntree=500, mtry = p)
+    rf_pred = predict(rf, x_test)
+    out[[3]] = cbind(yarf_pred, rf_pred)
 
-    # rf
-    rf = randomForest(train$x, train$y, ntree = 10, mtry=mtry,
-        replace=FALSE,sampsize=nrow(train$x), nodesize=5)
+    # 500 tree: mtry = default
+    yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 500,
+        verbose=F)
+    yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+    
+    rf = randomForest(x_train, y_train, ntree=500)
+    rf_pred = predict(rf, x_test)
+    out[[4]] = cbind(yarf_pred, rf_pred)
 
-    # test
-    rf_pred = predict(rf, test$x)
-    yarf_pred = predict(yarf_mod, as.data.frame(test$x))
-    mse_rf[i] = mean((rf_pred - test$y)^2)
-    mse_yarf[i] = mean((yarf_pred - test$y)^2)
-
-    if(i %% 5 == 0) cat(i, '\n')
+    out
+    
 }
 
-mean(mse_rf - mse_yarf)
-t.test(mse_rf, mse_yarf)
+rmse_list = function(out_list, y_test){
+    rmse = function(x) sqrt(mean((x-y_test)^2))
+    sapply(out_list, function(x) c(rmse(x[,1]), rmse(x[,2])))
+}
+
+train_test_split = function(df, train_frac = 0.8){
+    n = dim(df)[1]
+    n_train = floor(n*train_frac)
+    train_ix = sample(1:n, n_train, replace=F)
+    list(train=df[train_ix, ], test=df[-train_ix, ])
+}
+
+boston = function(){
+    data(BostonHousing)
+    tmp = train_test_split(BostonHousing)
+    train = tmp$train
+    test = tmp$test
+
+    train = list(y=train$medv, x = model.matrix(medv~.+0, train))
+    test = list(y=test$medv, x = model.matrix(medv~.+0, test))
+    list(train=train, test=test)
+    
+}
+
+# ------------------------------------------------------------------------------
+#                                   Bakeoff
+# ------------------------------------------------------------------------------
+ 
+n_reps = 100
+
+results = list()
+rmse = list()
+t1 = Sys.time()
+
+for(i in 1:n_reps){
+
+    # --------------------- Regression -------------------- #
+    
+    # linear regression
+    train = linear_regression(500, 5, 3, 1)
+    test = linear_regression(500, 5, 3, 1)
+    results[['linreg']][[i]] = simulation_run(train$x, train$y, test$x)
+    rmse[['linreg']][[i]] = rmse_list(results[['linreg']][[i]], test$y)
+    rm(train, test)
+
+    # friedman 1
+    train = mlbench.friedman1(500)
+    test = mlbench.friedman1(500)
+    results[['friedman1']][[i]] = simulation_run(train$x, train$y, test$x)
+    rmse[['friedman1']][[i]] = rmse_list(results[['friedman1']][[i]], test$y)
+    rm(train, test)
+
+    # friedman 2
+    train = mlbench.friedman2(500)
+    test = mlbench.friedman2(500)
+    results[['friedman2']][[i]] = simulation_run(train$x, train$y, test$x)
+    rmse[['friedman2']][[i]] = rmse_list(results[['friedman2']][[i]], test$y)
+    rm(train, test)
+
+    # friedman 3
+    train = mlbench.friedman3(500)
+    test = mlbench.friedman3(500)
+    results[['friedman3']][[i]] = simulation_run(train$x, train$y, test$x)
+    rmse[['friedman3']][[i]] = rmse_list(results[['friedman3']][[i]], test$y)
+    rm(train, test)
+
+    # peaks
+    train = mlbench.peak(500)
+    test = mlbench.peak(500)
+    results[['peaks']][[i]] = simulation_run(train$x, train$y, test$x)
+    rmse[['peaks']][[i]] = rmse_list(results[['peaks']][[i]], test$y)
+    rm(train, test)
+
+    # boston housing
+    tmp = boston()
+    train = tmp$train
+    test = tmp$test
+    results[['boston']][[i]] = simulation_run(train$x, train$y, test$x)
+    rmse[['boston']][[i]] = rmse_list(results[['boston']][[i]], test$y)
+    rm(train, test)
+
+    # --------------------- Classification -------------------- #
+
+    #train = mlbench.ringnorm(500)
+    #test = mlbench.ringnorm(500)
+    #results[['ringnorm']][[i]] = simulation_run(train$x, train$classes, test$x)
+    #rm(train, test)
+    cat('-------------------- Iteration ', i, ' -------------------\n')
+    print(Sys.time()-t1)
+
+    
+}
+
+save(rmse, results, file='bench.RData')
+
+## classification
+#sonar
+#ionosphere
+#2dnormals
+#mlbench.cassini(n, relsize=c(2,2,1))
+#mlbench.circle(n, d=2)
+#mlbench.ringnorm(n, d=20)
+
