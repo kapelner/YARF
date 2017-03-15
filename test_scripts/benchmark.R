@@ -112,13 +112,14 @@ n_reps = 100
 results = list()
 rmse = list()
 t1 = Sys.time()
+i=1
 
 for(i in 1:n_reps){
 
     # --------------------- Regression -------------------- #
     
     # linear regression
-    train = linear_regression(500, 5, 3, 1)
+    train = linear_regression(3000, 5, 3, 1)
     test = linear_regression(500, 5, 3, 1)
     results[['linreg']][[i]] = simulation_run(train$x, train$y, test$x)
     rmse[['linreg']][[i]] = rmse_list(results[['linreg']][[i]], test$y)
@@ -168,11 +169,15 @@ for(i in 1:n_reps){
     #rm(train, test)
     cat('-------------------- Iteration ', i, ' -------------------\n')
     print(Sys.time()-t1)
+    
+    #save results iteratively
+    save(rmse, results, file='bench.RData')
 
     
 }
 
-save(rmse, results, file='bench.RData')
+
+
 
 ## classification
 #sonar

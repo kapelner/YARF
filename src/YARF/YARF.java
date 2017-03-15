@@ -490,7 +490,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		if (is_a_regression){
 			return StatUtils.mean(y_preds); //the sample average
 		}
-		return StatToolbox.sample_mode(y_preds); //most likely class
+		return StatToolbox.random_sample_mode(y_preds); //most likely class
 	}
 	
 	public double[] allNodeAssignments(double[] record){

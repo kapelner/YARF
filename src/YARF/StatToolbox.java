@@ -91,13 +91,14 @@ public class StatToolbox {
 	 * @param y	The vector of data values
 	 * @return	The sample standard deviation
 	 */
-	public static final double sample_standard_deviation(int[] y){
-		double y_bar = sample_average(y);
+	public static final double sample_standard_deviation(int[] ys){
+		double y_bar = sample_average(ys);
 		double sum_sqd_deviations = 0;
-		for (int i = 0; i < y.length; i++){
-			sum_sqd_deviations += Math.pow(y[i] - y_bar, 2);
+		for (int i = 0; i < ys.length; i++){
+			double e = ys[i] - y_bar;
+			sum_sqd_deviations += (e * e);
 		}
-		return Math.sqrt(sum_sqd_deviations / ((double)y.length - 1));		
+		return Math.sqrt(sum_sqd_deviations / ((double)ys.length - 1));		
 	}
 	
 	/**
@@ -125,7 +126,8 @@ public class StatToolbox {
 	public static double sample_sum_sq_err(double[] ys, double y_center_point) {
 		double sum_sqd_deviations = 0;
 		for (int i = 0; i < ys.length; i++){
-			sum_sqd_deviations += Math.pow(ys[i] - y_center_point, 2);
+			double e = ys[i] - y_center_point;
+			sum_sqd_deviations += (e * e);
 		}
 		if (YARF.DEBUG){System.out.println("        SSE calc ybar = " + y_center_point + " ys = " + Tools.StringJoin(ys));}
 		
@@ -142,7 +144,8 @@ public class StatToolbox {
 		double y_bar = sample_average(ys);
 		double sum_sqd_deviations = 0;
 		for (int i = 0; i < ys.length; i++){
-			sum_sqd_deviations += Math.pow(ys[i] - y_bar, 2);
+			double e = ys[i] - y_bar;
+			sum_sqd_deviations += (e * e);
 		}
 		return sum_sqd_deviations;
 	}
@@ -285,7 +288,7 @@ public class StatToolbox {
 
 	}
 	
-	public static double sample_mode(double[] arr){
+	public static double random_sample_mode(double[] arr){
 		double[] modes = StatUtils.mode(arr); //there could be multiple modes
 		return modes[StatToolbox.randInt(modes.length)]; //return one at random in the spirit of "random forests"
 	}
