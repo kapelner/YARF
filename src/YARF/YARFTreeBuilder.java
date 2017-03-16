@@ -128,6 +128,7 @@ public class YARFTreeBuilder {
 		//first get the indices for this note sorted on attribute j and get the missings as well
 		TIntArrayList ordered_nonmissing_indices_j = new TIntArrayList();
 		TIntHashSet missing_indices_j = new TIntHashSet(); //order is not necessary here since there is no order
+		//FUTURE: ordered_nonmissing_indices_j not used... need to optimize this
 		yarf.sortedIndices(j, node.indices, ordered_nonmissing_indices_j, missing_indices_j);
 //		if (YARF.DEBUG){System.out.println("node.indices: " + Tools.StringJoin(node.indices));}
 //		if (YARF.DEBUG){System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));}
@@ -178,51 +179,25 @@ public class YARFTreeBuilder {
 			//putative_right.indices = (TIntArrayList)node.indices.subList(i + 1, num_split_points);		
 			
 			//handle the indices from missingness L/R now
-//			if (!missing_indices_j.isEmpty()){ 
-//				if (send_missing_data_right){
-//					putative_right.indices.addAll(missing_indices_j);
-//				}
-//				else {
-//					putative_left.indices.addAll(missing_indices_j);
-//				}
-//			}
+			if (!missing_indices_j.isEmpty()){ 
+				if (send_missing_data_right){
+					putative_right.indices.addAll(missing_indices_j);
+				}
+				else {
+					putative_left.indices.addAll(missing_indices_j);
+				}
+			}
 
-			//we should ditch if these don't work out
-//			if (makeNodeLeaf(putative_left) || makeNodeLeaf(putative_right)){
-//				System.out.println(" !! makeNodeLeaf(putative_left) " + makeNodeLeaf(putative_left)
-//						+ " || makeNodeLeaf(putative_right) " + makeNodeLeaf(putative_right));
-				
-//				if (missing_indices_j.isEmpty()){ //for efficiency only!!
-//					continue split_value_search;
-//				} 
-//				else {
-//					continue;
-//				}
-				
-//			}
 			
-			//these are now viable splits, so we compute cost
-
-			if (YARF.DEBUG){System.out.print("putative_left");}
+			//these are now viable splits, so we compute cost on each node and the overall cost of the split
 			computeNodeCost(putative_left);
-			if (YARF.DEBUG){System.out.print("putative_right");}
-			computeNodeCost(putative_right);
-			
-			
-			double total_split_cost = totalChildrenCost(putative_left, putative_right);
-			
+			computeNodeCost(putative_right);			
+			double total_split_cost = totalChildrenCost(putative_left, putative_right);			
 			if (YARF.DEBUG){System.out.println("   viable split cost = " + total_split_cost + " at split X_" + (j + 1) + " <= " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")\n");}
-			
-//			if (node.stringLocation(false).equals("RLLR")){
-//				System.out.println("   viable split cost = " + total_split_cost + " at split X_" + (j + 1) + " <= " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")\n");
-//			}
 			
 			//System.out.println("total_split_cost: " + total_split_cost);
 			if (total_split_cost < split_data.lowest_total_split_cost){
 				if (YARF.DEBUG){System.out.println("beat with cost: " + total_split_cost + " < " + split_data.lowest_total_split_cost + " using split X_" + (j + 1) + " <= " + split_value +"\n\n");}
-//				if (node.stringLocation(false).equals("RLLR")){
-//					System.out.println("beat with cost: " + total_split_cost + "<" + lowest_total_split_cost + " using split X_" + (j + 1) + " <= " + split_value +"\n\n");
-//				}
 				split_data.lowest_total_split_cost = total_split_cost;
 				split_data.lowest_cost_split_attribute = j;
 				split_data.lowest_cost_split_value = split_value;
@@ -243,7 +218,7 @@ public class YARFTreeBuilder {
 		}
 		else {
 			//find the unique values at this node
-			double[] xj_node_unique = Tools.unique_values(node.node_Xs_by_feature(j)).toArray();
+			double[] xj_node_unique = node.uniqueXvals(j);
 			//sort them
 			Arrays.sort(xj_node_unique);
 			//now get their midpoints
@@ -270,6 +245,7 @@ public class YARFTreeBuilder {
 			node.cost = yarf.runSingleNodeCost(node);
 		}
 		else {
+			//FUTURE: this call from scratch is unneeded. It is costing a big %age of runtime
 			double[] ys = node.node_ys();
 			if (yarf.is_a_regression){ //the cost is the SSE (across both the left and right)
 				node.cost = StatToolbox.sample_sum_sq_err(ys, StatToolbox.sample_average(ys));

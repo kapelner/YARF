@@ -389,5 +389,9 @@ public class YARFNode implements Cloneable {
 			right.prune();
 		}
 
+	}
+
+	public double[] uniqueXvals(int j) {
+		return Tools.unique_values(node_Xs_by_feature(j)).toArray();
 	}	
 }

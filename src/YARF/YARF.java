@@ -61,7 +61,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	
 
 	//convenient pre-computed data to have around
-	protected transient TIntObjectHashMap<int[]> all_attribute_sorts;
+//	protected transient TIntObjectHashMap<int[]> all_attribute_sorts;
 	private transient TIntHashSet indices_one_to_n;
 	protected transient int[] indices_zero_to_p_minus_1;
 	
@@ -297,7 +297,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	public void Build() {
 
 		//System.err.println("inside YARF");
-		all_attribute_sorts = new TIntObjectHashMap<int[]>(p);
+//		all_attribute_sorts = new TIntObjectHashMap<int[]>(p);
 		initTrees();
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
@@ -639,13 +639,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	protected void sortedIndices(int j, TIntArrayList sub_indices, TIntArrayList ordered_nonmissing_indices_j, TIntHashSet missing_indices_j){
 		//we only do the sorting ONCE per attribute... this ensures this runs with a minimal 
 		//amount of thread butting
-		synchronized(sorter_locks[j]){
-			int[] indices_sorted_j = all_attribute_sorts.get(j);
-			if (indices_sorted_j == null){ //we need to build it
-				indices_sorted_j = getSortedIndicesForAnAttribute(j);
-				all_attribute_sorts.put(j, indices_sorted_j);
-			}			
-		}
+//		synchronized(sorter_locks[j]){
+//			int[] indices_sorted_j = all_attribute_sorts.get(j);
+//			if (indices_sorted_j == null){ //we need to build it
+//				indices_sorted_j = getSortedIndicesForAnAttribute(j);
+//				all_attribute_sorts.put(j, indices_sorted_j);
+//			}			
+//		}
 		//////the above code is not used anywhere.... why???
 
 		//System.out.println("sortedIndices j = " + j + " indices_sorted_j = " + Tools.StringJoin(indices_sorted_j));

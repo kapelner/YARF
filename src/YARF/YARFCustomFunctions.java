@@ -394,6 +394,14 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public void setMtry_function_str(String mtry_function_str) {
 		this.mtry_function_str = mtry_function_str;
 	}
+	
+	public String getSplit_values_function_str() {
+		return split_values_function_str;
+	}
+
+	public void setSplit_values_function_str(String split_values_function_str) {
+		this.split_values_function_str = split_values_function_str;
+	}	
 
 	public String getCost_single_node_calc_function_str() {
 		return cost_single_node_calc_function_str;
