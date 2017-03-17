@@ -1,5 +1,5 @@
 options(java.parameters = c("-Xmx6000m")); library(YARF); library(readr)
-# set_YARF_num_cores(2)
+set_YARF_num_cores(2)
 shared_scripts = read_file("scr04.js") #the median function and sample_avg function
 node_assign_script = read_file("scr02.js") #assign node median
 

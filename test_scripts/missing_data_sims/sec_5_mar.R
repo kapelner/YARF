@@ -2,8 +2,7 @@ options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
 library(missForest)
-
-set_yarf_num_cores(2)
+set_YARF_num_cores(2)
 
 ###constants for simulation
 Nsim = 1000

@@ -1,8 +1,7 @@
 options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
-
-set_yarf_num_cores(4)
+set_YARF_num_cores(4)
 
 ###constants for simulation
 Nsim = 1000
