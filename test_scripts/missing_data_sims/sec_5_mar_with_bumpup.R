@@ -3,6 +3,8 @@ library(YARF)
 library(MASS)
 library(missForest)
 
+set_yarf_num_cores(2)
+
 ###constants for simulation
 Nsim = 500
 pct_test_data = 0.2

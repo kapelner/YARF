@@ -1,7 +1,7 @@
 options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
-set_yarf_machine_num_cores(2)
+set_yarf_num_cores(2)
 
 
 generate_response_model = function(n, sigma_e = 1, Sigma = NULL, mu_vec = NULL){
