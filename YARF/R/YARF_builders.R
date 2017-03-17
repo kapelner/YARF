@@ -31,6 +31,17 @@
 #' 
 #' 											  \}
 #' 
+#' @param split_vals_script					A custom javascript function which selects the split values to be greedily searched in feature j.
+#' 											The default is \code{NULL} which employs the midpoints of all sorted values.
+#' 
+#' 											  function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number (0...p-1)
+#' 
+#' 											    ...
+#' 
+#' 											    return double[] //a vector of split vals to greedily assess
+#' 
+#' 											  \}
+#' 
 #' @param nodesize							The minimum number of observations in a node. YARF will stop splitting at this point.
 #' 											If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
 #' 											will be used.
@@ -72,6 +83,7 @@
 #' 											    return double //where a higher number indicates a higher cost
 #' 
 #' 											  \}
+#' 
 #' 
 #' @param node_assign_script				A custom node assignment function in Javascript (see below). This function is run after RF greedily finds the 
 #' 											"lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
@@ -143,8 +155,9 @@ YARF = function(
 		other_indices = NULL, #other indices you pass to the tree which will NOT be included in the OOB
 		mtry = NULL,
 		nodesize = NULL,
-		#all custom scripts/function
+		#all custom scripts/functions
 		mtry_script = NULL,
+		split_vals_script = NULL,
 		make_node_to_leaf_script = NULL,
 		cost_single_node_calc_script = NULL,
 		node_assign_script = NULL,
@@ -407,12 +420,18 @@ YARF = function(
 	} else if (!is.null(mtry_script)) {
 		.jcall(java_YARF, "V", "setMtry_function_str", mtry_script)
 	}
+	
+	
 	if (!is.null(nodesize)){
 		.jcall(java_YARF, "V", "setNodesize", as.integer(nodesize))
 	} else if (!is.null(make_node_to_leaf_script)) {
 		.jcall(java_YARF, "V", "setMake_node_into_leaf_function_str", make_node_to_leaf_script)
 	} else { #Breiman defaults...
 		.jcall(java_YARF, "V", "setNodesize", as.integer(ifelse(pred_type == "regression", 5, 1)))
+	}
+	
+	if (!is.null(split_vals_script)){
+		.jcall(java_YARF, "V", "setSplit_values_function_str", split_vals_script)
 	}
 	
 	if (!is.null(cost_single_node_calc_script)){

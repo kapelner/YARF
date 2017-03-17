@@ -15,6 +15,8 @@ public abstract class YARFCustomFunctions extends Classifier {
 	private String mtry_function_str;
 	public static final String MTryScriptFunctionName = "tryVars";
 	private String make_node_into_leaf_function_str;
+	public static final String SplitValuesScriptFunctionName = "tryVals";
+	private String split_values_function_str;
 	public static final String NodesizeLegalScriptFunctionName = "makeNodeIntoLeaf";
 	private String cost_single_node_calc_function_str;
 	public static final String SingleNodeCostScriptFunctionName = "nodeCost";
@@ -41,6 +43,7 @@ public abstract class YARFCustomFunctions extends Classifier {
     private transient Compilable compilingEngine;
     //all invocables
     private transient Invocable mtry_fun;
+    private transient Invocable split_vals_fun;
     private transient Invocable make_node_into_leaf_fun;
     private transient Invocable cost_single_node_calc_fun;
     private transient Invocable cost_both_children_calc_fun;
@@ -97,7 +100,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 	
 	public int[] runMtry(YARFNode node){
 		if (mtry_fun == null){
-			mtry_fun = stringToInvokableCompiledFunction(mtry_function_str, MTryScriptFunctionName);	
+			mtry_fun = stringToInvokableCompiledFunction(split_values_function_str, MTryScriptFunctionName);	
 		}
 		try {
 			return  (int[]) mtry_fun.invokeFunction(MTryScriptFunctionName, node);
@@ -108,6 +111,24 @@ public abstract class YARFCustomFunctions extends Classifier {
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + MTryScriptFunctionName + "\" function:");
+			e.printStackTrace();		
+		}
+		return null;
+	}	
+
+	public double[] runSplitValues(YARFNode node, int j){
+		if (split_vals_fun == null){
+			split_vals_fun = stringToInvokableCompiledFunction(split_values_function_str, SplitValuesScriptFunctionName);	
+		}
+		try {
+			return  (double[]) split_vals_fun.invokeFunction(SplitValuesScriptFunctionName, node, j);
+		} catch (NoSuchMethodException e) {
+			StopBuilding();
+			System.err.println("Your mtry script must include the function \"" + SplitValuesScriptFunctionName + "(node)\" and return an array of doubles.");
+			e.printStackTrace();
+		} catch (ScriptException e) {
+			StopBuilding();
+			System.err.println("There was a problem evaluating your \"" + SplitValuesScriptFunctionName + "\" function:");
 			e.printStackTrace();		
 		}
 		return null;
@@ -305,6 +326,10 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public boolean customFunctionMtry(){
 		return mtry_function_str != null;
 	}
+
+	public boolean customFunctionSplitValues(){
+		return split_values_function_str != null;
+	}
 	
 	public boolean customFunctionMakeNodeIntoLeaf(){
 		return make_node_into_leaf_function_str != null;
@@ -369,6 +394,14 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public void setMtry_function_str(String mtry_function_str) {
 		this.mtry_function_str = mtry_function_str;
 	}
+	
+	public String getSplit_values_function_str() {
+		return split_values_function_str;
+	}
+
+	public void setSplit_values_function_str(String split_values_function_str) {
+		this.split_values_function_str = split_values_function_str;
+	}	
 
 	public String getCost_single_node_calc_function_str() {
 		return cost_single_node_calc_function_str;

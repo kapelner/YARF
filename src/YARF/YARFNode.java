@@ -42,7 +42,7 @@ public class YARFNode implements Cloneable {
 	/** the indices in this node */
 	public TIntArrayList indices;
 	/** the number of training observations in this node */
-	private Integer node_size;
+	private int node_size = BAD_FLAG_int; //bad flag... optimization so we don't have to call intvalue inside of Java
 	/** what tree is this node part of? */
 	protected YARFTree tree;
 
@@ -124,7 +124,7 @@ public class YARFNode implements Cloneable {
 	}
 	
 	public int nodeSize(){
-		if (node_size == null){
+		if (node_size == BAD_FLAG_int){
 			node_size = indices.size();
 		}
 		return node_size;
@@ -318,7 +318,7 @@ public class YARFNode implements Cloneable {
 				y_pred = StatToolbox.sample_average(node_ys());
 			}
 			else { //and for a classification, it's just the modal value among the y's
-				y_pred = StatToolbox.sample_mode(node_ys());
+				y_pred = StatToolbox.random_sample_mode(node_ys());
 			}
 		}
 	}
@@ -389,5 +389,9 @@ public class YARFNode implements Cloneable {
 			right.prune();
 		}
 
+	}
+
+	public double[] uniqueXvals(int j) {
+		return Tools.unique_values(node_Xs_by_feature(j)).toArray();
 	}	
 }
