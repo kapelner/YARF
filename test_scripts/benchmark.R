@@ -174,6 +174,27 @@ for(i in 1:n_reps){
 
 save(rmse, results, file='bench.RData')
 
+library(ggplot2)
+library(reshape2)
+load('results_reg.RData')
+
+for(sim in names(rmse)){
+    df = rmse[[sim]]
+    df = melt(df); names(df) = c('Type', 'Setting', 'RMSE', 'n')
+    df$Type = ifelse(df$Type == 1, 'YARF', 'RF')
+    df$Setting[df$Setting == 1] = 'ntree_1_mtry_p'
+    df$Setting[df$Setting == 2] = 'ntree_500_mtry_1'
+    df$Setting[df$Setting == 3] = 'ntree_500_mtry_p'
+    df$Setting[df$Setting == 4] = 'ntree_500_mtry_default'
+    
+    plt = ggplot(df, aes(x=Type, y=RMSE)) + geom_boxplot() + ggtitle(sim)+
+        facet_wrap(~Setting)
+    ggsave(plot=plt, filename=paste0(sim, '.pdf'), height=5, width=5)
+}
+
+
+
+
 ## classification
 #sonar
 #ionosphere
