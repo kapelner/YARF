@@ -27,18 +27,18 @@
 #' 
 #' 											    ...
 #' 
-#' 											    return int_array //indices in 1,...,p indicating the variables to perform the exhaustive search on
+#' 											    return int_array //a subset of {0,...,p-1}, indices indicating the variables to perform the exhaustive search on
 #' 
 #' 											  \}
 #' 
 #' @param split_vals_script					A custom javascript function which selects the split values to be greedily searched in feature j.
 #' 											The default is \code{NULL} which employs the midpoints of all sorted values.
 #' 
-#' 											  function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number (0...p-1)
+#' 											  function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number in {0,...,p-1}
 #' 
 #' 											    ...
 #' 
-#' 											    return double[] //a vector of split vals to greedily assess
+#' 											    return double_array //a vector of split vals to greedily assess
 #' 
 #' 											  \}
 #' 

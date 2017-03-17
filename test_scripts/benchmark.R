@@ -174,7 +174,7 @@ for(i in 1:n_reps){
 }
 
 save(rmse, results, file='bench.RData')
-apply(rmse, function(M) M[[4]][,4])
+lapply(rmse, function(M) M[[4]][,4])
 
 ## classification
 #sonar
