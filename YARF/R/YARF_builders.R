@@ -27,18 +27,18 @@
 #' 
 #' 											    ...
 #' 
-#' 											    return int_array //indices in 1,...,p indicating the variables to perform the exhaustive search on
+#' 											    return int_array //a subset of {0,...,p-1}, indices indicating the variables to perform the exhaustive search on
 #' 
 #' 											  \}
 #' 
 #' @param split_vals_script					A custom javascript function which selects the split values to be greedily searched in feature j.
 #' 											The default is \code{NULL} which employs the midpoints of all sorted values.
 #' 
-#' 											  function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number (0...p-1)
+#' 											  function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number in {0,...,p-1}
 #' 
 #' 											    ...
 #' 
-#' 											    return double[] //a vector of split vals to greedily assess
+#' 											    return double_array //a vector of split vals to greedily assess
 #' 
 #' 											  \}
 #' 
@@ -125,6 +125,8 @@
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 #' 											default is \code{TRUE}.	
+#' @param use_missing_data_dummies_as_vars	For each predictor in the dataset that is missing, create a new variable \code{M_<name>} that
+#' 											is one for observations that are missing and 0 if not. The default is \code{TRUE}.	
 #' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
 #' 											time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
 #' 											we will automatically serialize after other operations that add data (such as the OOB evaluation).
@@ -166,6 +168,7 @@ YARF = function(
 		shared_scripts = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = TRUE,
+		use_missing_data_dummies_as_vars = TRUE,
 		replace_missing_data_with_x_j_bar = FALSE,
 		#other arguments for Java
 		serialize = FALSE,
@@ -387,8 +390,7 @@ YARF = function(
 		cat("YARF before preprocess...\n")
 	}
 	
-	pre_process_obj = pre_process_training_data(X)
-	model_matrix_training_data = pre_process_obj$data
+	model_matrix_training_data = pre_process_data(X, use_missing_data_dummies_as_vars)$data
 	p = ncol(model_matrix_training_data) # we subtract one because we tacked on the response as the last column
 #	factor_lengths = pre_process_obj$factor_lengths
 	if (verbose){
@@ -525,6 +527,7 @@ YARF = function(
 		aggregation_script = aggregation_script,
 		shared_scripts = shared_scripts, 
 		use_missing_data = use_missing_data,
+		use_missing_data_dummies_as_vars = use_missing_data_dummies_as_vars,
 		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
 		serialize = serialize,
 		seed = seed,
