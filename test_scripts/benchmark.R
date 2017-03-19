@@ -31,6 +31,7 @@ linear_regression = function(n, n_signal, n_noise, sigma){
     list(x=x,y=y)
 }
 
+
 simulation_run = function(x_train, y_train, x_test){
 
     n = length(y_train)
@@ -40,32 +41,32 @@ simulation_run = function(x_train, y_train, x_test){
     out = list()
     
     # no boot, 1 tree: mtry = ncol
-    # yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 1, mtry = p,
-    #     verbose=F, bootstrap_indices=boot_ind)
-    # yarf_pred = predict(yarf_mod, as.data.frame(x_test))
-    # 
-    # rf = randomForest(x_train, y_train, ntree=1, mtry=p, replace=F, sampsize=n)
-    # rf_pred = predict(rf, x_test)
-    # out[[1]] = cbind(yarf_pred, rf_pred)
-    # 
-    # # 500 trees: mtry = 1
-    # yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = 1, num_trees = 500,
-    #         verbose=F)
-    # yarf_pred = predict(yarf_mod, as.data.frame(x_test))
-    # 
-    # rf = randomForest(x_train, y_train, ntree=500, mtry = 1)
-    # rf_pred = predict(rf, x_test)
-    # out[[2]] = cbind(yarf_pred, rf_pred)
-    # 
-    # # 500 trees: mtry = ncol
-    # yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = p, num_trees = 500,
-    #         verbose=F)
-    # yarf_pred = predict(yarf_mod, as.data.frame(x_test))
-    # 
-    # rf = randomForest(x_train, y_train, ntree=500, mtry = p)
-    # rf_pred = predict(rf, x_test)
-    # out[[3]] = cbind(yarf_pred, rf_pred)
-
+     yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 1, mtry = p,
+         verbose=F, bootstrap_indices=boot_ind)
+     yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+    
+     rf = randomForest(x_train, y_train, ntree=1, mtry=p, replace=F, sampsize=n)
+     rf_pred = predict(rf, x_test)
+     out[[1]] = cbind(yarf_pred, rf_pred)
+     
+     # 500 trees: mtry = 1
+     yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = 1, num_trees = 500,
+             verbose=F)
+     yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+    
+     rf = randomForest(x_train, y_train, ntree=500, mtry = 1)
+     rf_pred = predict(rf, x_test)
+     out[[2]] = cbind(yarf_pred, rf_pred)
+     
+    # 500 trees: mtry = ncol
+    yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = p, num_trees = 500,
+         verbose=F)
+    yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+    
+    rf = randomForest(x_train, y_train, ntree=500, mtry = p)
+    rf_pred = predict(rf, x_test)
+    out[[3]] = cbind(yarf_pred, rf_pred)
+    
     # 500 tree: mtry = default
     yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 500,
         verbose=F)
@@ -79,9 +80,17 @@ simulation_run = function(x_train, y_train, x_test){
     
 }
 
+
 rmse_list = function(out_list, y_test){
     rmse = function(x) sqrt(mean((x-y_test)^2))
     sapply(out_list, function(x) c(rmse(x[,1]), rmse(x[,2])))
+}
+
+misclass_list = function(out_list, y_test){
+    # out_list: list of predictions
+    # y_test: (factor) vector of predictions
+    sapply(out_list, function(x) c(mean(x[,1] != y_test),
+                                   mean(x[,2] != y_test)))
 }
 
 train_test_split = function(df, train_frac = 0.8){
@@ -90,6 +99,21 @@ train_test_split = function(df, train_frac = 0.8){
     train_ix = sample(1:n, n_train, replace=F)
     list(train=df[train_ix, ], test=df[-train_ix, ])
 }
+
+
+train_test_split_list = function(df, train_frac=0.8){
+  # Returns a train / test 'list'
+  #
+  # df: list with items 'y' and 'X'
+  if(!all(names(df) %in% c('y', 'X'))) stop('Bad df names')
+  n = length(df$y)
+  n_train = floor(n*train_frac)
+  train_ix = sample(1:n, n_train, replace=F)
+  train = list(y=df$y[train_ix], X=df$X[train_ix, ])
+  test = list(y=df$y[-train_ix], X=df$X[-train_ix, ])
+  list(train=train, test=test)
+}
+
 
 boston = function(){
     data(BostonHousing)
@@ -104,20 +128,18 @@ boston = function(){
 }
 
 # ------------------------------------------------------------------------------
-#                                   Bakeoff
+#                                   Bakeoff (Regression)
 # ------------------------------------------------------------------------------
  
-n_reps = 1000
+n_reps = 50
 
 results = list()
 rmse = list()
+
 t1 = Sys.time()
-i=1
 
 for(i in 1:n_reps){
 
-    # --------------------- Regression -------------------- #
-    
     # linear regression
     train = linear_regression(500, 5, 3, 1)
     test = linear_regression(5000, 5, 3, 1)
@@ -160,27 +182,49 @@ for(i in 1:n_reps){
     results[['boston']][[i]] = simulation_run(train$x, train$y, test$x)
     rmse[['boston']][[i]] = rmse_list(results[['boston']][[i]], test$y)
     rm(train, test)
-
-    # --------------------- Classification -------------------- #
-
-    #train = mlbench.ringnorm(500)
-    #test = mlbench.ringnorm(500)
-    #results[['ringnorm']][[i]] = simulation_run(train$x, train$classes, test$x)
-    #rm(train, test)
     cat('-------------------- Iteration ', i, ' -------------------\n')
     print(Sys.time()-t1)
 
     
 }
 
-save(rmse, results, file='bench.RData')
-lapply(rmse, function(M) M[[4]][,4])
+save(rmse, results, file='bench_regression.RData')
 
-## classification
-#sonar
-#ionosphere
-#2dnormals
-#mlbench.cassini(n, relsize=c(2,2,1))
-#mlbench.circle(n, d=2)
-#mlbench.ringnorm(n, d=20)
+# ------------------------------------------------------------------------------
+#                                   Bakeoff (Classification)
+# ------------------------------------------------------------------------------
 
+dsets = list.files(path='../Data/', pattern='*.RData', full.names=TRUE)
+dsets = dsets[c(-3, -7)]
+misclass = list()
+t1 = Sys.time()
+
+for(i in 1:n_reps){
+
+    for(dset in dsets){
+        dset_name = load(dset)
+        dfs = train_test_split_list(get(dset_name))
+        train = dfs$train
+        test = dfs$test
+        train$y = as.factor(train$y); levels(train$y) = c(1,2)
+        test$y = as.factor(test$y); levels(test$y) = c(1,2)
+        tryCatch({
+            out = simulation_run(train$X, train$y, test$X)
+            misclass[[dset_name]][[i]] = misclass_list(out, test$y)
+        }, error=function(e) cat('Bad dset: ', dset_name, 'at ', i))
+        
+        #yarf_mod = YARF(train$X, train$y, mtry = 1, num_trees = 500,
+        #    verbose=F)
+        #yarf_pred = predict(yarf_mod, test$X)
+        # german credit ... weird labels error? [-4]
+        # minus musk
+
+    }
+    
+    cat('-------------------- Iteration ', i, ' -------------------\n')
+    print(Sys.time()-t1)
+    
+}
+
+save(misclass, file='results_class.RData')
+ 
