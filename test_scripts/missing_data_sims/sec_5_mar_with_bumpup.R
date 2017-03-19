@@ -87,7 +87,8 @@ for (nsim in 1 : Nsim){
 		Xtrain = Xm[-test_indices, ]
 		ytrain = y_with_bump_up[-test_indices]
 		Xtest = Xm[test_indices, ]
-		ytest = y_with_bump_up[test_indices]	
+		ytest = y_with_bump_up[test_indices]
+		cat("size of Xtrain:", dim(Xtrain), "length of ytrain", length(ytrain), "\n")
 		
 		#now start training models and predicting on them
 		#impute both training and test data with MissForest
