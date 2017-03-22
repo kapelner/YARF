@@ -573,8 +573,6 @@ set_YARF_num_cores = function(num_cores){
 	cat("YARF now using", num_cores, "cores.\n")
 }
 
-#J("YARF.YARF")$MTryScriptFunctionName
-
 #' Serializes the model so the user can use \code{save} and \code{save.image}
 #' to write it to a file that can be then loaded into another and/or future R session.
 #' 

@@ -208,10 +208,10 @@ for(i in 1:n_reps){
         test = dfs$test
         train$y = as.factor(train$y); levels(train$y) = c(1,2)
         test$y = as.factor(test$y); levels(test$y) = c(1,2)
-        tryCatch({
+        # tryCatch({
             out = simulation_run(train$X, train$y, test$X)
             misclass[[dset_name]][[i]] = misclass_list(out, test$y)
-        }, error=function(e) cat('Bad dset: ', dset_name, 'at ', i))
+        # }, error=function(e) cat('Bad dset: ', dset_name, 'at ', i))
         
         #yarf_mod = YARF(train$X, train$y, mtry = 1, num_trees = 500,
         #    verbose=F)

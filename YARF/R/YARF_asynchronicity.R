@@ -68,7 +68,7 @@ YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_
 	previous_num_trees_completed = 0
 	trees = c()
 	fit_metrics = c()
-	while (TRUE){
+	repeat {
 		progress = YARF_progress(yarf_mod)
 		if (progress$done){
 			break
