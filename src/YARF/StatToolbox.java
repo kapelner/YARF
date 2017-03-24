@@ -2,6 +2,7 @@ package YARF;
 
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
 import java.util.Arrays;
@@ -305,17 +306,41 @@ public class StatToolbox {
 		}
 		return -prop_entropy;
 	}
+	
+	public static double gini_split(double[] data) {
+		double n = (double)data.length;
+		TDoubleIntHashMap class_freqs = class_freqs(data);
 
-	public static TDoubleIntHashMap class_freqs(double[] data) {
-		TDoubleIntHashMap class_proportions = new TDoubleIntHashMap();
-		for (double d : data){			
-			if (!class_proportions.containsKey(d)){
-				class_proportions.put(d, 1);
-			} 
-			else {
-				class_proportions.put(d, class_proportions.get(d) + 1);
+		double aggregate = 0;
+		for (int class_freq : class_freqs.values()){
+			if (class_freq > 0){		
+				aggregate += class_freq * (n - class_freq);
 			}
 		}
-		return class_proportions;
+		return aggregate / n;
+	}	
+
+	public static TDoubleIntHashMap class_freqs(double[] data) {
+		TDoubleIntHashMap class_freqs = new TDoubleIntHashMap();
+		for (double d : data){			
+			if (!class_freqs.containsKey(d)){
+				class_freqs.put(d, 1);
+			} 
+			else {
+				class_freqs.put(d, class_freqs.get(d) + 1);
+			}
+		}
+		return class_freqs;
 	}
+	
+
+//	public static TDoubleDoubleHashMap class_props(double[] data) {
+//		double n = (double)data.length;
+//		TDoubleIntHashMap class_freqs = class_freqs(data);
+//		TDoubleDoubleHashMap class_props = new TDoubleDoubleHashMap(class_freqs.size());
+//		for (double y_label : class_freqs.keys()){
+//			class_props.put(y_label, class_freqs.get(y_label) / n);
+//		}
+//		return class_props;
+//	}
 }

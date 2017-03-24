@@ -250,8 +250,9 @@ public class YARFTreeBuilder {
 			if (yarf.is_a_regression){ //the cost is the SSE (across both the left and right)
 				node.cost = StatToolbox.sample_sum_sq_err(ys, StatToolbox.sample_average(ys));
 			}
-			else { //it's a classification - the "cost" is the negative entropy which is the negative of the gain...
-				node.cost = StatToolbox.natural_negative_entropy(ys); ////maybe use Gini instead???
+			else { //it's a classification - the "cost" is Gini
+				node.cost = StatToolbox.gini_split(ys);
+//				node.cost = StatToolbox.natural_negative_entropy(ys); ////maybe use Gini instead???
 			}
 		}
 		//System.out.println("computeNodeCost node " + node + " cost = " + node.cost + " pred = " + node.y_pred + " size = " + node.nodeSize());
