@@ -41,40 +41,47 @@ simulation_run = function(x_train, y_train, x_test){
     out = list()
     
     # no boot, 1 tree: mtry = ncol
-     yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 1, mtry = p,
-         verbose=F, bootstrap_indices=boot_ind)
-     yarf_pred = predict(yarf_mod, as.data.frame(x_test))
-    
-     rf = randomForest(x_train, y_train, ntree=1, mtry=p, replace=F, sampsize=n)
-     rf_pred = predict(rf, x_test)
-     out[[1]] = cbind(yarf_pred, rf_pred)
+     # yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 1, mtry = p,
+     #     verbose=F, bootstrap_indices=boot_ind)
+     # yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+     # 
+     # rf = randomForest(x_train, y_train, ntree=1, mtry=p, replace=F, sampsize=n)
+     # rf_pred = predict(rf, x_test)
+     # out[[1]] = cbind(yarf_pred, rf_pred)
      
      # 500 trees: mtry = 1
-     yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = 1, num_trees = 500,
-             verbose=F)
-     yarf_pred = predict(yarf_mod, as.data.frame(x_test))
-    
-     rf = randomForest(x_train, y_train, ntree=500, mtry = 1)
-     rf_pred = predict(rf, x_test)
-     out[[2]] = cbind(yarf_pred, rf_pred)
+     # yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = 1, num_trees = 500,
+     #         verbose=F)
+     # yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+     # 
+     # rf = randomForest(x_train, y_train, ntree=500, mtry = 1)
+     # rf_pred = predict(rf, x_test)
+     # out[[2]] = cbind(yarf_pred, rf_pred)
      
     # 500 trees: mtry = ncol
-    yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = p, num_trees = 500,
-         verbose=F)
-    yarf_pred = predict(yarf_mod, as.data.frame(x_test))
-    
-    rf = randomForest(x_train, y_train, ntree=500, mtry = p)
-    rf_pred = predict(rf, x_test)
-    out[[3]] = cbind(yarf_pred, rf_pred)
+    # yarf_mod = YARF(as.data.frame(x_train), y_train, mtry = p, num_trees = 500,
+    #      verbose=F)
+    # yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+    # 
+    # rf = randomForest(x_train, y_train, ntree=500, mtry = p)
+    # rf_pred = predict(rf, x_test)
+    # out[[3]] = cbind(yarf_pred, rf_pred)
     
     # 500 tree: mtry = default
-    yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 500,
-        verbose=F)
-    yarf_pred = predict(yarf_mod, as.data.frame(x_test))
     
+    t_yarf_0 = Sys.time()
+    yarf_mod = YARF(as.data.frame(x_train), y_train, num_trees = 500, verbose=F)
+    yarf_pred = predict(yarf_mod, as.data.frame(x_test))
+    t_yarf_f = Sys.time()
+    cat("YARF time: ", t_yarf_f - t_yarf_0, "\n")
+    
+    t_rf_0 = Sys.time()
     rf = randomForest(x_train, y_train, ntree=500)
-    rf_pred = predict(rf, x_test)
-    out[[4]] = cbind(yarf_pred, rf_pred)
+    rf_pred = predict(rf, x_test)    
+    t_rf_f = Sys.time()
+    cat("RF time: ", t_rf_f - t_rf_0, "\n")
+    
+    out[[1]] = cbind(yarf_pred, rf_pred)
 
     out
     
