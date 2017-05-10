@@ -4,16 +4,21 @@
 \alias{illustrate_trees}
 \title{Illustrates trees to PNG files in the local directory.}
 \usage{
-illustrate_trees(yarf_mod, trees = NULL, background_rgb_color = c(255, 255,
-  255), line_rgb_color = c(100, 100, 100), text_rgb_color = c(0, 0, 0),
-  font_family = "Arial", font_size = 12, margin_in_px = 70,
-  character_width_in_px = 4.2, length_in_px_per_half_split = 20,
-  depth_in_px_per_split = 100, title = "yarf_mod_tree")
+illustrate_trees(yarf_mod, trees = NULL, max_depth = -1,
+  background_rgb_color = c(255, 255, 255), line_rgb_color = c(100, 100,
+  100), text_rgb_color = c(0, 0, 0), font_family = "Arial",
+  font_size = 12, margin_in_px = 70, character_width_in_px = 4.2,
+  length_in_px_per_half_split = 20, depth_in_px_per_split = 100,
+  print_at_split_node_script = NULL, print_at_leaf_script = NULL,
+  title = "yarf_mod_tree", open_file = FALSE)
 }
 \arguments{
 \item{yarf_mod}{The YARF model whose trees are to be illustrated}
 
 \item{trees}{A vector of the tree indices (a subset of 1...num_trees)}
+
+\item{max_depth}{Illustrate the tree only up to this depth. Default is \code{-1}
+indicating no restriction.}
 
 \item{background_rgb_color}{A vector with 3 elements in {0, 1, ..., 255} specifying the RGB color 
 of the background. Default is \code{c(255, 255, 255)} for white.}
@@ -39,8 +44,33 @@ is \code{70}.}
 
 \item{depth_in_px_per_split}{The length of the depth of a split in pixels. Default is \code{100}.}
 
+\item{print_at_split_node_script}{A custom javascript function which creates a special custom message to be printed 
+                                        at split nodes (see below). The default is \code{NULL} which prints no special message.
+
+                                        function printAtSplitNode(node)\{ //node is of type YARF.YARFNode
+
+                                            ...
+
+                                            return message; //a string
+
+                                        \}}
+
+\item{print_at_leaf_script}{A custom javascript function which creates a special custom message to be printed 
+                                        at leaf nodes (see below). The default is \code{NULL} which prints no special message.
+
+                                        function printAtLeaf(node)\{ //node is of type YARF.YARFNode
+
+                                            ...
+
+                                            return message; //a string
+
+                                        \}}
+
 \item{title}{The name of the file. Note that "_00t.png" will be added where "t"
-is the tree index. Default is "yarf_mod_tree".}
+is the tree index and "00" is an appropriate number of leading zeroes.
+Default is "yarf_mod_tree".}
+
+\item{open_file}{Should the first file be opened by the operating system? Default is \code{FALSE}.}
 }
 \description{
 Illustrates trees to PNG files in the local directory.
@@ -48,4 +78,3 @@ Illustrates trees to PNG files in the local directory.
 \author{
 Adam Kapelner
 }
-

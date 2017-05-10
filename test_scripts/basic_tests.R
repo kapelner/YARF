@@ -139,7 +139,7 @@ data(Boston)
 X = Boston[, 1 : 13]
 y = Boston[, 14]
 
-yarf_mod = YARF(X, y, num_trees = 500)
+yarf_mod = YARF(X, y, num_trees = 10)
 yarf_mod
 yarf_mod = YARF_update_with_oob_results(yarf_mod)
 yarf_mod

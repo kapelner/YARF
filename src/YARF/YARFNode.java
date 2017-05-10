@@ -17,16 +17,16 @@ public class YARFNode implements Cloneable {
 	public static final int BAD_FLAG_int = -Integer.MAX_VALUE;
 	
 	/** the parent node of this node */
-	protected YARFNode parent;
+	public YARFNode parent;
 	/** the left daughter node */
-	protected YARFNode left;
+	public YARFNode left;
 	/** the right daughter node */
-	protected YARFNode right;
+	public YARFNode right;
 	
 	/** the in-sample cost associated with this node */
 	protected double cost = BAD_FLAG_double;
 	/** Information kept for the user during customization */
-	protected Object other_info;
+	public Object other_info;
 	/** the generation of this node from the top node (root note has generation = 0 by definition) */
 	public int depth = 0;
 	/** is this node a terminal node? */
@@ -40,7 +40,7 @@ public class YARFNode implements Cloneable {
 	/** if this is a leaf node, then the result of the prediction for regression, otherwise null */
 	public double y_pred = BAD_FLAG_double;
 	/** the indices in this node */
-	public TIntArrayList indices;
+	protected TIntArrayList indices;
 	/** the number of training observations in this node */
 	private int node_size = BAD_FLAG_int; //bad flag... optimization so we don't have to call intvalue inside of Java
 	/** what tree is this node part of? */
@@ -49,7 +49,6 @@ public class YARFNode implements Cloneable {
 	//convenience functions for looking at the data in this node
 	private double[] node_ys;
 	private ArrayList<double[]> node_Xs_by_obs;
-	private ArrayList<double[]> node_Xs_by_feature;
 	private ArrayList<double[]> node_X_others;
 
 	
@@ -110,6 +109,32 @@ public class YARFNode implements Cloneable {
 		}
 	}
 	
+	/**
+	 * Evaluate a record recursively accounting for split rules and the presence of missing data
+	 * 
+	 * @param record		The record which to evaluate in this tree
+	 * @return				The returned prediction from the terminal node that this tree structure maps the record to
+	 */
+	public YARFNode predictNode(double[] record) {
+		YARFNode evalNode = this;
+		while (true){
+			if (evalNode.is_leaf){
+				return evalNode;
+			}
+			//all split rules are less than or equals (this is merely a convention)
+			//handle missing data first
+			if (Classifier.isMissing(record[evalNode.split_attribute])){
+				evalNode = evalNode.send_missing_data_right ? evalNode.right : evalNode.left;
+			}			
+			else if (record[evalNode.split_attribute] <= evalNode.split_value){
+				evalNode = evalNode.left;
+			}
+			else {
+				evalNode = evalNode.right;
+			}
+		}
+	}	
+	
 	/** Remove all the data in this node and its children recursively to save memory */
 	public void flushNodeData() {
 		indices = null;
@@ -128,6 +153,19 @@ public class YARFNode implements Cloneable {
 			node_size = indices.size();
 		}
 		return node_size;
+	}
+
+	
+	public double cost(){
+		return cost;
+	}
+	
+	public double parentCost(){
+		return parent == null ? tree.yarf.nullModelCost() : parent.cost;
+	}
+	
+	public int[] indices(){
+		return indices.toArray();
 	}
 	
 	/**
@@ -160,12 +198,12 @@ public class YARFNode implements Cloneable {
 	/**
 	 * In debugging, print a string that codes this node's location in the entire tree
 	 * 	
-	 * @param show_parent	Show a character if this node is a stump
+	 * @param show_root	Show a character if this node is a stump
 	 * @return				The coded string
 	 */
-	public String stringLocation(boolean show_parent) {
+	public String stringLocation(boolean show_root) {
 		if (this.parent == null){
-			return show_parent ? "P" : "";
+			return show_root ? "P" : "";
 		}
 		else if (this.parent.left == this){
 			return this.parent.stringLocation(false) + "L";
@@ -173,21 +211,16 @@ public class YARFNode implements Cloneable {
 		else if (this.parent.right == this){
 			return this.parent.stringLocation(false) + "R";
 		}
-		else {
-			return this.parent.stringLocation(false) + "?";
-		}
+		return null;
 	}
-	
-//	public void printTree(){
-//		printNodeDebugInfo("");
-//		if (left != null){
-//			left.printTree();
-//		}
-//		if (right != null){
-//			right.printTree();
-//		}
-//	}
-	
+	/**
+	 * In debugging, print a string that codes this node's location in the entire tree
+	 * 
+	 * @return				The coded string with root being shown
+	 */
+	public String stringLocation(){
+		return stringLocation(true);
+	}	
 
 	/**
 	 * Prints debug information about this node, its parent and its immediate children

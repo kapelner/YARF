@@ -24,4 +24,3 @@ off and serializing is turned off as well.
 \author{
 Adam Kapelner
 }
-

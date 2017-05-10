@@ -36,4 +36,3 @@ variable is nested in splits of another variable.
 \author{
 Adam Kapelner
 }
-

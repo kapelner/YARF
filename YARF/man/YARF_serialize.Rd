@@ -17,4 +17,3 @@ to write it to a file that can be then loaded into another and/or future R sessi
 \author{
 Adam Kapelner
 }
-
