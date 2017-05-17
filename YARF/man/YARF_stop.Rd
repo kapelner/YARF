@@ -15,4 +15,3 @@ Halts the model building.
 \author{
 Adam Kapelner
 }
-

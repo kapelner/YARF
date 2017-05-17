@@ -22,4 +22,3 @@ Function which queries the YARF model about how many times the variables are use
 \author{
 Adam Kapelner
 }
-

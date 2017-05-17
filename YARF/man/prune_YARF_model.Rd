@@ -31,4 +31,3 @@ the tree structure.
 \author{
 Adam Kapelner
 }
-

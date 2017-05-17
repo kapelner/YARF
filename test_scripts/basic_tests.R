@@ -4,12 +4,12 @@ library(YARF)
 
 
 ###basic test... stump
-n = 100
-p = 1
+n = 5000
+p = 100
 X = data.frame(1:n, matrix(runif(n * (p-1)), nrow = n))
 y = X[, 1]
 
-yarf_mod = YARF(X, y, num_trees = 1, mtry = 1)
+yarf_mod = YARF(X, y, num_trees = 500)
 yarf_mod
 YARF_update_with_oob_results(yarf_mod)
 illustrate_trees(yarf_mod, open_file = TRUE)
@@ -139,7 +139,7 @@ data(Boston)
 X = Boston[, 1 : 13]
 y = Boston[, 14]
 
-yarf_mod = YARF(X, y, num_trees = 500)
+yarf_mod = YARF(X, y, num_trees = 10)
 yarf_mod
 yarf_mod = YARF_update_with_oob_results(yarf_mod)
 yarf_mod

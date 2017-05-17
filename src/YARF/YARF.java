@@ -58,7 +58,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	private transient int[][] other_indices;
 
 	private Integer default_mtry;	
-	
+
+	private Double null_model_cost;
 
 	//convenient pre-computed data to have around
 //	protected transient TIntObjectHashMap<int[]> all_attribute_sorts;
@@ -471,6 +472,56 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		
 		return y_hats;	
 	}
+	
+	/**
+	 * After the classifier has been built, new records can be evaluated / predicted
+	 * (implemented by a daughter class)
+	 * 
+	 * @param records					A n* x p matrix of n* observations to be evaluated / predicted.
+	 * @param num_cores_evaluate		The number of processor cores to be used during the evaluation / prediction
+	 * @return							The predictions
+	 */
+	public YARFNode[][] predictNodes(double[][] records, int num_cores_evaluate){
+		int n_star = records.length;
+		final YARFNode[][] nodes = new YARFNode[n_star][num_trees];
+		
+		//speedup for the dumb user
+		if (num_cores_evaluate == 1){			
+			for (int i = 0; i < n_star; i++){
+				nodes[i] = predictNode(records[i]);
+			}
+			return nodes;
+		}
+		
+		ExecutorService tree_eval_pool = Executors.newFixedThreadPool(num_cores_evaluate);
+		for (int i = 0; i < n_star; i++){
+			final int i_f = i;
+			tree_eval_pool.execute(new Runnable(){
+				public void run() {
+					try {
+						nodes[i_f] = predictNode(records[i_f]);
+					} catch (ArrayIndexOutOfBoundsException e){
+						tree_eval_pool.shutdownNow();
+						e.printStackTrace();
+					}
+				}
+			});
+		}
+		tree_eval_pool.shutdown();
+		try {	         
+			tree_eval_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS); //effectively infinity
+	    } catch (InterruptedException ignored){}
+		
+		return nodes;	
+	}	
+
+	public YARFNode[] predictNode(double[] record) {
+		YARFNode[] nodes = new YARFNode[num_trees];
+		for (int t = 0; t < num_trees; t++){
+			nodes[t] = yarf_trees[t].predictNode(record);
+		}
+		return nodes;
+	}
 
 	/**
 	 * The default BART evaluation of a new observations is done via sample average of the 
@@ -614,6 +665,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	
 	private TIntObjectHashMap<TDoubleIntHashMap> feature_to_split_point_to_indices;
 
+
 	
 	protected TDoubleIntHashMap splitPointToCutoffSortedIndex(int j){
 		TDoubleIntHashMap split_point_to_cutoff_index = feature_to_split_point_to_indices.get(j);
@@ -744,6 +796,19 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		return num_leaves;		
 	}
 	
+	public YARFNode getNode(int t, String location){
+		location = location.toLowerCase();
+		YARFNode node = yarf_trees[t].root;
+		for (int i = 0; i < location.length(); i++){
+			if (location.charAt(i) == 'l'){
+				node = node.left;
+			} else if (location.charAt(i) == 'r'){
+				node = node.right;
+			} // The "r" for root does nothing
+		}
+		return node;
+	}
+	
 	public int[] getNumNodes(){
 		int[] num_nodes = new int[num_trees];
 		for (int t = 0; t < num_trees; t++){
@@ -758,5 +823,17 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			depths[t] = yarf_trees[t].depth();
 		}
 		return depths;		
+	}
+	
+	public double nullModelCost(){
+		if (null_model_cost == null){
+			if (is_a_regression){ //the cost is the SSE (across both the left and right)
+				null_model_cost = StatToolbox.sample_sum_sq_err(y, StatToolbox.sample_average(y));
+			}
+			else { //it's a classification - the "cost" is Gini
+				null_model_cost = StatToolbox.gini_split(y);
+			}
+		}
+		return null_model_cost;
 	}
 }

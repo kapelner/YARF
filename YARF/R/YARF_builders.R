@@ -7,7 +7,7 @@
 #' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
 #' 											handled in the custom functions, YARF will crash. Default is \code{FALSE}.
 #' @param num_trees 						The # of trees in the RF. Default is \code{500}.
-#' @param bootstrap_indices 				A list with keys 1,2,..., num_trees where each value is the indices of the training data
+#' @param bootstrap_indices 				A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 #' 											you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
 #' 											of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
 #' 											to say indices specified here will not be part of the out-of-bag collection of indices.	

@@ -22,4 +22,3 @@ Gets information about each tree: the number of nodes, number of leaves and maxi
 \author{
 Adam Kapelner
 }
-

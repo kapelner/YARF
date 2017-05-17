@@ -72,6 +72,10 @@ public class YARFTree extends Classifier {
 		return root.Evaluate(x_star);
 	}
 
+	public YARFNode predictNode(double[] x_star) {
+		return root.predictNode(x_star);
+	}
+
 	@Override
 	public void StopBuilding() {
 		stop = true;

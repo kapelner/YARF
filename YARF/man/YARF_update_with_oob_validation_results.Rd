@@ -22,4 +22,3 @@ true out-of-sample performance estimation.
 \author{
 Adam Kapelner
 }
-

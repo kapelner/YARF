@@ -4,18 +4,19 @@
 \name{YARF}
 \alias{YARF}
 \alias{YARF-package}
+\alias{YARF}
 \title{A fully customizable Random Forests implementation}
 \usage{
 YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   allow_missingness_in_y = FALSE, num_trees = 500,
   bootstrap_indices = NULL, other_indices = NULL, mtry = NULL,
-  nodesize = NULL, mtry_script = NULL, make_node_to_leaf_script = NULL,
-  cost_single_node_calc_script = NULL, node_assign_script = NULL,
-  after_node_birth_function_script = NULL, aggregation_script = NULL,
-  oob_cost_calculation = NULL, shared_scripts = NULL,
-  use_missing_data = TRUE, replace_missing_data_with_x_j_bar = FALSE,
-  serialize = FALSE, seed = NULL, wait = TRUE, verbose = TRUE,
-  debug_log = FALSE)
+  nodesize = NULL, mtry_script = NULL, split_vals_script = NULL,
+  make_node_to_leaf_script = NULL, cost_single_node_calc_script = NULL,
+  node_assign_script = NULL, after_node_birth_function_script = NULL,
+  aggregation_script = NULL, shared_scripts = NULL,
+  use_missing_data = TRUE, use_missing_data_dummies_as_vars = TRUE,
+  replace_missing_data_with_x_j_bar = FALSE, serialize = FALSE,
+  seed = NULL, wait = TRUE, verbose = TRUE, debug_log = FALSE)
 }
 \arguments{
 \item{X}{The data frame of training data}
@@ -31,7 +32,7 @@ handled in the custom functions, YARF will crash. Default is \code{FALSE}.}
 
 \item{num_trees}{The # of trees in the RF. Default is \code{500}.}
 
-\item{bootstrap_indices}{A list with keys 1,2,..., num_trees where each value is the indices of the training data
+\item{bootstrap_indices}{A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
 of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
 to say indices specified here will not be part of the out-of-bag collection of indices.}
@@ -58,7 +59,18 @@ will be used.}
 
                                                 ...
 
-                                                return int_array //indices in 1,...,p indicating the variables to perform the exhaustive search on
+                                                return int_array //a subset of {0,...,p-1}, indices indicating the variables to perform the exhaustive search on
+
+                                              \}}
+
+\item{split_vals_script}{A custom javascript function which selects the split values to be greedily searched in feature j.
+                                            The default is \code{NULL} which employs the midpoints of all sorted values.
+
+                                              function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number in {0,...,p-1}
+
+                                                ...
+
+                                                return double_array //a vector of split vals to greedily assess
 
                                               \}}
 
@@ -124,23 +136,14 @@ will be used.}
 
                                               \}}
 
-\item{oob_cost_calculation}{A custom Javascript function which calculates the cost of a prediction given the true
-                                            value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
-                                            is recommended to share code between them by writing a function included in \code{shared_scripts}.
-
-                                              function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are doubles)
-
-                                                ...
-
-                                                return double //where a higher number indicates a higher cost
-
-                                              \}}
-
 \item{shared_scripts}{Custom Javascript code that are always in scope when running all your custom methods. 
 The default is \code{NULL} for no shared scripts.}
 
 \item{use_missing_data}{Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 default is \code{TRUE}.}
+
+\item{use_missing_data_dummies_as_vars}{For each predictor in the dataset that is missing, create a new variable \code{M_<name>} that
+is one for observations that are missing and 0 if not. The default is \code{TRUE}.}
 
 \item{serialize}{Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
 time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
@@ -178,21 +181,22 @@ A list that (a) reiterates all ob the above arguments passed in and (b) \code{pr
 											other functions in this package.
 }
 \description{
-Software which helps practitioners optimally design experiments that measure the slope divided by the intercept.
+Random Forests with (1) the ability to customize almost every algorithmic decions (2)
+parallelization with asynchronicity (3) missingness incorporated in attributes and (4)
+variable importance, interaction detection, variable(s) testing, tree illustrations et al.
 
 Builds a YARF Model. There are many custom functions
+}
+\references{
+TK
 }
 \author{
 Adam Kapelner \email{kapelner@qc.cuny.edu}
 
 Adam Kapelner
 }
-\references{
-TK
-}
 \keyword{Learning,}
 \keyword{Machine}
 \keyword{Non-parametric}
 \keyword{Tree-based}
 \keyword{regression}
-

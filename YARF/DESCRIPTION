@@ -19,4 +19,4 @@ Imports:
     grDevices,
     stats
 SystemRequirements: Java (>= 1.8.0)
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

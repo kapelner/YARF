@@ -20,4 +20,3 @@ Prints out a message reflecting the progress of the YARF model construction
 \author{
 Kapelner
 }
-

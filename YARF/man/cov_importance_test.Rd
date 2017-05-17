@@ -38,4 +38,3 @@ The p-val is determined by a permutation-like test.
 \author{
 Adam Kapelner
 }
-

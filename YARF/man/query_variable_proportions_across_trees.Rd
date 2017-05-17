@@ -24,4 +24,3 @@ This is a convenience method which merely normalizes the result of \code{query_v
 \author{
 Adam Kapelner
 }
-

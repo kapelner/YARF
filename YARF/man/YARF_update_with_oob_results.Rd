@@ -5,10 +5,24 @@
 \title{Computes the out-of-bag (OOB) predictions for the training data. 
 This gives a good sense of out-of-sample performance in the future.}
 \usage{
-YARF_update_with_oob_results(yarf_mod, indices = NULL)
+YARF_update_with_oob_results(yarf_mod, oob_cost_calculation_script = NULL,
+  indices = NULL)
 }
 \arguments{
 \item{yarf_mod}{The yarf model object}
+
+\item{oob_cost_calculation_script}{An optional custom Javascript function which calculates the cost of a prediction given the true
+                                            value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
+                                            is recommended to share code between them by writing a function included in \code{shared_scripts} which is
+                                            passed into \code{YARF} upon construction and can be referenced when calculating OOB results.
+
+                                              function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are of type double)
+
+                                                ...
+
+                                                return double //where a larger number indicates a higher cost to the error(y_hat, y).
+
+                                              \}}
 
 \item{indices}{The indices to compute OOB performance. This is generally a private argument
 for use by the validation / test functions.}
@@ -20,4 +34,3 @@ This gives a good sense of out-of-sample performance in the future.
 \author{
 Adam Kapelner
 }
-

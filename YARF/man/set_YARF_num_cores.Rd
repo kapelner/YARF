@@ -17,4 +17,3 @@ which are multithreaded (e.g. model construction, prediction, etc)
 \author{
 Adam Kapelner
 }
-

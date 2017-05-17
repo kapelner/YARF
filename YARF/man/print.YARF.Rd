@@ -17,4 +17,3 @@ Alias for summary.
 \author{
 Adam Kapelner
 }
-

@@ -27,4 +27,3 @@ passed in, the default aggregation is the sample average for regression and the 
 \author{
 Kapelner
 }
-
