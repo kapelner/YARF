@@ -229,63 +229,6 @@ YARF_progress_reports(yarf_mod, time_delay_in_seconds = 4, plot_oob_error = TRUE
 #with the regular node assignment for regression: the average
 
 
-options(java.parameters = c("-Xmx4000m")); library(YARF); library(MASS); data(Boston)
-X = Boston[, 1 : 13]; y = Boston[, 14]
-library(readr)
-
-#load the node assign as the median value
-node_assign_script = read_file("scr02.js")
-shared_scripts = read_file("scr04.js")
-
-yarf_mod = YARF(X, y, num_trees = 500, 
-                node_assign_script = node_assign_script,
-                shared_scripts = shared_scripts)
-YARF_update_with_oob_results(yarf_mod)
-#vanilla RF
-yarf_mod = YARF(X, y, num_trees = 500)
-YARF_update_with_oob_results(yarf_mod)
-#note same results
-
-
-#predict(yarf_mod, X)
-
-#now let's go even crazier... let's make the cost function sum of absolute errors (instead of squared errors)
-cost_single_node_calc_script = read_file("scr03.js")
-
-
-yarf_mod = YARF(X, y, num_trees = 1,
-                node_assign_script = node_assign_script,
-                cost_single_node_calc_script = cost_single_node_calc_script)
-yarf_mod
-YARF_update_with_oob_results(yarf_mod)
-
-#now let's get funky and do median
-
-node_assign_script = read_file("scr02.js")
-node_assign_script = gsub("\\s", "", node_assign_script) 
-node_assign_script
-
-yarf_mod = YARF(X, y, num_trees = 500, node_assign_script = node_assign_script)
-yarf_mod
-YARF_update_with_oob_results(yarf_mod)
-#same results
-
-#now let's go even crazier... let's aggregate across the tree predictions by median
-aggregation_script = " 
-	function aggregateYhatsIntoOneYhat(y_hat_trees){
-		y_hat_trees.sort(function(a,b) {return a - b;});
-		var half = Math.floor(y_hat_trees / 2);
-		if (y_hat_trees % 2)
-			return y_hat_trees[half];
-		else
-			return (y_hat_trees[half - 1] + y_hat_trees[half]) / 2.0;
-	}"
-
-
-yarf_mod = YARF(X, y, num_trees = 500, 
-                node_assign_script = node_assign_script, aggregation_script = aggregation_script)
-yarf_mod
-YARF_update_with_oob_results(yarf_mod)
 
 
 
