@@ -6,7 +6,7 @@ function nodeCost(node){
   	for (i = 0; i < ys.length; i++){
     	sae += Math.abs(ys[i] - y_avg);
   	}
-  	//print("y_avg:", y_avg)
+  	//print(" INSIDE JAVASCRIPT y_avg:", y_avg)
   	//print("sae:", sae)
   	return sae;
 }

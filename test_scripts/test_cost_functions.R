@@ -1,15 +1,36 @@
-options(java.parameters = c("-Xmx6000m")); library(YARF); library(readr)
+options(java.parameters = c("-Xmx4000m"))
+library(YARF)
+library(mlbench)
+library(randomForest)
+
+
 set_YARF_num_cores(2)
 shared_scripts = read_file("scr04.js") #the median function and sample_avg function
+cost_single_node_calc_script = read_file("scr03.js")
 node_assign_script = read_file("scr02.js") #assign node median
 
 set.seed(1984)
-n = 1000; p = 1
-errors = rcauchy(n)
+n = 500; p = 1
+errors = rt(n, 1.8)
 X = matrix(rnorm(n * p), nrow = n)
-beta = as.matrix(100)
+beta = as.matrix(10)
 y = as.numeric(X %*% beta + errors)
 X = data.frame(X)
+summary(lm(y~.,X))
+plot(X[,1], y)
+
+yarf_mod = YARF(X, y, num_trees = 500, 
+		node_assign_script = node_assign_script,
+		cost_single_node_calc_script = cost_single_node_calc_script,
+		shared_scripts = shared_scripts,
+		wait = TRUE)
+YARF_update_with_oob_results(yarf_mod)
+yarf_mod = YARF_update_with_oob_results(yarf_mod)
+
+mae_validation_results[i] = yarf_mod$mae_oob
+yarf_mod = YARF_update_with_oob_test_results(yarf_mod)
+mae_test_results[i] = yarf_mod$mae_oob
+
 
 powers = seq(0.25, 2, by = 0.25)
 

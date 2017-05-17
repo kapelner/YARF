@@ -191,7 +191,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public double runNodeAssignment(YARFNode node){
 		if (node_assignment_fun == null){
 			node_assignment_fun = stringToInvokableCompiledFunction(node_assignment_function_str, AssignYhatToNodeScriptFunctionName);
-			//System.out.println("compile node_assignment_function_str:\n" + node_assignment_function_str + "\n======");
+			System.err.println("compile node_assignment_function_str:\n" + node_assignment_function_str + "\n======");
 		}
 		try {
 			return (double)node_assignment_fun.invokeFunction(AssignYhatToNodeScriptFunctionName, node);
