@@ -78,11 +78,8 @@ public class YARFTreeBuilder {
 		//we will check each attribute
 		for (int j : features_to_split_on){	
 			tryFeature(node, j, split_data, trueFalseRandomOrder);
-
 		}
 		
-		
-
 		//if we have been unsuccessful in finding an advantageous split, we should let this node be a leaf and ditch
 		if (split_data.lowest_total_split_cost >= node.cost){
 			if (YARF.DEBUG){System.out.println("greedy search unsuccessful... for node: " + node.stringLocation(true) + "\n\n");}

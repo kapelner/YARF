@@ -55,6 +55,8 @@ public abstract class YARFCustomFunctions extends Classifier {
     private transient Invocable print_at_leaf_fun;
     private transient Invocable oob_cost_calculation_fun;
 
+	private boolean stop_evaluting;
+
 	private Invocable stringToInvokableCompiledFunction(String script_as_string, String function_name) {
 
 //		System.out.println("stringToInvokableCompiledFunction");
@@ -75,6 +77,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 				StopBuilding();
 				System.err.println("There was a problem compiling the shared script:");
 				e.printStackTrace();
+				System.err.println("Your function:\n\n" + shared_scripts_str);
 			}
 //			System.out.println("compiled shared scripts");
 		} else {
@@ -87,6 +90,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("There was a problem compiling the script with the \"" + function_name + "\" function:");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + script_as_string);
 		}
 		try {
 			cscript.eval(nashorn_js_engine.getBindings(ScriptContext.ENGINE_SCOPE));
@@ -94,13 +98,14 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("There was a problem adding the scope to the script with the \"" + function_name + "\" function:");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + script_as_string);
 		}
         return (Invocable)cscript.getEngine();
 	}
 	
 	public int[] runMtry(YARFNode node){
 		if (mtry_fun == null){
-			mtry_fun = stringToInvokableCompiledFunction(split_values_function_str, MTryScriptFunctionName);	
+			mtry_fun = stringToInvokableCompiledFunction(mtry_function_str, MTryScriptFunctionName);	
 		}
 		try {
 			return  (int[]) mtry_fun.invokeFunction(MTryScriptFunctionName, node);
@@ -108,10 +113,12 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your mtry script must include the function \"" + MTryScriptFunctionName + "(node)\" and return an array of integers.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + mtry_function_str);
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + MTryScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();
+			System.err.println("Your function:\n\n" + mtry_function_str);
 		}
 		return null;
 	}	
@@ -126,10 +133,12 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your mtry script must include the function \"" + SplitValuesScriptFunctionName + "(node)\" and return an array of doubles.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + split_values_function_str);
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + SplitValuesScriptFunctionName + "\" function:");
 			e.printStackTrace();		
+			System.err.println("Your function:\n\n" + split_values_function_str);
 		}
 		return null;
 	}
@@ -144,10 +153,12 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your nodesize legal script must include the function \"" + NodesizeLegalScriptFunctionName + "(node)\" and return a boolean where true means the node under consideration is legal.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + make_node_into_leaf_function_str);
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + NodesizeLegalScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();
+			System.err.println("Your function:\n\n" + make_node_into_leaf_function_str);		
 		}
 		return false;
 	}
@@ -162,10 +173,12 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your node cost script must include the function \"" + SingleNodeCostScriptFunctionName + "(node)\" and return the cost as a double.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + cost_single_node_calc_function_str);	
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + SingleNodeCostScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();
+			System.err.println("Your function:\n\n" + cost_single_node_calc_function_str);			
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
@@ -180,10 +193,12 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your total cost script must include the function \"" + TotalNodeCostScriptFunctionName + "(leftNode, rightNode)\" and return the total cost of both nodes as a double.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + cost_both_children_calc_function_str);
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + TotalNodeCostScriptFunctionName + "\" function:");
 			e.printStackTrace();		
+			System.err.println("Your function:\n\n" + cost_both_children_calc_function_str);
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
@@ -198,12 +213,13 @@ public abstract class YARFCustomFunctions extends Classifier {
 		} catch (NoSuchMethodException e) {
 			StopBuilding();
 			System.err.println("Your node assign script must include the function \"" + AssignYhatToNodeScriptFunctionName + "(node)\" and return the node assignment (the predicted yhat) as a double.");
-			System.err.println("node_assignment_function_str:\n" + node_assignment_function_str);
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + node_assignment_function_str);
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + AssignYhatToNodeScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();	
+			System.err.println("Your function:\n\n" + node_assignment_function_str);	
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
@@ -217,12 +233,13 @@ public abstract class YARFCustomFunctions extends Classifier {
 		} catch (NoSuchMethodException e) {
 			StopBuilding();
 			System.err.println("Your after node birth script must include the function \"" + AfterNodeBirthScriptFunctionName + "(node)\" and return nothing.");
-			System.err.println("after_node_birth_fun:\n" + after_node_birth_function_str);
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + after_node_birth_function_str);
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + AfterNodeBirthScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();
+			System.err.println("Your function:\n\n" + after_node_birth_function_str);		
 		}
 	}
 	
@@ -236,10 +253,12 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your aggregation script must include the function \"" + AggregationScriptFunctionName + "(y_hats, yarf_trees)\" and return the aggregated prediction as a double.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + aggregation_function_str);	
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + AggregationScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();	
+			System.err.println("Your function:\n\n" + aggregation_function_str);		
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
@@ -254,10 +273,12 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your prune if script must include the function \"" + PruneIfScriptFunctionName + "(node)\" and return a boolean.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + prune_if_function_str);
 		} catch (ScriptException e) {
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + PruneIfScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();	
+			System.err.println("Your function:\n\n" + prune_if_function_str);	
 		}
 		return false;
 	}
@@ -269,13 +290,15 @@ public abstract class YARFCustomFunctions extends Classifier {
 		try {
 			return (double)oob_cost_calculation_fun.invokeFunction(OobCostScriptFunctionName, y_hat, y);
 		} catch (NoSuchMethodException e) {
-			StopBuilding();
+			stop_evaluting = true;
 			System.err.println("Your oob cost calculation script must include the function \"" + OobCostScriptFunctionName + "(y_hat, y)\" and return the aggregated prediction as a double.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + oob_cost_calculation_str);
 		} catch (ScriptException e) {
-			StopBuilding();
+			stop_evaluting = true;
 			System.err.println("There was a problem evaluating your \"" + OobCostScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();
+			System.err.println("Your function:\n\n" + oob_cost_calculation_str);
 		}
 		return YARFNode.BAD_FLAG_double;		
 	}
@@ -292,11 +315,13 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your print at split node script must include the function \"" + PrintAtSplitNodeScriptFunctionName + "(node)\" and return a String.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + print_at_split_node_str);
 		} catch (ScriptException e) {
 			System.out.println("ScriptException");
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + PrintAtSplitNodeScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();
+			System.err.println("Your function:\n\n" + print_at_split_node_str);		
 		}
 		return null;
 	}
@@ -313,11 +338,13 @@ public abstract class YARFCustomFunctions extends Classifier {
 			StopBuilding();
 			System.err.println("Your print at leaf node must include the function \"" + PrintAtLeafScriptFunctionName + "(node)\" and return a String.");
 			e.printStackTrace();
+			System.err.println("Your function:\n\n" + print_at_leaf_str);	
 		} catch (ScriptException e) {
 			System.out.println("ScriptException");
 			StopBuilding();
 			System.err.println("There was a problem evaluating your \"" + PrintAtLeafScriptFunctionName + "\" function:");
-			e.printStackTrace();		
+			e.printStackTrace();
+			System.err.println("Your function:\n\n" + print_at_leaf_str);			
 		}
 		return null;
 	}
@@ -374,6 +401,9 @@ public abstract class YARFCustomFunctions extends Classifier {
 		for (int i = 0; i < n_oob; i++){
 			//no need for an error check for oob_cost_calculation_str here as it's done in R
 			costs[i] = runOobCostCalculation(y_oob[i], y[i]);
+			if (stop_evaluting){
+				break;
+			}
 		}
 		return costs;
 	}	
@@ -393,6 +423,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setMtry_function_str(String mtry_function_str) {
 		this.mtry_function_str = mtry_function_str;
+		mtry_fun = null; //reset
 	}
 	
 	public String getSplit_values_function_str() {
@@ -401,6 +432,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setSplit_values_function_str(String split_values_function_str) {
 		this.split_values_function_str = split_values_function_str;
+		mtry_fun = null; //reset
 	}	
 
 	public String getCost_single_node_calc_function_str() {
@@ -410,15 +442,16 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public void setCost_single_node_calc_function_str(
 			String cost_single_node_calc_function_str) {
 		this.cost_single_node_calc_function_str = cost_single_node_calc_function_str;
+		mtry_fun = null; //reset
 	}
 
 	public String getCost_both_children_calc_function_str() {
 		return cost_both_children_calc_function_str;
 	}
 
-	public void setCost_both_children_calc_function_str(
-			String cost_both_children_calc_function_str) {
+	public void setCost_both_children_calc_function_str(String cost_both_children_calc_function_str) {
 		this.cost_both_children_calc_function_str = cost_both_children_calc_function_str;
+		mtry_fun = null; //reset
 	}
 
 	public String getAggregation_function_str() {
@@ -427,6 +460,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setAggregation_function_str(String aggregation_function_str) {
 		this.aggregation_function_str = aggregation_function_str;
+		aggregation_fun = null; //reset
 	}
 
 	public String getMake_node_into_leaf_function_str() {
@@ -435,6 +469,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setMake_node_into_leaf_function_str(String make_node_into_leaf_function_str) {
 		this.make_node_into_leaf_function_str = make_node_into_leaf_function_str;
+		make_node_into_leaf_fun = null; //reset
 	}
 
 	public String getNode_assignment_function_str() {
@@ -443,6 +478,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setNode_assignment_function_str(String node_assignment_function_str) {
 		this.node_assignment_function_str = node_assignment_function_str;
+		node_assignment_fun = null; //reset
 	}
 	
 	public String getAfter_node_birth_function_str() {
@@ -451,6 +487,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setAfter_node_birth_function_str(String after_node_assignment_function_str) {
 		this.after_node_birth_function_str = after_node_assignment_function_str;
+		after_node_birth_fun = null; //reset
 	}
 
 	public String getPrune_if_function_str() {
@@ -459,6 +496,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setPrune_if_function_str(String prune_if_function_str) {
 		this.prune_if_function_str = prune_if_function_str;
+		prune_if_fun = null; //reset
 	}
 	
 	public String getOob_cost_calculation_str() {
@@ -467,19 +505,15 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setOob_cost_calculation_str(String oob_cost_calculation_str) {
 		this.oob_cost_calculation_str = oob_cost_calculation_str;
-		//the function itself should be reset here
-		oob_cost_calculation_fun = null;
+		oob_cost_calculation_fun = null; //reset
 	}
 	public String getPrint_at_split_node_str() {
 		return print_at_split_node_str;
 	}
 
 	public void setPrint_at_split_node_str(String print_at_split_node_str) {
-//		System.out.println("begin setPrint_at_split_node_str");
 		this.print_at_split_node_str = print_at_split_node_str;
-		//the function itself should be reset here
-		print_at_split_node_fun = null;
-//		System.out.println("after setPrint_at_split_node_str");
+		print_at_split_node_fun = null; //reset
 	}
 
 	public String getPrint_at_leaf_str() {
@@ -488,7 +522,6 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setPrint_at_leaf_str(String print_at_leaf_str) {
 		this.print_at_leaf_str = print_at_leaf_str;
-		//the function itself should be reset here
-		print_at_leaf_fun = null;
+		print_at_leaf_fun = null; //reset
 	}
 }

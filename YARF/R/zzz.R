@@ -1,9 +1,7 @@
-YARF_MAX_MEM_MB_DEFAULT = 1100 #1.1GB is the most a 32bit machine can give without throwing an error or crashing
-YARF_NUM_CORES_DEFAULT = 1 #Stay conservative as a default
-
 .onLoad = function(libname, pkgname) {
   .jpackage(pkgname, lib.loc = libname)
   assign("YARF_globals", new.env(), envir = parent.env(environment()))
+  assign("YARF_NUM_CORES", 1, YARF_globals) #Stay conservative as a default
 }
 
 .onAttach = function(libname, pkgname){

@@ -13,8 +13,8 @@ YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   nodesize = NULL, mtry_script = NULL, split_vals_script = NULL,
   make_node_to_leaf_script = NULL, cost_single_node_calc_script = NULL,
   node_assign_script = NULL, after_node_birth_function_script = NULL,
-  aggregation_script = NULL, shared_scripts = NULL,
-  use_missing_data = TRUE, use_missing_data_dummies_as_vars = TRUE,
+  shared_scripts = NULL, use_missing_data = TRUE,
+  use_missing_data_dummies_as_vars = TRUE,
   replace_missing_data_with_x_j_bar = FALSE, serialize = FALSE,
   seed = NULL, wait = TRUE, verbose = TRUE, debug_log = FALSE)
 }
@@ -123,19 +123,6 @@ will be used.}
 
                                               \}}
 
-\item{aggregation_script}{A custom javascript function which aggregates the predictions in the trees for one observations 
-                                            into one scalar prediction (see below). The default is \code{NULL} corresponding to the sample average for
-                                            regression and the modal category for classification.
-
-                                              function aggregateYhatsIntoOneYhat(y_hats, yarf)\{ //y_hats is an array of doubles 
-                                                //and yarf provides access to the entire random forest object (of type YARF.YARF)
-
-                                                ...
-
-                                                return double //this is the final predicted value aggregated from all tree predictions
-
-                                              \}}
-
 \item{shared_scripts}{Custom Javascript code that are always in scope when running all your custom methods. 
 The default is \code{NULL} for no shared scripts.}
 
@@ -185,7 +172,7 @@ Random Forests with (1) the ability to customize almost every algorithmic decion
 parallelization with asynchronicity (3) missingness incorporated in attributes and (4)
 variable importance, interaction detection, variable(s) testing, tree illustrations et al.
 
-Builds a YARF Model. There are many custom functions
+Builds a YARF Model. There are many customizations available.
 }
 \references{
 TK

@@ -3,8 +3,9 @@
 \name{predict.YARF}
 \alias{predict.YARF}
 \title{Computes a response prediction for new data observation(s). Predictions are an aggregation from each of the 
-individual trees' predictions based on the function passed into the model creation step. If no function was 
-passed in, the default aggregation is the sample average for regression and the modal class for classification.}
+individual trees' predictions based on the function passed into the model creation step. The default 
+aggregation is the sample average for regression and the modal class for classification. You can set
+a custom aggregation method via the \code{YARF_set_aggregation_method} function.}
 \usage{
 \method{predict}{YARF}(object, new_data, ...)
 }
@@ -21,8 +22,9 @@ The yhat prediction for the \code{new_data} record(s).
 }
 \description{
 Computes a response prediction for new data observation(s). Predictions are an aggregation from each of the 
-individual trees' predictions based on the function passed into the model creation step. If no function was 
-passed in, the default aggregation is the sample average for regression and the modal class for classification.
+individual trees' predictions based on the function passed into the model creation step. The default 
+aggregation is the sample average for regression and the modal class for classification. You can set
+a custom aggregation method via the \code{YARF_set_aggregation_method} function.
 }
 \author{
 Kapelner

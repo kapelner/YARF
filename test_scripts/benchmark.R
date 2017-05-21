@@ -138,7 +138,7 @@ boston = function(){
 #                                   Bakeoff (Regression)
 # ------------------------------------------------------------------------------
  
-n_reps = 50
+n_reps = 500
 
 results = list()
 rmse = list()

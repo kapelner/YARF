@@ -3,6 +3,8 @@ package YARF;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
+
 import OpenSourceExtensions.UnorderedPair;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -284,6 +286,10 @@ public class YARFNode implements Cloneable {
 		return node_ys;
 	}
 	
+	public double y_quantile(double q){
+		return new Percentile().evaluate(node_ys(), q);
+	}	
+	
 	public ArrayList<double[]> node_Xs_by_obs(){
 		if (node_Xs_by_obs == null){
 			node_Xs_by_obs = new ArrayList<double[]>(nodeSize());
@@ -356,6 +362,10 @@ public class YARFNode implements Cloneable {
 		}
 	}
 
+	public void assignYHat(double y_pred) {
+		this.y_pred = y_pred;		
+	}
+	
 	public int[] attributeSplitCounts() {
 		int[] attribute_split_counts = new int[tree.yarf.p];
 		attributeSplitCountsInner(attribute_split_counts);

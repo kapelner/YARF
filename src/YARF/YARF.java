@@ -31,7 +31,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	/** debug mode -- prints lots of messages that are useful */
 	public static final boolean DEBUG = false;
 	
-	/** the number of CPU cores to build many different trees in a YARF model */
+	/** the number of CPU cores to use in YARF operations */
 	protected int num_cores;
 	/** the number of trees in this YARF model */
 	protected int num_trees;
@@ -302,15 +302,15 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		initTrees();
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
-		if (DEBUG){
-			System.out.println("building YARF...");
-		}
 		//System.err.println("inside 2");
 		ExecutorService tree_grow_pool = Executors.newFixedThreadPool(num_cores);
 		for (int t = 0; t < num_trees; t++){
 			final int tf = t;
 	    	tree_grow_pool.execute(new Runnable(){
 				public void run() {
+					if (DEBUG){
+						System.out.println("building tree " + tf + "/" + num_trees + " in the YARF model...");
+					}
 					yarf_trees[tf].Build();
 				}
 			});
@@ -425,7 +425,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 
 	/** Flush all unnecessary data from the Gibbs chains to conserve RAM */
 	protected void FlushData() {
-		for (int t = 0; t < num_cores; t++){
+		for (int t = 0; t < num_trees; t++){
 			yarf_trees[t].FlushData();
 		}
 	}
@@ -474,8 +474,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	}
 	
 	/**
-	 * After the classifier has been built, new records can be evaluated / predicted
-	 * (implemented by a daughter class)
+	 * After the classifier has been built, we can return the leaf nodes where records end up
 	 * 
 	 * @param records					A n* x p matrix of n* observations to be evaluated / predicted.
 	 * @param num_cores_evaluate		The number of processor cores to be used during the evaluation / prediction
@@ -515,7 +514,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		return nodes;	
 	}	
 
-	public YARFNode[] predictNode(double[] record) {
+	private YARFNode[] predictNode(double[] record) {
 		YARFNode[] nodes = new YARFNode[num_trees];
 		for (int t = 0; t < num_trees; t++){
 			nodes[t] = yarf_trees[t].predictNode(record);
@@ -634,14 +633,14 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //		System.out.println("getXJ " + j + "n" + n + "p" + p);
 		double[] x_dot_j = X_by_col.get(j);
 		if (x_dot_j == null){ //gotta build it
-			synchronized(X_by_col){ //don't wanna build it twice so sync it
+//			synchronized(X_by_col){ //don't wanna build it twice so sync it
 				x_dot_j = new double[n];
 				for (int i = 0; i < n; i++){
 //					System.out.println("getXJ " + j + " i " + i);
 					x_dot_j[i] = X.get(i)[j];
 				}
 				X_by_col.put(j, x_dot_j);
-			}	
+//			}	
 		}
 		return x_dot_j;
 	 }
@@ -663,30 +662,30 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //		return missingnessExistsInXj(j, this.indices_one_to_n._set);
 //	}
 	
-	private TIntObjectHashMap<TDoubleIntHashMap> feature_to_split_point_to_indices;
+//	private TIntObjectHashMap<TDoubleIntHashMap> feature_to_split_point_to_indices;
 
 
 	
-	protected TDoubleIntHashMap splitPointToCutoffSortedIndex(int j){
-		TDoubleIntHashMap split_point_to_cutoff_index = feature_to_split_point_to_indices.get(j);
-		if (split_point_to_cutoff_index != null){
-			return split_point_to_cutoff_index;
-		}
-		
-		//do the work and cache it
-		split_point_to_cutoff_index = new TDoubleIntHashMap(n);
-		
-		//we need to get x values we can split on
-		double[] xj = getXj(j);
-		int[] sorted_indices = getSortedIndicesForAnAttribute(j);
-		for (int i = 0; i < n; i++){
-			double val = xj[sorted_indices[i]];
-			split_point_to_cutoff_index.put(val, sorted_indices[i]);
-		}
-		
-		feature_to_split_point_to_indices.put(j, split_point_to_cutoff_index);
-		return split_point_to_cutoff_index;
-	}
+//	protected TDoubleIntHashMap splitPointToCutoffSortedIndex(int j){
+//		TDoubleIntHashMap split_point_to_cutoff_index = feature_to_split_point_to_indices.get(j);
+//		if (split_point_to_cutoff_index != null){
+//			return split_point_to_cutoff_index;
+//		}
+//		
+//		//do the work and cache it
+//		split_point_to_cutoff_index = new TDoubleIntHashMap(n);
+//		
+//		//we need to get x values we can split on
+//		double[] xj = getXj(j);
+//		int[] sorted_indices = getSortedIndicesForAnAttribute(j);
+//		for (int i = 0; i < n; i++){
+//			double val = xj[sorted_indices[i]];
+//			split_point_to_cutoff_index.put(val, sorted_indices[i]);
+//		}
+//		
+//		feature_to_split_point_to_indices.put(j, split_point_to_cutoff_index);
+//		return split_point_to_cutoff_index;
+//	}
 	
 	protected void sortedIndices(int j, TIntArrayList sub_indices, TIntArrayList ordered_nonmissing_indices_j, TIntHashSet missing_indices_j){
 		//we only do the sorting ONCE per attribute... this ensures this runs with a minimal 
@@ -741,19 +740,19 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	}
 	
 	//Java is about annoying as they come... why isn't this implemented????
-	private int[] getSortedIndicesForAnAttribute(int j) {
-		double[] xj = getXj(j);
-		ArrayList<SortPair> temp = new ArrayList<SortPair>(n);
-		for (int i = 0; i < n; i++){
-			temp.add(new SortPair(i, xj[i]));
-		}
-		Collections.sort(temp);
-		int[] indices = new int[n];
-		for (int i = 0; i < n; i++){
-			indices[i] = temp.get(i).ind;
-		}		
-		return indices;
-	}
+//	private int[] getSortedIndicesForAnAttribute(int j) {
+//		double[] xj = getXj(j);
+//		ArrayList<SortPair> temp = new ArrayList<SortPair>(n);
+//		for (int i = 0; i < n; i++){
+//			temp.add(new SortPair(i, xj[i]));
+//		}
+//		Collections.sort(temp);
+//		int[] indices = new int[n];
+//		for (int i = 0; i < n; i++){
+//			indices[i] = temp.get(i).ind;
+//		}		
+//		return indices;
+//	}
 
 	//this is the default mtry as specified by Breiman
 	public int defaultMtry(){

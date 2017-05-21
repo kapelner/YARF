@@ -38,8 +38,8 @@ summary.YARF = function(object, ...){
 				cat("OOB results on all observations")
 			}	
 			
-			if (!is.null(yarf_mod$oob_cost_calculation)){
-				cat(":\n")
+			if (!is.null(object$oob_cost_calculation)){
+				cat(" for your custom cost function:\n")
 				cat("  average cost:", round(object$y_oob_average_cost, 5), "\n")
 				cat("  median cost:", round(object$y_oob_median_cost, 5), "\n")
 				cat("  total cost:", round(object$y_oob_total_cost, 5), "\n")

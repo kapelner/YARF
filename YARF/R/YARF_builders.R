@@ -1,4 +1,4 @@
-#' Builds a YARF Model. There are many custom functions
+#' Builds a YARF Model. There are many customizations available.
 #' 
 #' @param X 								The data frame of training data
 #' @param y 								The vector of training responses
@@ -108,19 +108,6 @@
 #' 
 #' 											  \}
 #' 
-#' @param aggregation_script				A custom javascript function which aggregates the predictions in the trees for one observations 
-#' 											into one scalar prediction (see below). The default is \code{NULL} corresponding to the sample average for
-#' 											regression and the modal category for classification.
-#' 
-#' 											  function aggregateYhatsIntoOneYhat(y_hats, yarf)\{ //y_hats is an array of doubles 
-#' 												//and yarf provides access to the entire random forest object (of type YARF.YARF)
-#' 
-#' 											    ...
-#' 
-#' 											    return double //this is the final predicted value aggregated from all tree predictions
-#' 
-#' 											  \}
-#' 
 #' @param shared_scripts					Custom Javascript code that are always in scope when running all your custom methods. 
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
@@ -164,7 +151,6 @@ YARF = function(
 		cost_single_node_calc_script = NULL,
 		node_assign_script = NULL,
 		after_node_birth_function_script = NULL,
-		aggregation_script = NULL,
 		shared_scripts = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = TRUE,
@@ -213,12 +199,6 @@ YARF = function(
 	if (!is.null(after_node_birth_function_script)){
 		if (class(after_node_birth_function_script) != "character"){
 			stop("'after_node_birth_function_script' must be a character string of Javascript code")
-		}
-	}
-	
-	if (!is.null(aggregation_script)){
-		if (class(aggregation_script) != "character"){
-			stop("'aggregation_script' must be a character string of Javascript code")
 		}
 	}
 	
@@ -402,12 +382,8 @@ YARF = function(
 		cat("warning: printing out the log file will slow down the runtime significantly.\n")
 		.jcall(java_YARF, "V", "writeStdOutToLogFile")
 	}
-
-	#if the user hasn't set a number of cores, set it here
-	if (!exists("YARF_NUM_CORES", envir = YARF_globals)){
-		assign("YARF_NUM_CORES", YARF_NUM_CORES_DEFAULT, YARF_globals)
-	}
-	#load the number of cores the user set
+	
+	#load the number of cores the user set (default is declared in zzz.R)
 	num_cores = get("YARF_NUM_CORES", YARF_globals)
 	
 	#build YARF to spec with what the user wants
@@ -442,10 +418,6 @@ YARF = function(
 	
 	if (!is.null(node_assign_script)){
 		.jcall(java_YARF, "V", "setNode_assignment_function_str", node_assign_script)
-	}
-	
-	if (!is.null(aggregation_script)){
-		.jcall(java_YARF, "V", "setAggregation_function_str", aggregation_script)
 	}
 	
 	if (!is.null(after_node_birth_function_script)){
@@ -524,7 +496,6 @@ YARF = function(
 		cost_single_node_calc_script = cost_single_node_calc_script,
 		node_assign_script = node_assign_script,
 		after_node_birth_function_script = after_node_birth_function_script,
-		aggregation_script = aggregation_script,
 		shared_scripts = shared_scripts, 
 		use_missing_data = use_missing_data,
 		use_missing_data_dummies_as_vars = use_missing_data_dummies_as_vars,
@@ -570,7 +541,12 @@ set_YARF_num_cores = function(num_cores){
 		stop("\"num_cores\" must be a natural number.")
 	}
 	assign("YARF_NUM_CORES", num_cores, YARF_globals)
-	cat("YARF now using", num_cores, "cores.\n")
+	if (num_cores == 1){
+		cat("YARF is now making use of one core. Are you sure?\n")
+	} else {
+		cat("YARF now can make use of", num_cores, "cores.\n")
+	}
+	
 }
 
 #' Serializes the model so the user can use \code{save} and \code{save.image}
@@ -584,6 +560,47 @@ YARF_serialize = function(yarf_mod){
 	cat("serializing so that the YARF model could potentially be saved and transported to future R sessions...")
 	.jcache(yarf_mod$java_YARF)
 	cat("done\n")	
+}
+
+
+
+#' Sets the Tree Aggregation Method
+#' 
+#' This function sets custom code to be run when the Forest is making a decision from its many trees. This function should be run
+#' before you run \code{predict} or \code{YARF_update_with_oob_results} so that your custom aggregation can be employed. This function 
+#' is optional as the default aggregation method corresponds to (a) the sample average for regression and (b) the modal category 
+#' for classification. One further note of warning: once this script has been set, it will be retained in the YARF model until 
+#' this function is run again for this YARF model object with a new aggregation script. Set \code{aggregation_script = NULL} if you
+#' wish to reset. 
+#' 
+#' @param yarf_mod 					The yarf model object
+#' @param aggregation_script		A custom javascript function which aggregates the predictions in the trees for one observations 
+#' 									into one scalar prediction (see below). 
+#' 
+#' 									function aggregateYhatsIntoOneYhat(y_hats, yarf)\{ //y_hats is an array of doubles of size num_trees
+#' 										//and yarf provides access to the entire random forest object if needed (of type YARF.YARF)
+#' 
+#' 										...
+#' 
+#' 										return double //this is the final predicted value aggregated from all tree predictions
+#' 
+#' 									\}
+#' @return 							The yarf model object (invisibly)
+#' 
+#' @author Adam Kapelner
+#' @export
+YARF_set_aggregation_method = function(yarf_mod, aggregation_script){
+	if (is.null(aggregation_script)){
+		.jcall(yarf_mod$java_YARF, "V", "setAggregation_function_str", .jnull("java/lang/String"))
+	} else {
+		if (class(aggregation_script) != "character"){
+			stop("'aggregation_script' must be a character string of Javascript code if non-null")
+		}
+		.jcall(yarf_mod$java_YARF, "V", "setAggregation_function_str", aggregation_script)
+	}
+	
+	yarf_mod$aggregation_script = aggregation_script
+	invisible(yarf_mod)
 }
 
 
