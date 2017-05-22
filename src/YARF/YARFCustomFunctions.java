@@ -432,7 +432,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setSplit_values_function_str(String split_values_function_str) {
 		this.split_values_function_str = split_values_function_str;
-		mtry_fun = null; //reset
+		split_vals_fun = null; //reset
 	}	
 
 	public String getCost_single_node_calc_function_str() {
@@ -442,7 +442,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public void setCost_single_node_calc_function_str(
 			String cost_single_node_calc_function_str) {
 		this.cost_single_node_calc_function_str = cost_single_node_calc_function_str;
-		mtry_fun = null; //reset
+		cost_single_node_calc_fun = null; //reset
 	}
 
 	public String getCost_both_children_calc_function_str() {
@@ -451,7 +451,7 @@ public abstract class YARFCustomFunctions extends Classifier {
 
 	public void setCost_both_children_calc_function_str(String cost_both_children_calc_function_str) {
 		this.cost_both_children_calc_function_str = cost_both_children_calc_function_str;
-		mtry_fun = null; //reset
+		cost_both_children_calc_fun = null; //reset
 	}
 
 	public String getAggregation_function_str() {
