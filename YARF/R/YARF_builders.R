@@ -21,7 +21,8 @@
 #' 											the out-of-box RF default which is floor(p / 3) for regression and floor(sqrt(p)) for
 #' 											classification. If you want a custom function, leave this NULL and see next parameter. 
 #' @param mtry_script						A custom javascript function which selects the variables to be greedily searched (see below)
-#' 											The default is \code{NULL} which employs the \code{mtry} argument.
+#' 											The default is \code{NULL} which employs the \code{mtry} argument. If you specify your function
+#' 											please randomize the order of the returned attributes to arbitrate ties.
 #' 
 #' 											  function tryVars(node)\{ //node is of type YARF.YARFNode
 #' 
@@ -164,6 +165,11 @@ YARF = function(
 		debug_log = FALSE
 	){
 	
+	if (!is.null(seed)){
+		#set the seed in R
+		set.seed(seed)
+	}
+	
 	if (serialize && !wait){
 		stop("'serialize' can only by TRUE if 'wait' is TRUE (you cannot save a model that is not yet fully constructed).")
 	}
@@ -272,7 +278,8 @@ YARF = function(
 		bootstrap_indices = list()
 		one_to_n = seq(1, n)
 		for (t in 1 : num_trees){
-			bootstrap_indices[[t]] = sample(one_to_n, replace = TRUE)
+			bootstrap_indices[[t]] = sort(sample(one_to_n, replace = TRUE)) #easier to debug
+#			bootstrap_indices[[t]] = sample(one_to_n, replace = TRUE)
 		}
 	} else {
 		#ensure the indicies is the correct format
@@ -313,6 +320,11 @@ YARF = function(
 	
 	#init the java object
 	java_YARF = .jnew("YARF.YARF")
+	
+	if (!is.null(seed)){
+		#set the seed in Java
+		.jcall(java_YARF, "V", "setSeed", as.integer(seed))
+	}
 
 	#now take care of classification or regression
 	y_levels = levels(y)
@@ -428,13 +440,6 @@ YARF = function(
 		.jcall(java_YARF, "V", "setShared_scripts_str", shared_scripts)
 	}
 	
-	if (!is.null(seed)){
-		#set the seed in R
-		set.seed(seed)
-		#set the seed in Java
-		.jcall(java_YARF, "V", "setSeed", as.integer(seed))
-	}
-	
 	#now load the training data into YARF
 	for (i in 1 : n){
 		row_as_char = as.character(model_matrix_training_data[i, ]) ######FIX THIS
@@ -544,7 +549,7 @@ set_YARF_num_cores = function(num_cores){
 	if (num_cores == 1){
 		cat("YARF is now making use of one core. Are you sure?\n")
 	} else {
-		cat("YARF now can make use of", num_cores, "cores.\n")
+		cat("YARF can now make use of", num_cores, "cores.\n")
 	}
 	
 }

@@ -1,15 +1,9 @@
 package YARF;
 
 import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
-
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Random;
 
-import org.apache.commons.math3.stat.StatUtils;
 
 /**
  * This is a class where we're going to put all sorts of useful functions
@@ -18,9 +12,7 @@ import org.apache.commons.math3.stat.StatUtils;
  * @author Adam Kapelner
  */
 public class StatToolbox {
-	
-	/** A convenience for a Random object */
-	private static final Random R = new Random();
+
 	/** A flag that indicates an illegal value or failed operation */
 	public static final double ILLEGAL_FLAG = -999999999;	
 
@@ -233,66 +225,9 @@ public class StatToolbox {
 		return index;
 	}
 
-	/**
-	 * Sample from a multinomial distribution
-	 * 
-	 * @param vals		The integer values of the labels in this multinomial distribution
-	 * @param probs		The probabilities with which to sample the labels (must be the same length of the vals)
-	 * @return			The integer label of the value that was drawn from this multinomial distribution
-	 */
-	public static int multinomial_sample(TIntArrayList vals, double[] probs) {
-		double r = StatToolbox.rand();
-		double cum_prob = 0;
-		int index = 0;
-		if (r < probs[0]){
-			return vals.get(0);
-		}
-		while (true){			
-			cum_prob += probs[index];
-			if (r > cum_prob && r < cum_prob + probs[index + 1]){
-				return vals.get(index + 1);
-			}
-			index++;
-		}
-	}
 
-	/**
-	 * Set the seed of the random number generator
-	 * 
-	 * @param seed	The seed
-	 */
-	public static void setSeed(long seed) {
-		R.setSeed(seed);
-	}
 	
-	/** 
-	 * A convenience method for a random object
-	 * 
-	 * @return	A random number drawn from a uniform distribution bounded between 0 and 1.
-	 */
-	public static double rand(){
-		return R.nextDouble();
-	}	
-	
-	public static int randInt(int i){
-		return R.nextInt(i);
-	}
-	
-	//http://lemire.me/blog/2013/08/16/picking-n-distinct-numbers-at-random-how-to-do-it-fast/
-	public static int[] pickNRandomElements(int[] arr, int subset_size) {
-		Tools.shuffleArray(arr);
-		int[] random_subset = new int[subset_size];
-		for (int i = 0; i < subset_size; i++){
-			random_subset[i] = arr[i];
-		}
-        return random_subset;
 
-	}
-	
-	public static double random_sample_mode(double[] arr){
-		double[] modes = StatUtils.mode(arr); //there could be multiple modes
-		return modes[StatToolbox.randInt(modes.length)]; //return one at random in the spirit of "random forests"
-	}
 
 	public static double natural_negative_entropy(double[] data) {
 		double n = (double)data.length;

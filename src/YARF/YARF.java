@@ -1,7 +1,6 @@
 package YARF;
 
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TDoubleIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -64,7 +63,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	//convenient pre-computed data to have around
 //	protected transient TIntObjectHashMap<int[]> all_attribute_sorts;
 	private transient TIntHashSet indices_one_to_n;
-	protected transient int[] indices_zero_to_p_minus_1;
+//	protected transient int[] indices_zero_to_p_minus_1;
 	
 	
 	
@@ -74,6 +73,10 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 
 	/** should we hang the system until the model is fully constructed? */
 	private boolean wait;
+	/** an object that isolates randomness in the algorithm for debugging purposes */
+	private YARFRandomness r;
+	/** the random seed */
+	private Integer seed;
 
 
 
@@ -157,7 +160,9 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		
 	}
 	
-	public YARF(){}
+	public YARF(){
+		r = new YARFRandomness();
+	}
 	
 	/**
 	 * Adds an observation / record to the "other" data array. The
@@ -212,16 +217,6 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		this.nodesize = nodesize;
 	}
 	
-
-	
-	public void initTrees(){
-		//System.out.println("initTrees num_trees = " + num_trees);
-		yarf_trees = new YARFTree[num_trees];
-		for (int t = 0; t < num_trees; t++){
-			yarf_trees[t] = new YARFTree(this);
-			setBootstrapAndOutOfBagIndices(t);
-		}
-	}
 	
 	public int progress(){
 		int progress = 0;
@@ -299,7 +294,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 
 		//System.err.println("inside YARF");
 //		all_attribute_sorts = new TIntObjectHashMap<int[]>(p);
-		initTrees();
+		
+		yarf_trees = new YARFTree[num_trees];
+		final YARF yarf = this;
+		for (int t = 0; t < num_trees; t++){
+			
+
+		}
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
 		//System.err.println("inside 2");
@@ -308,8 +309,14 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			final int tf = t;
 	    	tree_grow_pool.execute(new Runnable(){
 				public void run() {
+					yarf_trees[tf] = new YARFTree(yarf, tf);
+					setBootstrapAndOutOfBagIndices(tf);
+					if (seed != null){ //i.e. someone set the seed
+						yarf_trees[tf].setSeed(seed);
+					}
 					if (DEBUG){
-						System.out.println("building tree " + tf + "/" + num_trees + " in the YARF model...");
+						System.out.println("now building tree " + (tf + 1) + "/" + num_trees + " in the YARF model... bootstrap indicies: " + 
+							Tools.StringJoin(yarf_trees[tf].bootstrap_indices));
 					}
 					yarf_trees[tf].Build();
 				}
@@ -540,7 +547,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		if (is_a_regression){
 			return StatUtils.mean(y_preds); //the sample average
 		}
-		return StatToolbox.random_sample_mode(y_preds); //most likely class
+		return r.random_sample_mode(y_preds); //most likely class
 	}
 	
 	public double[] allNodeAssignments(double[] record){
@@ -609,10 +616,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			indices_one_to_n.add(i);
 		}
 		//System.out.println("indices_one_to_n" + indices_one_to_n);
-		indices_zero_to_p_minus_1 = new int[p];
-		for (int j = 0; j < p; j++){
-			indices_zero_to_p_minus_1[j] = j;
-		}
+
 
 		sorter_locks = new Object[p];
 		for (int j = 0; j < p; j++){
@@ -834,5 +838,11 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			}
 		}
 		return null_model_cost;
+	}
+	
+
+	public void setSeed(int seed){
+		this.seed = seed;
+		r.setSeed(seed);
 	}
 }

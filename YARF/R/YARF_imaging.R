@@ -105,7 +105,7 @@ illustrate_trees = function(yarf_mod,
 			as.integer(depth_in_px_per_split),
 			filename
 		)
-		if (open_file & t == trees[t]){
+		if (open_file & t == trees[1]){
 			openFileInOS(paste(filename, ".png", sep = ""))
 		}
 	}

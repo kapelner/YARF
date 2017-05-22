@@ -7,7 +7,6 @@ import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 /**
  * A class that contains many generally useful convenience methods.
@@ -403,28 +402,5 @@ public class Tools {
 		return sorted_and_midpointed;
 	}
 	
-	public static void shuffleArray(int[] array)
-	{
-	    int index, temp;
-	    for (int i = array.length - 1; i > 0; i--)
-	    {
-	        index = StatToolbox.randInt(i + 1);
-	        temp = array[index];
-	        array[index] = array[i];
-	        array[i] = temp;
-	    }
-	}
-	
-	public static void shuffleArray(double[] array)
-	{
-	    int index;
-	    double temp;
-	    for (int i = array.length - 1; i > 0; i--)
-	    {
-	        index = StatToolbox.randInt(i + 1);
-	        temp = array[index];
-	        array[index] = array[i];
-	        array[i] = temp;
-	    }
-	}
+
 }

@@ -52,18 +52,6 @@ public class YARFNode implements Cloneable {
 	private double[] node_ys;
 	private ArrayList<double[]> node_Xs_by_obs;
 	private ArrayList<double[]> node_X_others;
-
-	
-	
-	/**
-	 * Picks a random direction for missing data to flow down the tree from this node. As of
-	 * now, this is a 50-50 coin flip left:right.
-	 * 
-	 * @return	True / false is returned
-	 */
-	public static boolean pickRandomDirectionForMissingData() {
-		return StatToolbox.rand() < 0.5 ? false : true;
-	}
 	
 	public YARFNode(YARFTree tree){
 		this.tree = tree;
@@ -357,7 +345,7 @@ public class YARFNode implements Cloneable {
 				y_pred = StatToolbox.sample_average(node_ys());
 			}
 			else { //and for a classification, it's just the modal value among the y's
-				y_pred = StatToolbox.random_sample_mode(node_ys());
+				y_pred = tree.r.random_sample_mode(node_ys());
 			}
 		}
 	}

@@ -49,13 +49,10 @@ public abstract class Classifier implements Serializable{
 	/** the number of features / predictors in the training set */
 	public int p;
 	/** in sample evaluation */
-	protected double[] residuals;
-
+//	protected double[] residuals;
 	protected String[] feature_names;
-
 	protected int[] missingnessAmongFeatures;
-
-	protected PrintStream printStreamToFile;	
+	protected PrintStream printStreamToFile;
 
 	
 	/** A dummy constructor which keeps <code>Serializable</code> happy */
@@ -215,9 +212,6 @@ public abstract class Classifier implements Serializable{
 		this.verbose = verbose;
 	}
 
-	public void setSeed(int seed){
-		StatToolbox.setSeed(seed);
-	}
 	
 	public void writeStdOutToLogFile(){
 		try {

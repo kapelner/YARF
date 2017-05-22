@@ -2,10 +2,7 @@ package YARF;
 
 import java.util.Arrays;
 
-import com.sun.java.swing.plaf.windows.WindowsBorders.ToolBarBorder;
-
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 public class YARFTreeBuilder {
@@ -61,15 +58,20 @@ public class YARFTreeBuilder {
 		
 		//which features can we split on in this node?
 		int[] features_to_split_on = selectAttributesToTry(node);
+//		if (tree.tree_num == 0){
+//			System.out.println(" features_to_split_on: " + Tools.StringJoin(features_to_split_on));
+//		}
 		
 		//randomize the order of the features to randomly select ties
-		Tools.shuffleArray(features_to_split_on);
-		
+		tree.r.shuffleArray(features_to_split_on);
+//		if (tree.tree_num == 0){
+//			System.out.println("features_to_split_on after shuffle: " + Tools.StringJoin(features_to_split_on));
+//		}		
 
 		if (YARF.DEBUG){System.out.println("features_to_split_on: " + Tools.StringJoin(features_to_split_on));}
 		
 		//there are two missingness options - check them in random order
-		double r = StatToolbox.rand();
+		double r = tree.r.rand();
 		boolean[] trueFalseRandomOrder = {r > 0.5, r <= 0.5};
 		
 		//set up the data
@@ -271,8 +273,12 @@ public class YARFTreeBuilder {
 		if (yarf.customFunctionMtry()){
 			return yarf.runMtry(node);
 		}
-//		return yarf.indices_zero_to_p_minus_1;
-		return StatToolbox.pickNRandomElements(yarf.indices_zero_to_p_minus_1, (yarf.mtry == 0 ? yarf.defaultMtry() : yarf.mtry));
+		
+		int[] indices_zero_to_p_minus_1 = new int[yarf.p];
+		for (int j = 0; j < yarf.p; j++){
+			indices_zero_to_p_minus_1[j] = j;
+		}		
+		return tree.r.pickNRandomElements(indices_zero_to_p_minus_1, (yarf.mtry == 0 ? yarf.defaultMtry() : yarf.mtry));
 	}
 
 }

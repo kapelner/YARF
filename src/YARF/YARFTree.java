@@ -16,9 +16,13 @@ public class YARFTree extends Classifier {
 	protected TIntHashSet oob_indices;
 	protected boolean stop;
 	protected boolean completed;
+	protected int tree_num;
+	protected YARFRandomness r;
 
-	public YARFTree(YARF yarf) {
+	public YARFTree(YARF yarf, int tree_num) {
 		this.yarf = yarf;
+		this.tree_num = tree_num;
+		r = new YARFRandomness();
 	}
 
 	public void Build() {
@@ -97,6 +101,10 @@ public class YARFTree extends Classifier {
 
 	public int numNodes() {
 		return root.numNodes();
+	}
+
+	public void setSeed(int seed) {
+		r.setSeed(seed);
 	}
 
 }
