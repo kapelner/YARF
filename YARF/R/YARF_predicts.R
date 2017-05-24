@@ -16,7 +16,8 @@ predict.YARF = function(object, new_data, ...){
 	check_serialization(object) #ensure the Java object exists and fire an error if not
 	
 	if (class(new_data) != "data.frame"){		
-		stop("\"new_data\" needs to be a data frame with the same column names as the training data.")
+		new_data = data.frame(new_data)
+		setNames(new_data, names(objet$X))
 	}
 	if (!object$use_missing_data){
 		nrow_before = nrow(new_data)
@@ -49,8 +50,10 @@ predict.YARF = function(object, new_data, ...){
 #' Computes a response prediction for new data observation(s) for all trees (unaggregated). 
 #' 
 #' @param yarf_mod 					A YARF model object.
-#' @param new_data 					A n* x p matrix where each row is an observation you wish to predict for. Here,
-#' 									p is the same length as the original training data.
+#' @param new_data 					A n* x p data frame where each row is an observation you wish to predict for. Here,
+#' 									p is the same length as the original training data and \code{new_data} has the same
+#' 									column names. If a matrix object is passed in, it is automatically cast to a data frame. 
+#' 									This may not always give you what you want. 
 #' @return 							A matrix of yhat predictions for the \code{new_data} record(s) for all trees 
 #' 									(size n* x num_trees).
 #' 
@@ -59,8 +62,9 @@ predict.YARF = function(object, new_data, ...){
 YARF_predict_all_trees = function(yarf_mod, new_data){
 	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
 	
-	if (class(new_data) != "data.frame"){		
-		stop("\"new_data\" needs to be a data frame with the same column names as the training data.")
+	if (class(new_data) != "data.frame"){
+		new_data = data.frame(new_data)
+		setNames(new_data, names(yarf_mod$X))
 	}
 	if (!yarf_mod$use_missing_data){
 		nrow_before = nrow(new_data)

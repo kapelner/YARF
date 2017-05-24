@@ -1,8 +1,10 @@
 #' Returns the leaf nodes that are responsible for predictions for a given dataset. 
 #' 
 #' @param yarf_mod 					A YARF model object.
-#' @param X 				        A n* x p matrix where each row is an observation you wish to obtain prediction information. Here,
-#' 									p is the same length as the original training data. If \code{NULL} (the default), 
+#' @param X 				        A n* x p data frame where each row is an observation you wish to obtain prediction information. Here,
+#' 									p is the same length as the original training data and the column names match the original training data. 
+#' 									If a matrix object is passed in, it is automatically cast to a data frame. This may not always give you what
+#' 									you want. If \code{NULL} (the default), 
 #' 									then this parameter is set to the model's training data.
 #' @param oob_only          		If \code{X} is \code{NULL}, setting this to \code{TRUE} (the default) will only return node information
 #' 									for trees where each observation is out-of-bag. If \code{X} is not \code{NULL}, this
@@ -33,7 +35,8 @@ prediction_nodes = function(yarf_mod, X = NULL, oob_only = TRUE){
 	} else { #otherwise give them all nodes for all trees
 		
 		if (class(X) != "data.frame"){		
-			stop("\"X\" needs to be a data frame with the same column names as the training data.")
+			X = data.frame(X)
+			setNames(X, names(yarf_mod$X))
 		}
 		if (!yarf_mod$use_missing_data){
 			nrow_before = nrow(X)
@@ -109,9 +112,6 @@ compute_raw_proximity_info = function(yarf_mod, X1 = NULL, X2 = NULL, oob_only_1
 		nodes1 = prediction_nodes(yarf_mod, NULL, oob_only_1)
 		X1 = yarf_mod$X
 	} else { #error checking
-		if (class(X1) != "data.frame"){		
-			stop("\"X1\" needs to be a data frame with the same column names as the training data.")
-		}
 		if (!yarf_mod$use_missing_data){
 			nrow_before = nrow(X1)
 			X1 = na.omit(X1)
@@ -133,9 +133,6 @@ compute_raw_proximity_info = function(yarf_mod, X1 = NULL, X2 = NULL, oob_only_1
 		}
 		X2 = yarf_mod$X
 	} else { #error checking
-		if (class(X2) != "data.frame"){		
-			stop("\"X2\" needs to be a data frame with the same column names as the training data.")
-		}
 		if (!yarf_mod$use_missing_data){
 			nrow_before = nrow(X2)
 			X2 = na.omit(X2)
