@@ -2,7 +2,7 @@ function nodeCost(node){
 	var q = quantile_from_R;
 	var q_C_neg = q - 1;
 	//assign the value now and not have to run the same operation twice
-	node.y_pred = node.y_quantile(q * 100);
+	node.y_pred = node.y_quantile(q * 100); //run the advanced williams et al 1985 estimate
 	var cost = 0;
 	for each (y_i in node.node_ys()){
 		var diff = y_i - node.y_pred;

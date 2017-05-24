@@ -274,8 +274,8 @@ public class YARFNode implements Cloneable {
 		return node_ys;
 	}
 	
-	public double y_quantile(double q){
-		return new Percentile().evaluate(node_ys(), q);
+	public double y_quantile(double p){
+		return new Percentile().evaluate(node_ys(), p);
 	}	
 	
 	public ArrayList<double[]> node_Xs_by_obs(){

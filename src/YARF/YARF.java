@@ -298,8 +298,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		yarf_trees = new YARFTree[num_trees];
 		final YARF yarf = this;
 		for (int t = 0; t < num_trees; t++){
-			
-
+			yarf_trees[t] = new YARFTree(yarf, t);
+			setBootstrapAndOutOfBagIndices(t);
 		}
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
@@ -309,8 +309,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			final int tf = t;
 	    	tree_grow_pool.execute(new Runnable(){
 				public void run() {
-					yarf_trees[tf] = new YARFTree(yarf, tf);
-					setBootstrapAndOutOfBagIndices(tf);
+					
+					
 					if (seed != null){ //i.e. someone set the seed
 						yarf_trees[tf].setSeed(seed);
 					}

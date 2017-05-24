@@ -1,4 +1,6 @@
-#' Computes a response prediction for new data observation(s). Predictions are an aggregation from each of the 
+#' Computes a response prediction for new data observation(s). 
+#' 
+#' Predictions are an aggregation from each of the 
 #' individual trees' predictions based on the function passed into the model creation step. The default 
 #' aggregation is the sample average for regression and the modal class for classification. You can set
 #' a custom aggregation method via the \code{YARF_set_aggregation_method} function.

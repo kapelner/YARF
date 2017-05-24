@@ -1,6 +1,6 @@
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
-
+set_YARF_num_cores(3)
 
 ##### the case of the exponential errors
 #### true mean is x + 1/gamma
@@ -11,7 +11,7 @@ quantile = "0.9"
 X = data.frame(x1 = (sort(runif(n, 0, 1))))
 y = 0 + 1*X[,1] + rexp(n, gamma)
 plot(X$x1, y)
-abline(a = 0, b = 1 + 1 / gamma, col = "gray", lwd = 3)
+# abline(a = 0, b = 1 + 1 / gamma, col = "gray", lwd = 3)
 
 yarf_mod_vanilla = YARF(X, y, num_trees = 500)
 YARF_update_with_oob_results(yarf_mod_vanilla)
@@ -73,6 +73,9 @@ YARF_update_with_oob_results(yarf_mod, oob_cost_calculation_script =
                                gsub("quantile_from_R", quantile,
                                     read_file("quantile_cost_oob.js")))
 yarf_mod_vanilla = YARF(X, y, num_trees = 1250, nodesize = 100)
+YARF_update_with_oob_results(yarf_mod_vanilla, oob_cost_calculation_script = 
+                               gsub("quantile_from_R", quantile,
+                                    read_file("quantile_cost_oob.js")))
 
 y_true = 0 + 1*X[,1] + qexp(as.numeric(quantile), gamma)
 plot(X$x1, y, col = "gray")
