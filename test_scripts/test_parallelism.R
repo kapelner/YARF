@@ -6,8 +6,8 @@ p = 30
 sigma = 0.5
 beta_0 = 3
 beta_1 = 4
-p = ncol(X)
 X = data.frame(matrix(runif(n * p), nrow = n))
+p = ncol(X)
 y = beta_0 + beta_1*X[,1] + rnorm(n, 0, sigma)
 plot(X[,1], y)
 abline(a = beta_0, b = beta_1, col = "gray", lwd = 3)
@@ -36,6 +36,7 @@ YARF_update_with_oob_results(yarf_mod_cores_all)
 
 
 illustrate_trees(yarf_mod_cores_1, open_file = TRUE, trees = 1, max_depth = 4)
-illustrate_trees(yarf_mod_cores_all, open_file = TRUE, trees = 1, max_depth = 4)
+illustrate_trees(yarf_mod_cores_all, open_file = TRUE, 
+                 file_format = "png", trees = 1, max_depth = 4)
 
 

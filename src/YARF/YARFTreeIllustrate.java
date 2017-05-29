@@ -45,6 +45,8 @@ public class YARFTreeIllustrate {
 	private int depth_in_num_splits;
 	private int image_type;
 
+	private boolean use_real_names;
+
 	public YARFTreeIllustrate(YARF yarf,
 			YARFNode root, 
 			Integer max_depth,
@@ -57,6 +59,8 @@ public class YARFTreeIllustrate {
 			double character_width_in_px,
 			int length_in_px_per_half_split,
 			int depth_in_px_per_split,
+			String file_format,
+			boolean use_real_names,
 			String title) {
 		
 		this.yarf = yarf;
@@ -69,6 +73,7 @@ public class YARFTreeIllustrate {
 		this.character_width_in_px = character_width_in_px;
 		this.length_in_px_per_half_split = length_in_px_per_half_split;
 		this.depth_in_px_per_split = depth_in_px_per_split;
+		this.use_real_names = use_real_names;
 		
 		depth_in_num_splits = max_depth <= 0 ? root.maxDepth() : Math.min(max_depth, root.maxDepth());
 //		System.out.println("YARFTreeIllustrate with depth: " + depth_in_num_splits);
@@ -77,13 +82,13 @@ public class YARFTreeIllustrate {
 		//recursively draw all splits, start drawing on top and horizontally in the middle
 		drawSplit(root, canvas.getWidth() / 2, margin_in_px);
 		//write to file
-		saveImageFile(canvas, title);
+		saveImageFile(title, file_format);
 	}
 
-	private void saveImageFile(BufferedImage image, String title) {
+	private void saveImageFile(String title, String file_format) {
 		try {
-			File f = new File(title + ".png");
-			ImageIO.write(image, "PNG", f);
+			File f = new File(title + "." + file_format);
+			ImageIO.write(canvas, file_format, f);
 //			System.out.println("after write: " + f.getAbsolutePath());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -138,7 +143,10 @@ public class YARFTreeIllustrate {
 		if (node.split_attribute != YARFNode.BAD_FLAG_int && node.split_value != YARFNode.BAD_FLAG_double) {
 			int attr = node.split_attribute;
 			double val = node.split_value;
-			String rule_and_n = "X_" + (attr + 1) + " <= " + two_digit_format.format(val) + 
+			String rule_and_n = 
+					(use_real_names ? yarf.feature_names[attr] : ("X_" + (attr + 1))) +
+					" <= " + 
+					two_digit_format.format(val) + 
 					(node.send_missing_data_right ? " M->" : " <-M") +
 					" (" + node.nodeSize() + ") " + 
 					(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");

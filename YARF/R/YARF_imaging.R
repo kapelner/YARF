@@ -41,6 +41,9 @@
 #' 
 #' 										\}
 #' 
+#' @param file_format					The image format of the resulting illustration. Legal values are "jpg", "gif", "png". Default is "png". 
+#' @param use_real_names				In the illustrations of split rules, set this to \code{TRUE} to use the names in the data frame.
+#' 										and \code{FALSE} to use "X_1", "X_2", etc. Default is \code{TRUE}.
 #' @param title 						The name of the file. Note that "_00t.png" will be added where "t"
 #' 										is the tree index and "00" is an appropriate number of leading zeroes.
 #' 										Default is "yarf_mod_tree".
@@ -62,6 +65,8 @@ illustrate_trees = function(yarf_mod,
 		depth_in_px_per_split = 100,
 		print_at_split_node_script = NULL,
 		print_at_leaf_script = NULL,
+		file_format = "png",
+		use_real_names = TRUE,
 		title = "yarf_mod_tree",
 		open_file = FALSE
 	){
@@ -103,10 +108,12 @@ illustrate_trees = function(yarf_mod,
 			character_width_in_px,
 			as.integer(length_in_px_per_half_split),
 			as.integer(depth_in_px_per_split),
+			file_format,
+			use_real_names,
 			filename
 		)
 		if (open_file & t == trees[1]){
-			openFileInOS(paste(filename, ".png", sep = ""))
+			openFileInOS(paste(filename, ".", file_format, sep = ""))
 		}
 	}
 }

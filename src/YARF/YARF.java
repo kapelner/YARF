@@ -406,6 +406,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			double character_width_in_px,
 			int length_in_px_per_half_split,
 			int depth_in_px_per_split,
+			String file_format,
+			boolean use_real_names,
 			String title){
 		
 		YARFTree tree = yarf_trees[t];
@@ -423,6 +425,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 					character_width_in_px, 
 					length_in_px_per_half_split, 
 					depth_in_px_per_split,
+					file_format,
+					use_real_names,
 					title);
 		}
 		else {
