@@ -105,3 +105,46 @@ sample_mode = function(arr) {
 	ux = unique(arr)
 	ux[which.max(tabulate(match(arr, ux)))]
 }
+
+
+
+#' Sets the Tree Aggregation Method
+#' 
+#' This function sets custom code to be run when the Forest is making a decision from its many trees. This function should be run
+#' before you run \code{predict} or \code{YARF_update_with_oob_results} so that your custom aggregation can be employed. This function 
+#' is optional as the default aggregation method corresponds to (a) the sample average for regression and (b) the modal category 
+#' for classification. One further note of warning: once this script has been set, it will be retained in the YARF model until 
+#' this function is run again for this YARF model object with a new aggregation script. Set \code{aggregation_script = NULL} if you
+#' wish to reset. 
+#' 
+#' @param yarf_mod 					The yarf model object
+#' @param aggregation_script		A custom javascript function which aggregates the predictions in the trees for one observations 
+#' 									into one scalar prediction (see below). 
+#' 
+#' 									function aggregateYhatsIntoOneYhat(y_hats, yarf)\{ //y_hats is an array of doubles of size num_trees
+#' 										//and yarf provides access to the entire random forest object if needed (of type YARF.YARF)
+#' 
+#' 										...
+#' 
+#' 										return double //this is the final predicted value aggregated from all tree predictions
+#' 
+#' 									\}
+#' @return 							The yarf model object (invisibly)
+#' 
+#' @author Adam Kapelner
+#' @export
+YARF_set_aggregation_method = function(yarf_mod, aggregation_script){
+	if (is.null(aggregation_script)){
+		.jcall(yarf_mod$java_YARF, "V", "setAggregation_function_str", .jnull("java/lang/String"))
+	} else {
+		if (class(aggregation_script) != "character"){
+			stop("'aggregation_script' must be a character string of Javascript code if non-null")
+		}
+		.jcall(yarf_mod$java_YARF, "V", "setAggregation_function_str", aggregation_script)
+	}
+	
+	yarf_mod$aggregation_script = aggregation_script
+	invisible(yarf_mod)
+}
+
+

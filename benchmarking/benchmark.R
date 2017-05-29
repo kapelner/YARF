@@ -201,7 +201,7 @@ save(rmse, results, file='bench_regression.RData')
 #                                   Bakeoff (Classification)
 # ------------------------------------------------------------------------------
 
-dsets = list.files(path='../Data/', pattern='*.RData', full.names=TRUE)
+dsets = list.files(path = 'Data/', pattern = '*.RData', full.names = TRUE)
 dsets = dsets[c(-3, -7)]
 misclass = list()
 t1 = Sys.time()

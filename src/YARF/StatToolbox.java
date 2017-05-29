@@ -12,17 +12,14 @@ import java.util.Arrays;
  * @author Adam Kapelner
  */
 public class StatToolbox {
-
-	/** A flag that indicates an illegal value or failed operation */
-	public static final double ILLEGAL_FLAG = -999999999;	
-
+	
 	/**
 	 * Compute the sample average of a vector of data
 	 * 
 	 * @param y	The vector of data values
 	 * @return	The sample average
 	 */
-	public static final double sample_average(double[] y){
+	public static double sample_average(double[] y){
 		double y_bar = 0;
 		for (int i = 0; i < y.length; i++){
 			y_bar += y[i];
@@ -36,7 +33,7 @@ public class StatToolbox {
 	 * @param y	The vector of data values
 	 * @return	The sample average
 	 */
-	public static final double sample_average(TDoubleArrayList y){
+	public static double sample_average(TDoubleArrayList y){
 		double y_bar = 0;
 		for (int i = 0; i < y.size(); i++){
 			y_bar += y.get(i);
@@ -50,7 +47,7 @@ public class StatToolbox {
 	 * @param y	The vector of data values
 	 * @return	The sample average
 	 */
-	public static final double sample_average(int[] y){
+	public static double sample_average(int[] y){
 		double y_bar = 0;
 		for (int i = 0; i < y.length; i++){
 			y_bar += y[i];
@@ -77,55 +74,28 @@ public class StatToolbox {
 		}
 		
 	}
-	
-	/**
-	 * Compute the sample standard deviation of a vector of data
-	 * 
-	 * @param y	The vector of data values
-	 * @return	The sample standard deviation
-	 */
-	public static final double sample_standard_deviation(int[] ys){
-		double y_bar = sample_average(ys);
-		double sum_sqd_deviations = 0;
-		for (int i = 0; i < ys.length; i++){
-			double e = ys[i] - y_bar;
-			sum_sqd_deviations += (e * e);
-		}
-		return Math.sqrt(sum_sqd_deviations / ((double)ys.length - 1));		
-	}
-	
-	/**
-	 * Compute the sample standard deviation of a vector of data
-	 * 
-	 * @param y	The vector of data values
-	 * @return	The sample standard deviation
-	 */
-	public static final double sample_standard_deviation(double[] y){
-		return Math.sqrt(sample_variance(y));
-	}	
-	
-	/**
-	 * Compute the sample variance of a vector of data
-	 * 
-	 * @param y	The vector of data values
-	 * @return	The sample variance
-	 */
-	public static final double sample_variance(double[] y){
-		return sample_sum_sq_err(y) / ((double)y.length - 1);		
-	}	
-	
-
 
 	public static double sample_sum_sq_err(double[] ys, double y_center_point) {
-		double sum_sqd_deviations = 0;
+		double sum_sqd_errors = 0;
 		for (int i = 0; i < ys.length; i++){
 			double e = ys[i] - y_center_point;
-			sum_sqd_deviations += (e * e);
+			sum_sqd_errors += (e * e);
 		}
 		if (YARF.DEBUG){System.out.println("        SSE calc ybar = " + y_center_point + " ys = " + Tools.StringJoin(ys));}
 		
-		return sum_sqd_deviations;
+		return sum_sqd_errors;
 	}
+	
+	public static double sample_sum_sq_err(double[] ys, double[] yhats) {
+		double sum_sqd_errors = 0;
+		for (int i = 0; i < ys.length; i++){
+			double e = ys[i] - yhats[i];
+			sum_sqd_errors += (e * e);
+		}
+//		if (YARF.DEBUG){System.out.println("        SSE calc ybar = " + y_center_point + " ys = " + Tools.StringJoin(ys));}
+		
+		return sum_sqd_errors;
+	}	
 	
 	/**
 	 * Compute the sum of squared error (the squared deviation from the sample average) of a vector of data
@@ -133,7 +103,7 @@ public class StatToolbox {
 	 * @param ys	The vector of data values
 	 * @return		The sum of squared error
 	 */	
-	public static final double sample_sum_sq_err(double[] ys){
+	public static double sample_sum_sq_err(double[] ys){
 		double y_bar = sample_average(ys);
 		double sum_sqd_deviations = 0;
 		for (int i = 0; i < ys.length; i++){
@@ -266,6 +236,17 @@ public class StatToolbox {
 			}
 		}
 		return class_freqs;
+	}
+	
+	public static double misclassificationError(double[] ys, double[] yhats){
+		int n = ys.length;
+		int num_misclassifications = 0;
+		for (int i = 0; i < n; i++){
+			if (ys[i] != yhats[i]){
+				num_misclassifications++;
+			}
+		}
+		return num_misclassifications / (double)n;
 	}
 	
 

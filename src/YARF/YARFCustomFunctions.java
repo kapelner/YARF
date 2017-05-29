@@ -54,9 +54,7 @@ public abstract class YARFCustomFunctions extends Classifier {
     private transient Invocable print_at_split_node_fun;
     private transient Invocable print_at_leaf_fun;
     private transient Invocable oob_cost_calculation_fun;
-
-	private boolean stop_evaluting;
-
+    
 	private Invocable stringToInvokableCompiledFunction(String script_as_string, String function_name) {
 
 //		System.out.println("stringToInvokableCompiledFunction");
@@ -290,12 +288,10 @@ public abstract class YARFCustomFunctions extends Classifier {
 		try {
 			return (double)oob_cost_calculation_fun.invokeFunction(OobCostScriptFunctionName, y_hat, y);
 		} catch (NoSuchMethodException e) {
-			stop_evaluting = true;
 			System.err.println("Your oob cost calculation script must include the function \"" + OobCostScriptFunctionName + "(y_hat, y)\" and return the aggregated prediction as a double.");
 			e.printStackTrace();
 			System.err.println("Your function:\n\n" + oob_cost_calculation_str);
 		} catch (ScriptException e) {
-			stop_evaluting = true;
 			System.err.println("There was a problem evaluating your \"" + OobCostScriptFunctionName + "\" function:");
 			e.printStackTrace();
 			System.err.println("Your function:\n\n" + oob_cost_calculation_str);
@@ -395,19 +391,9 @@ public abstract class YARFCustomFunctions extends Classifier {
 		return print_at_leaf_str != null;
 	}
 	
-	public double[] customOutOfBagCosts(double[] y_oob, double[] y){
-		int n_oob = y_oob.length;
-		double[] costs = new double[n_oob];
-		for (int i = 0; i < n_oob; i++){
-			//no need for an error check for oob_cost_calculation_str here as it's done in R
-			costs[i] = runOobCostCalculation(y_oob[i], y[i]);
-			if (stop_evaluting){
-				break;
-			}
-		}
-		return costs;
+	public boolean customOutOfBagCosts(){
+		return oob_cost_calculation_str != null;
 	}	
-	
 
 	public String getShared_scripts_str() {
 		return shared_scripts_str;

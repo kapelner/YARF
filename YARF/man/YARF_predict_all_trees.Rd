@@ -9,8 +9,10 @@ YARF_predict_all_trees(yarf_mod, new_data)
 \arguments{
 \item{yarf_mod}{A YARF model object.}
 
-\item{new_data}{A n* x p matrix where each row is an observation you wish to predict for. Here,
-p is the same length as the original training data.}
+\item{new_data}{A n* x p data frame where each row is an observation you wish to predict for. Here,
+p is the same length as the original training data and \code{new_data} has the same
+column names. If a matrix object is passed in, it is automatically cast to a data frame. 
+This may not always give you what you want.}
 }
 \value{
 A matrix of yhat predictions for the \code{new_data} record(s) for all trees 

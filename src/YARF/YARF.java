@@ -1,5 +1,6 @@
 package YARF;
 
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
@@ -77,6 +78,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	private YARFRandomness r;
 	/** the random seed */
 	private Integer seed;
+	/** should we build until convergence? */
+	private boolean stop_at_convergence;
+	/** if we are building until convergence, what tolerance do we stop at? */
+	private double tolerance;
+
+	private TDoubleArrayList oob_cost_by_iteration;
+	private TDoubleArrayList oob_costs_changes;
 
 
 
@@ -297,10 +305,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		
 		yarf_trees = new YARFTree[num_trees];
 		final YARF yarf = this;
-		for (int t = 0; t < num_trees; t++){
+		for (int t = 0; t < num_trees; t++){ //they all must be initialized first before any are built
 			yarf_trees[t] = new YARFTree(yarf, t);
 			setBootstrapAndOutOfBagIndices(t);
 		}
+		
+		oob_cost_by_iteration = new TDoubleArrayList();
+		oob_costs_changes = new TDoubleArrayList();
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
 		//System.err.println("inside 2");
@@ -308,9 +319,10 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		for (int t = 0; t < num_trees; t++){
 			final int tf = t;
 	    	tree_grow_pool.execute(new Runnable(){
-				public void run() {
-					
-					
+				public void run() {	
+					if (stopped){ //user hit the brakes or the model converged, so ditch
+						return;
+					}
 					if (seed != null){ //i.e. someone set the seed
 						yarf_trees[tf].setSeed(seed);
 					}
@@ -849,4 +861,93 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		this.seed = seed;
 		r.setSeed(seed);
 	}
+
+	public void stopAtConvergence(){
+		stop_at_convergence = true;
+	}
+
+	public void setTolerance(double tolerance){
+		this.tolerance = tolerance;
+	}
+
+	public void treeCompletedCallback() {
+		if (stop_at_convergence){
+			oob_cost_by_iteration.add(calcOOBCost());
+			calcOOBCostChanges();
+			assessConvergenceAndStop();
+		}
+	}
+
+	private void calcOOBCostChanges() {
+		if (oob_cost_by_iteration.size() > 1){
+			oob_costs_changes.add(
+				oob_cost_by_iteration.get(oob_cost_by_iteration.size() - 1) 
+				- 
+				oob_cost_by_iteration.get(oob_cost_by_iteration.size() - 2)
+			);
+		}		
+	}
+	
+	public double[] OOBCostsByIteration(){
+		return oob_cost_by_iteration.toArray();
+	}
+
+	private double calcOOBCost() {
+		double[] y_hats = predictOutOfBag(1);
+		
+		if (customOutOfBagCosts()){
+			return StatUtils.sum(customOutOfBagCostCalc(y, y_hats));
+		}
+		if (is_a_regression){
+			return StatToolbox.sample_sum_sq_err(y, y_hats) / nullModelCost(); //1 - R^2 = SSE / SST
+		}
+		return StatToolbox.misclassificationError(y, y_hats);	
+	}	
+
+	
+	public double[] customOutOfBagCostCalc(double[] y, double[] y_oob){
+		int n_oob = y_oob.length;
+		double[] costs = new double[n_oob];
+		for (int i = 0; i < n_oob; i++){
+			//no need for an error check for oob_cost_calculation_str here as it's done in R
+			costs[i] = runOobCostCalculation(y_oob[i], y[i]);
+			if (costs[i] == YARFNode.BAD_FLAG_double){
+				break;
+			}
+		}
+		return costs;
+	}
+	
+	private void assessConvergenceAndStop() {
+		//first determine the first vacillation point
+		int t0 = Integer.MAX_VALUE;
+		for (int t = 0; t < oob_costs_changes.size(); t++){
+			if (oob_costs_changes.get(t) > 0){
+				t0 = t;
+				break;
+			}
+		}
+		//ditch if we haven't reached a vacillation point
+		if (t0 == Integer.MAX_VALUE){
+			return;
+		}
+		
+		double[] vacillations = oob_costs_changes.subList(t0, oob_costs_changes.size()).toArray();
+		double vacillations_avg = StatUtils.mean(vacillations);
+		double vacillations_var = StatUtils.variance(vacillations);
+		double moe = Math.sqrt(vacillations_var) / Math.sqrt(vacillations.length);
+		//now see if v-bar +- s / sqrt(n) is inside the tolerance window
+		if ((vacillations_avg - moe > -tolerance) && (vacillations_avg + moe < tolerance)){ //i.e. convergence
+			//we're done
+			synchronized(this) {
+				if (!stopped){
+					System.out.println("YARF model converged in " + progress() + " trees.");
+					StopBuilding();
+				}
+			}
+
+			
+		}		
+	}
+	
 }

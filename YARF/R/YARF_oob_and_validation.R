@@ -11,7 +11,7 @@
 #' 
 #' 											    ...
 #' 
-#' 											    return double //where a larger number indicates a higher cost to the error(y_hat, y).
+#' 											    return double //where a larger number indicates a higher cost to the error between y and y_hat.
 #' 
 #' 											  \}
 #' 
@@ -24,12 +24,15 @@ YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = 
 	y = yarf_mod$y
 	n = yarf_mod$n
 	
-	if (!is.null(oob_cost_calculation_script)){
+	if (is.null(oob_cost_calculation_script)){
+		.jcall(yarf_mod$java_YARF, "V", "setOob_cost_calculation_str", .jnull(class = "java/lang/String"))
+	} else {
 		if (class(oob_cost_calculation_script) != "character"){
 			stop("'oob_cost_calculation_script' must be a character string of Javascript code")
 		}
 		.jcall(yarf_mod$java_YARF, "V", "setOob_cost_calculation_str", oob_cost_calculation_script)
 	}
+	
 	yarf_mod$oob_cost_calculation_script = oob_cost_calculation_script
 
 	#get it from java multithreaded
@@ -48,7 +51,7 @@ YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = 
 	
 	if (!is.null(yarf_mod$oob_cost_calculation)){
 		yarf_mod$y_oob = y_oob
-		yarf_mod$y_oob_costs = .jcall(yarf_mod$java_YARF, "[D", "customOutOfBagCosts", y_oob, y)
+		yarf_mod$y_oob_costs = .jcall(yarf_mod$java_YARF, "[D", "customOutOfBagCostCalc", y, y_oob)
 		yarf_mod$y_oob_total_cost = sum(yarf_mod$y_oob_costs)
 		yarf_mod$y_oob_average_cost = yarf_mod$y_oob_total_cost / n
 		yarf_mod$y_oob_median_cost = median(yarf_mod$y_oob_costs)

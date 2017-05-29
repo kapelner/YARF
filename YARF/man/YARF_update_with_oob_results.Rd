@@ -20,7 +20,7 @@ YARF_update_with_oob_results(yarf_mod, oob_cost_calculation_script = NULL,
 
                                                 ...
 
-                                                return double //where a larger number indicates a higher cost to the error(y_hat, y).
+                                                return double //where a larger number indicates a higher cost to the error between y and y_hat.
 
                                               \}}
 

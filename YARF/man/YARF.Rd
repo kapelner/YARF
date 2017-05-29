@@ -8,7 +8,7 @@
 \title{A fully customizable Random Forests implementation}
 \usage{
 YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
-  allow_missingness_in_y = FALSE, num_trees = 500,
+  allow_missingness_in_y = FALSE, num_trees = NULL,
   bootstrap_indices = NULL, other_indices = NULL, mtry = NULL,
   nodesize = NULL, mtry_script = NULL, split_vals_script = NULL,
   make_node_to_leaf_script = NULL, cost_single_node_calc_script = NULL,
@@ -16,7 +16,9 @@ YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   shared_scripts = NULL, use_missing_data = TRUE,
   use_missing_data_dummies_as_vars = TRUE,
   replace_missing_data_with_x_j_bar = FALSE, serialize = FALSE,
-  seed = NULL, wait = TRUE, verbose = TRUE, debug_log = FALSE)
+  seed = NULL, wait = TRUE, calculate_oob_error = TRUE,
+  fit_until_convergence = FALSE, oob_cost_calculation_script = NULL,
+  tolerance = 0.1, verbose = TRUE, debug_log = FALSE)
 }
 \arguments{
 \item{X}{The data frame of training data}
@@ -30,7 +32,17 @@ YARF(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
 \item{allow_missingness_in_y}{If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
 handled in the custom functions, YARF will crash. Default is \code{FALSE}.}
 
-\item{num_trees}{The # of trees in the RF. Default is \code{500}.}
+\item{num_trees}{The number of trees in the RF. Default is \code{NULL} which sets the value to \code{500} 
+if \code{fit_until_convergence} is set to \code{FALSE} and 10,000 if \code{fit_until_convergence} 
+is set to \code{TRUE}.
+
+If the model is fit asynchronously via the \code{wait} parameter
+being set to \code{TRUE}, this number represents a vague contract between the user and the 
+software as the model fitting can be (a) halted by the user or the model can be (b) set 
+to converge automatically (by setting the \code{fit_until_convergence} parameter
+to \code{TRUE}). In the latter case, this parameter functions as the maximum number of trees
+that can be created and thus, it is recommended that this number is very large, hence the default
+of 10,000.}
 
 \item{bootstrap_indices}{A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
@@ -53,7 +65,8 @@ If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classifi
 will be used.}
 
 \item{mtry_script}{A custom javascript function which selects the variables to be greedily searched (see below)
-                                            The default is \code{NULL} which employs the \code{mtry} argument.
+                                            The default is \code{NULL} which employs the \code{mtry} argument. If you specify your function
+                                            please randomize the order of the returned attributes to arbitrate ties.
 
                                               function tryVars(node)\{ //node is of type YARF.YARFNode
 
@@ -139,6 +152,52 @@ we will automatically serialize after other operations that add data (such as th
 \item{seed}{Set a random seed for reproducibility.}
 
 \item{wait}{Should we hang R to wait for the YARF model to complete? The default is \code{TRUE}.}
+
+\item{calculate_oob_error}{Should we also calculate the OOB error? Default is \code{TRUE}. Automatically is turned off if
+\code{wait} becomes \code{FALSE}.}
+
+\item{fit_until_convergence}{Default is \code{FALSE}. If \code{TRUE}, then the \code{wait} parameter is set to \code{TRUE}
+                                            regardless of the user-specified value. Then, the Random Forest model is fit until "convergence"
+                                            as defined below:  
+
+                                            After each tree is completed, the OOB cost is computed. If the cost
+                                            decreases the algorithm does not engage. However, upon the first 
+                                            increase in cost, the model checks for convergence by calculating the average change in cost
+                                            and the standard deviation of change in cost. If a 95\% confidence interval of the average cost is
+                                            within the window created by plus or minus \code{tolerance} (i.e. from zero), then the algorithm has "converged".
+                                            Upon convergence, the model is stopped and a message is printed to the console. Note that specification 
+                                            of the \code{oob_cost_calculation_script} and a proper \code{tolerance} level is essential.
+
+                                            It is strongly recommended to set the \code{num_trees} parameter large, otherwise the model can halt before
+                                            it has converged since \code{num_trees} represents an upper limit. If left unspecified, \code{num_trees}
+                                            is set to 10,000 when \code{fit_until_convergence} set to \code{TRUE}.
+
+                                            If the user wishes to view the convergence in real time, we recommend the \code{\link{YARF_progress_reports}} 
+                                            function. However, this function will lock the console.}
+
+\item{oob_cost_calculation_script}{This parameter will determine the out-of-bag cost of the RF forest model. Default is \code{NULL}. If
+                                            it is \code{NULL}, then the cost will be 1-R^2 for regression models and misclassification error for classification 
+                                            models.
+
+                                            If non-null, an optional custom Javascript function which calculates the cost of a prediction given the true
+                                            value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
+                                            is recommended to share code between them by writing a function included in the \code{shared_scripts} argument  
+                                            which can be referenced when calculating OOB results.
+
+                                              function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are of type double)
+
+                                                ...
+
+                                                return double //where a larger number indicates a higher cost to the error between y and y_hat.
+
+                                              \}
+
+                                            If this script is specified (i.e. the argument is non-\code{NULL}), this will also affect the output of the 
+                                            \code{\link{YARF_update_with_oob_results}} function. This script can be reset after the model is built if necessary.}
+
+\item{tolerance}{This parameter is ignored unless \code{fit_until_convergence} is set to \code{TRUE}. If so, this controls the tolerance
+used when assessing the convergence of the RF model. Default is \code{0.1}. If \code{oob_cost_calculation_script} is 
+specified, this should also be specified as 0.1 may not be appropriate for a custom oob cost function.}
 
 \item{verbose}{Should we print out messages verbosely during construction? Default is \code{FALSE}.}
 

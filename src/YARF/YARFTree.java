@@ -29,7 +29,11 @@ public class YARFTree extends Classifier {
 		//System.out.println("BUILD TREE");
 		root = new YARFNode(this);
 		new YARFTreeBuilder(this);
-		completed = true; //once it's done, ensure the rest of the forest knows about it
+		//if the user didn't hit the brakes, mark this completed, otherwise no guarantee...
+		if (!stop){
+			completed = true; //once it's done, ensure the rest of the forest knows about it
+			yarf.treeCompletedCallback();
+		}
 	}
 
 	public void FlushData() {

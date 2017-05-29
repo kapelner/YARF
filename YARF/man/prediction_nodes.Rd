@@ -9,8 +9,10 @@ prediction_nodes(yarf_mod, X = NULL, oob_only = TRUE)
 \arguments{
 \item{yarf_mod}{A YARF model object.}
 
-\item{X}{A n* x p matrix where each row is an observation you wish to obtain prediction information. Here,
-p is the same length as the original training data. If \code{NULL} (the default), 
+\item{X}{A n* x p data frame where each row is an observation you wish to obtain prediction information. Here,
+p is the same length as the original training data and the column names match the original training data. 
+If a matrix object is passed in, it is automatically cast to a data frame. This may not always give you what
+you want. If \code{NULL} (the default), 
 then this parameter is set to the model's training data.}
 
 \item{oob_only}{If \code{X} is \code{NULL}, setting this to \code{TRUE} (the default) will only return node information

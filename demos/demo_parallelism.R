@@ -25,18 +25,15 @@ plot(X[,1], y)
 
 seed = 1984
 
-num_trees = 500
 set_YARF_num_cores(1)
-yarf_mod_cores_1 = YARF(X, y, num_trees = num_trees, seed = seed)
+yarf_mod_cores_1 = YARF(X, y, seed = seed)
+yarf_mod_cores_1
 set_YARF_num_cores(7)
-yarf_mod_cores_all = YARF(X, y, num_trees = num_trees, seed = seed)
-
-YARF_update_with_oob_results(yarf_mod_cores_1)
-YARF_update_with_oob_results(yarf_mod_cores_all)
+yarf_mod_cores_all = YARF(X, y, seed = seed)
+yarf_mod_cores_all
 
 
 illustrate_trees(yarf_mod_cores_1, open_file = TRUE, trees = 1, max_depth = 4)
-illustrate_trees(yarf_mod_cores_all, open_file = TRUE, 
-                 file_format = "png", trees = 1, max_depth = 4)
+illustrate_trees(yarf_mod_cores_all, open_file = TRUE, trees = 1, max_depth = 4)
 
 

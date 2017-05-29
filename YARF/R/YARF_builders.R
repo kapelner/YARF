@@ -6,7 +6,18 @@
 #' @param Xother 							Other data that is used in the training but the RF doesn't split on it
 #' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
 #' 											handled in the custom functions, YARF will crash. Default is \code{FALSE}.
-#' @param num_trees 						The # of trees in the RF. Default is \code{500}.
+#' @param num_trees 						The number of trees in the RF. Default is \code{NULL} which sets the value to \code{500} 
+#' 											if \code{fit_until_convergence} is set to \code{FALSE} and 10,000 if \code{fit_until_convergence} 
+#' 											is set to \code{TRUE}.
+#' 											
+#' 											If the model is fit asynchronously via the \code{wait} parameter
+#' 											being set to \code{TRUE}, this number represents a vague contract between the user and the 
+#' 											software as the model fitting can be (a) halted by the user or the model can be (b) set 
+#' 											to converge automatically (by setting the \code{fit_until_convergence} parameter
+#' 											to \code{TRUE}). In the latter case, this parameter functions as the maximum number of trees
+#' 											that can be created and thus, it is recommended that this number is very large, hence the default
+#' 											of 10,000.
+#'  
 #' @param bootstrap_indices 				A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 #' 											you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
 #' 											of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
@@ -120,6 +131,51 @@
 #' 											we will automatically serialize after other operations that add data (such as the OOB evaluation).
 #' @param seed								Set a random seed for reproducibility. 
 #' @param wait								Should we hang R to wait for the YARF model to complete? The default is \code{TRUE}.
+#' @param calculate_oob_error				Should we also calculate the OOB error? Default is \code{TRUE}. Automatically is turned off if
+#' 											\code{wait} becomes \code{FALSE}.
+#' @param fit_until_convergence				Default is \code{FALSE}. If \code{TRUE}, then the \code{wait} parameter is set to \code{FALSE}
+#' 											regardless of the user-specified value. Then, the Random Forest model is fit until "convergence"
+#' 											as defined below:  
+#' 
+#' 											After each tree is completed, the OOB cost is computed. If the cost
+#' 											decreases the algorithm does not engage. However, upon the first 
+#' 											increase in cost, the model checks for convergence by calculating the average change in cost
+#' 											and the standard deviation of change in cost. If a 95\% confidence interval of the average cost is
+#' 											within the window created by plus or minus \code{tolerance} (i.e. from zero), then the algorithm has "converged".
+#' 											Upon convergence, the model is stopped and a message is printed to the console. Note that specification 
+#' 											of the \code{oob_cost_calculation_script} and a proper \code{tolerance} level is essential.
+#' 
+#' 											It is strongly recommended to set the \code{num_trees} parameter large, otherwise the model can halt before
+#' 											it has converged since \code{num_trees} represents an upper limit. If left unspecified, \code{num_trees}
+#' 											is set to 10,000 when \code{fit_until_convergence} set to \code{TRUE}.
+#' 
+#' 											If the user wishes to view the convergence in real time, we recommend the \code{\link{YARF_progress_reports}} 
+#' 											function. However, this function will lock the console.
+#' 
+#' @param oob_cost_calculation_script		This parameter will determine the out-of-bag cost of the RF forest model. Default is \code{NULL}. If
+#' 											it is \code{NULL}, then the cost will be 1-R^2 for regression models and misclassification error for classification 
+#' 											models.
+#' 
+#' 											If non-null, an optional custom Javascript function which calculates the cost of a prediction given the true
+#' 											value of the prediction (see below). If is likely similar to \code{cost_single_node_calc_script}. It
+#' 											is recommended to share code between them by writing a function included in the \code{shared_scripts} argument  
+#' 											which can be referenced when calculating OOB results.
+#' 
+#' 											  function oobCost(y_hat, y)\{ //y_hat is the predicted value and y is the true value (both are of type double)
+#' 
+#' 											    ...
+#' 
+#' 											    return double //where a larger number indicates a higher cost to the error between y and y_hat.
+#' 
+#' 											  \}
+#' 
+#' 											If this script is specified (i.e. the argument is non-\code{NULL}), this will also affect the output of the 
+#' 											\code{\link{YARF_update_with_oob_results}} function. This script can be reset after the model is built if necessary.
+#' 
+#' @param tolerance							This parameter is ignored unless \code{fit_until_convergence} is set to \code{TRUE}. If so, this controls the tolerance
+#' 											used when assessing the convergence of the RF model. Default is \code{0.1}. If \code{oob_cost_calculation_script} is 
+#' 											specified, this should also be specified as 0.1 may not be appropriate for a custom oob cost function.
+#' 
 #' @param verbose 							Should we print out messages verbosely during construction? Default is \code{FALSE}.
 #' @param debug_log							Should we print out messages from Java? Default is \code{FALSE}.
 #' 
@@ -139,7 +195,7 @@ YARF = function(
 		X = NULL, y = NULL, Xy = NULL, Xother = NULL,
 		allow_missingness_in_y = FALSE,
 		#pick the trees		
-		num_trees = 500,
+		num_trees = NULL,
 		#customizable bootstrap
 		bootstrap_indices = NULL, #if you want to specify data indices for the trees
 		other_indices = NULL, #other indices you pass to the tree which will NOT be included in the OOB
@@ -161,6 +217,10 @@ YARF = function(
 		serialize = FALSE,
 		seed = NULL,
 		wait = TRUE,
+		calculate_oob_error = TRUE,
+		fit_until_convergence = FALSE,
+		oob_cost_calculation_script = NULL,
+		tolerance = 0.1,
 		verbose = TRUE,
 		debug_log = FALSE
 	){
@@ -170,8 +230,20 @@ YARF = function(
 		set.seed(seed)
 	}
 	
+	if (fit_until_convergence){
+		wait = FALSE
+	}
+	
 	if (serialize && !wait){
-		stop("'serialize' can only by TRUE if 'wait' is TRUE (you cannot save a model that is not yet fully constructed).")
+		stop("'serialize' can only by TRUE if 'wait' is TRUE (you cannot save a model that is not yet fully constructed). If you wish to use asynchronous building with \"wait\" you can always run the \"YARF_serialize\" function even during construction.")
+	}
+	
+	if (is.null(num_trees)){
+		if (fit_until_convergence){
+			num_trees = 10000
+		} else {
+			num_trees = 500
+		}
 	}
 	
 	if ((as.integer(num_trees) != num_trees) || num_trees < 1){
@@ -213,6 +285,12 @@ YARF = function(
 			stop("'shared_scripts' must be a character string of Javascript code")
 		}
 	}	
+	
+	if (!is.null(oob_cost_calculation_script)){
+		if (class(oob_cost_calculation_script) != "character"){
+			stop("'oob_cost_calculation_script' must be a character string of Javascript code")
+		}
+	}
 	
 	if (verbose){
 		cat("YARF initializing with", num_trees, "trees...\n")	
@@ -306,12 +384,7 @@ YARF = function(
 			}
 		}
 	}
-	
-	
-	
-	if (verbose){
-		cat("YARF data input checked...\n")
-	}	
+
 	#we are about to construct a YARF Java object. First, let R garbage collect
 	#to clean up previous YARF objects that are no longer in use. This is important
 	#because R's garbage collection system does not "see" the size of Java objects. Thus,
@@ -345,10 +418,6 @@ YARF = function(
 	
 	#java expects doubles
 	y = as.numeric(y)
-
-	if (verbose){
-		cat("YARF java init...\n")
-	}
 	
 	#if no column names, make up names
 	if (is.null(colnames(X))){
@@ -360,7 +429,7 @@ YARF = function(
 	for (predictor in predictors_which_are_factors){
 		X[, predictor] = factor(X[, predictor])
 	}
-	if (verbose){
+	if (verbose && length(predictors_which_are_factors) > 0){
 		cat("YARF factors created...\n")
 	}
 	
@@ -378,19 +447,16 @@ YARF = function(
 			cat("Imputed missing data using attribute averages.\n")
 		}
 	}
-	if (verbose){
-		cat("YARF before preprocess...\n")
-	}
 	
 	model_matrix_training_data = pre_process_data(X, use_missing_data_dummies_as_vars)$data
 	p = ncol(model_matrix_training_data) # we subtract one because we tacked on the response as the last column
 #	factor_lengths = pre_process_obj$factor_lengths
 	if (verbose){
-		cat("YARF after preprocess...", ncol(model_matrix_training_data), "total features...\n")
+		cat("YARF after data preprocessed...", ncol(model_matrix_training_data), "total features...\n")
 	}
 	
 	#now set whether we want the program to log to a file
-	if (debug_log & verbose){
+	if (debug_log){
 		cat("warning: printing out the log file will slow down the runtime significantly.\n")
 		.jcall(java_YARF, "V", "writeStdOutToLogFile")
 	}
@@ -407,17 +473,19 @@ YARF = function(
 	#now load data and/or scripts
 	if (!is.null(mtry)){
 		.jcall(java_YARF, "V", "setMTry", as.integer(mtry))
-	} else if (!is.null(mtry_script)) {
+	} 
+	if (!is.null(mtry_script)) {
 		.jcall(java_YARF, "V", "setMtry_function_str", mtry_script)
 	}
 	
 	
 	if (!is.null(nodesize)){
 		.jcall(java_YARF, "V", "setNodesize", as.integer(nodesize))
-	} else if (!is.null(make_node_to_leaf_script)) {
-		.jcall(java_YARF, "V", "setMake_node_into_leaf_function_str", make_node_to_leaf_script)
 	} else { #Breiman defaults...
 		.jcall(java_YARF, "V", "setNodesize", as.integer(ifelse(pred_type == "regression", 5, 1)))
+	}
+	if (!is.null(make_node_to_leaf_script)) {
+		.jcall(java_YARF, "V", "setMake_node_into_leaf_function_str", make_node_to_leaf_script)
 	}
 	
 	if (!is.null(split_vals_script)){
@@ -440,6 +508,10 @@ YARF = function(
 		.jcall(java_YARF, "V", "setShared_scripts_str", shared_scripts)
 	}
 	
+	if (!is.null(oob_cost_calculation_script)){
+		.jcall(java_YARF, "V", "setOob_cost_calculation_str", oob_cost_calculation_script)
+	}
+	
 	#now load the training data into YARF
 	for (i in 1 : n){
 		row_as_char = as.character(model_matrix_training_data[i, ]) ######FIX THIS
@@ -448,10 +520,6 @@ YARF = function(
 	}
 	.jcall(java_YARF, "V", "addTrainingDataResponse", y)
 	.jcall(java_YARF, "V", "finalizeTrainingData")
-	if (verbose){
-		cat("YARF training data finalized...\n")
-	}
-	
 	.jcall(java_YARF, "V", "setTrainingDataNames", colnames(model_matrix_training_data))
 	
 	if (!is.null(Xother)){
@@ -461,9 +529,6 @@ YARF = function(
 			row_as_char = as.character(Xother[i, ])
 			row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
 			.jcall(java_YARF, "V", "addOtherDataRow", row_as_char)
-		}
-		if (verbose){
-			cat("YARF 'other' data finalized...\n")
 		}
 	}
 	
@@ -477,14 +542,24 @@ YARF = function(
 			.jcall(java_YARF, "V", "addOtherIndices", as.integer(other_indices[[t]] - 1), as.integer(t - 1)) ##Java is minus 1 from R's indexing on all fronts
 		}
 	}
+
+	
+	
 	#do we want to do the YARF model building asynchronously?
 	.jcall(java_YARF, "V", "setWait", wait)
+	if (fit_until_convergence){
+		.jcall(java_YARF, "V", "stopAtConvergence")
+		.jcall(java_YARF, "V", "setTolerance", as.numeric(tolerance))
+	}
 	
 	#build the YARF model and let the user know what type of model this is
 	if (verbose){
-		cat("Beginning YARF", pred_type, "model construction...\n")
+		cat("Beginning YARF", pred_type, "model construction...")
 	}
 	.jcall(java_YARF, "V", "Build") #Finally get it built
+	if (verbose){
+		cat("done.\n")
+	}
 	
 	yarf_mod = list(
 		X = X,
@@ -520,7 +595,10 @@ YARF = function(
 		model_matrix_training_data = model_matrix_training_data,
 		training_data_features = colnames(model_matrix_training_data),
 		predictors_which_are_factors = predictors_which_are_factors,
-		validation_test_indices = sample(1 : n)
+		validation_test_indices = sample(1 : n),
+		fit_until_convergence = fit_until_convergence,
+		oob_cost_calculation_script = oob_cost_calculation_script,
+		tolerance = tolerance
 	)
 	
 	#Let's serialize the object if the user wishes
@@ -530,6 +608,16 @@ YARF = function(
 	
 	#use R's S3 object orientation for convenience
 	class(yarf_mod) = "YARF"
+	
+	if (calculate_oob_error && wait){
+		if (verbose){
+			cat("Calculating OOB error...")
+		}		
+		yarf_mod = YARF_update_with_oob_results(yarf_mod, oob_cost_calculation_script = oob_cost_calculation_script)
+		if (verbose){
+			cat("done.\n")
+		}
+	}
 	yarf_mod
 }
 
@@ -565,47 +653,6 @@ YARF_serialize = function(yarf_mod){
 	cat("serializing so that the YARF model could potentially be saved and transported to future R sessions...")
 	.jcache(yarf_mod$java_YARF)
 	cat("done\n")	
-}
-
-
-
-#' Sets the Tree Aggregation Method
-#' 
-#' This function sets custom code to be run when the Forest is making a decision from its many trees. This function should be run
-#' before you run \code{predict} or \code{YARF_update_with_oob_results} so that your custom aggregation can be employed. This function 
-#' is optional as the default aggregation method corresponds to (a) the sample average for regression and (b) the modal category 
-#' for classification. One further note of warning: once this script has been set, it will be retained in the YARF model until 
-#' this function is run again for this YARF model object with a new aggregation script. Set \code{aggregation_script = NULL} if you
-#' wish to reset. 
-#' 
-#' @param yarf_mod 					The yarf model object
-#' @param aggregation_script		A custom javascript function which aggregates the predictions in the trees for one observations 
-#' 									into one scalar prediction (see below). 
-#' 
-#' 									function aggregateYhatsIntoOneYhat(y_hats, yarf)\{ //y_hats is an array of doubles of size num_trees
-#' 										//and yarf provides access to the entire random forest object if needed (of type YARF.YARF)
-#' 
-#' 										...
-#' 
-#' 										return double //this is the final predicted value aggregated from all tree predictions
-#' 
-#' 									\}
-#' @return 							The yarf model object (invisibly)
-#' 
-#' @author Adam Kapelner
-#' @export
-YARF_set_aggregation_method = function(yarf_mod, aggregation_script){
-	if (is.null(aggregation_script)){
-		.jcall(yarf_mod$java_YARF, "V", "setAggregation_function_str", .jnull("java/lang/String"))
-	} else {
-		if (class(aggregation_script) != "character"){
-			stop("'aggregation_script' must be a character string of Javascript code if non-null")
-		}
-		.jcall(yarf_mod$java_YARF, "V", "setAggregation_function_str", aggregation_script)
-	}
-	
-	yarf_mod$aggregation_script = aggregation_script
-	invisible(yarf_mod)
 }
 
 

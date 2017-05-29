@@ -11,7 +11,11 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 	progress = num_trees_completed / yarf_mod$num_trees
 	
 	if (.jcall(yarf_mod$java_YARF, "Z", "stopped")){
-		cat("Construction of this model was halted at", num_trees_completed, "trees before all", yarf_mod$num_trees, "trees were constructed.\n")
+		if (yarf_mod$fit_until_convergence){
+			cat("This model converged at", num_trees_completed, "trees (as defined by the user-specified oob cost function and tolerance level).\n");
+		} else {		
+			cat("Construction of this model was halted at", num_trees_completed, "trees before all", yarf_mod$num_trees, "trees were constructed.\n")
+		}
 		return
 	}
 	
@@ -30,10 +34,10 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 	}
 	
 	if (console_message){
-		cat(num_trees_completed, " / ", yarf_mod$num_trees, " trees completed (", round(progress * 100, 1), "% done in ", round(time_elapsed_in_min, 1), "min).\n", sep = "")	
+		cat(num_trees_completed, " / ", yarf_mod$num_trees, " trees completed (", round(progress * 100, 1), "% done in ", round(time_elapsed_in_min, 1), "min barring convergence).\n", sep = "")	
 		
 		if (num_trees_completed >= 1 && progress < 1){
-			cat("Estimated time until completion: ", round(time_remaining_estimate, 1), "min.\n", sep = "")
+			cat("Estimated time until completion: ", round(time_remaining_estimate, 1), "min (barring convergence).\n", sep = "")
 		} else if (progress < 1) {
 			cat("No time estimate for completion until the first tree is constructed.\n")
 		}
@@ -61,49 +65,42 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 #' 
 #' @author Kapelner
 #' @export
-YARF_progress_reports = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_error = FALSE, trail_pts = 5){
-	if (.jcall(yarf_mod$java_YARF, "Z", "stopped")){
-		return(YARF_progress(yarf_mod))
+YARF_convergence = function(yarf_mod, time_delay_in_seconds = 10, plot_oob_error = FALSE, trail_pts = 5){
+	if (!is.null(yarf_mod$oob_cost_calculation)){
+		ylab = "oob total cost (custom)"
+	} else if (yarf_mod$pred_type == "regression"){
+		ylab = "oob 1-R^2"
+	} else {
+		ylab = "oob misclassification rate"
 	}
-	previous_num_trees_completed = 0
-	trees = c()
-	fit_metrics = c()
+	
 	repeat {
+		#first get the iteration data
+		oob_cost_by_iteration = .jcall(yarf_mod$java_YARF, "[D", "OOBCostsByIteration")
+		t = length(oob_cost_by_iteration)
+		#now plot it if the user wishes
+		if (plot_oob_error && t > 0){
+			if (!is.null(trail_pts) & t > trail_pts){
+				par(mfrow = c(1, 2))
+			} else {
+				par(mfrow = c(1, 1))
+			}
+			
+			plot(1 : t, oob_cost_by_iteration, type = "o", xlab = "# trees completed", ylab = ylab)
+			if (!is.null(trail_pts) & length(trees) > trail_pts){
+				plot((t - trail_pts) : t, oob_cost_by_iteration[(t - trail_pts) : t], type = "o", xlab = "# trees completed", ylab = ylab)
+			}
+
+		}
+		#now ditch if the model is done, converged or halted by the user
+		if (.jcall(yarf_mod$java_YARF, "Z", "stopped")){
+			break
+		}		
 		progress = YARF_progress(yarf_mod)
 		if (progress$done){
 			break
 		}
-		if (plot_oob_error & progress$num_trees_completed > previous_num_trees_completed){
-			previous_num_trees_completed = progress$num_trees_completed
-			yarf_mod = YARF_update_with_oob_results(yarf_mod)
-			trees = c(trees, previous_num_trees_completed)
-			if (!is.null(trail_pts) & length(trees) > trail_pts){
-				par(mfrow = c(1, 2))
-				num_samples = length(trees)
-			} else {
-				par(mfrow = c(1, 1))
-			}
-			if (!is.null(yarf_mod$oob_cost_calculation)){
-				fit_metrics = c(fit_metrics, yarf_mod$y_oob_average_cost)
-				plot(trees, fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob Average Cost")
-				if (!is.null(trail_pts) & length(trees) > trail_pts){
-					plot(trees[(num_samples - trail_pts) : num_samples], fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob Average Cost")
-				}				
-			} else if (yarf_mod$pred_type == "regression"){
-				fit_metrics = c(fit_metrics, yarf_mod$pseudo_rsq_oob)
-				plot(trees, fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob Pseudo-Rsq")
-				if (!is.null(trail_pts) & length(trees) > trail_pts){
-					plot(trees[(num_samples - trail_pts) : num_samples], fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob Pseudo-Rsq")
-				}
-			} else {
-				fit_metrics = c(fit_metrics, yarf_mod$classification_accuracy * 100)
-				plot(trees, fit_metrics, type = "o", xlab = "# trees completed", ylab = "oob Accuracy (%)")
-				if (!is.null(trail_pts) & length(trees) > trail_pts){
-					plot(trees[(num_samples - trail_pts) : num_samples], fit_metrics[(num_samples - trail_pts) : num_samples], type = "o", xlab = "# trees completed", ylab = "oob % Correctly Classified")
-				}
-			}
-
-		}
+		#otherwise take a break and then repeat
 		Sys.sleep(time_delay_in_seconds)
 	}
 	invisible(list(trees = trees, fit_metrics = fit_metrics))
