@@ -13,7 +13,13 @@ summary.YARF = function(object, ...){
 	}
 	n = object$n
 	#first print out characteristics of the training data
-	cat(paste(object$num_trees, "trees,", "training data n =", n, "and p =", object$p, "\n"))
+	converged = .jcall(object$java_YARF, "Z", "converged")
+	if (converged){
+		cat(paste("training data n =", n, "and p =", object$p, "\n"))
+	} else {
+		cat(paste(object$num_trees, "trees,", "training data n =", n, "and p =", object$p, "\n"))
+	}
+	
 	
 	progress_report = YARF_progress(object, console_message = FALSE)
 	

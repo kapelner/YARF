@@ -85,6 +85,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 
 	private TDoubleArrayList oob_cost_by_iteration;
 	private TDoubleArrayList oob_costs_changes;
+	/** If the user wishes to wait until convergence, this records that it converged */
+	private boolean converged;
 
 
 
@@ -873,7 +875,9 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	public void treeCompletedCallback() {
 		if (stop_at_convergence){
 			oob_cost_by_iteration.add(calcOOBCost());
+//			System.out.println("costs: " + Tools.StringJoin(oob_cost_by_iteration));
 			calcOOBCostChanges();
+//			System.out.println("deltas: " + Tools.StringJoin(oob_costs_changes));
 			assessConvergenceAndStop();
 		}
 	}
@@ -894,14 +898,16 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 
 	private double calcOOBCost() {
 		double[] y_hats = predictOutOfBag(1);
+//		System.out.println("y_hats: " + Tools.StringJoin(y_hats));
+//		System.out.println("y: " + Tools.StringJoin(y));
 		
 		if (customOutOfBagCosts()){
 			return StatUtils.sum(customOutOfBagCostCalc(y, y_hats));
 		}
 		if (is_a_regression){
-			return StatToolbox.sample_sum_sq_err(y, y_hats) / nullModelCost(); //1 - R^2 = SSE / SST
+			return StatToolbox.sampleSumSqErrIgnoreNans(y, y_hats) / nullModelCost(); //1 - R^2 = SSE / SST
 		}
-		return StatToolbox.misclassificationError(y, y_hats);	
+		return StatToolbox.misclassificationErrorIgnoreNans(y, y_hats);	
 	}	
 
 	
@@ -910,9 +916,11 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		double[] costs = new double[n_oob];
 		for (int i = 0; i < n_oob; i++){
 			//no need for an error check for oob_cost_calculation_str here as it's done in R
-			costs[i] = runOobCostCalculation(y_oob[i], y[i]);
-			if (costs[i] == YARFNode.BAD_FLAG_double){
-				break;
+			if (!Double.isNaN(y_oob[i])){
+				costs[i] = runOobCostCalculation(y_oob[i], y[i]);
+				if (costs[i] == YARFNode.BAD_FLAG_double){
+					break;
+				}
 			}
 		}
 		return costs;
@@ -937,17 +945,28 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		double vacillations_var = StatUtils.variance(vacillations);
 		double moe = Math.sqrt(vacillations_var) / Math.sqrt(vacillations.length);
 		//now see if v-bar +- s / sqrt(n) is inside the tolerance window
+
+//		System.out.println("vacillations: " + Tools.StringJoin(vacillations));
+//		System.out.println("vacillations_avg: " + vacillations_avg + " vacillations_sd: " + Math.sqrt(vacillations_var) + " n = " + vacillations.length);
+//		System.out.println("CI: [" + (vacillations_avg - moe) + ", "  + (vacillations_avg + moe) + "]");
+//		System.out.println("tolerance: [" + (-tolerance) + ", "  + (tolerance) + "]");
+		
 		if ((vacillations_avg - moe > -tolerance) && (vacillations_avg + moe < tolerance)){ //i.e. convergence
 			//we're done
 			synchronized(this) {
 				if (!stopped){
 					System.out.println("YARF model converged in " + progress() + " trees.");
 					StopBuilding();
+					converged = true;
 				}
 			}
 
 			
 		}		
+	}
+	
+	public boolean converged(){
+		return converged;
 	}
 	
 }

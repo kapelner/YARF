@@ -86,11 +86,13 @@ public class StatToolbox {
 		return sum_sqd_errors;
 	}
 	
-	public static double sample_sum_sq_err(double[] ys, double[] yhats) {
+	public static double sampleSumSqErrIgnoreNans(double[] ys, double[] yhats) {
 		double sum_sqd_errors = 0;
 		for (int i = 0; i < ys.length; i++){
-			double e = ys[i] - yhats[i];
-			sum_sqd_errors += (e * e);
+			if (!Double.isNaN(yhats[i])){
+				double e = ys[i] - yhats[i];
+				sum_sqd_errors += (e * e);
+			}
 		}
 //		if (YARF.DEBUG){System.out.println("        SSE calc ybar = " + y_center_point + " ys = " + Tools.StringJoin(ys));}
 		
@@ -238,12 +240,14 @@ public class StatToolbox {
 		return class_freqs;
 	}
 	
-	public static double misclassificationError(double[] ys, double[] yhats){
+	public static double misclassificationErrorIgnoreNans(double[] ys, double[] yhats){
 		int n = ys.length;
 		int num_misclassifications = 0;
 		for (int i = 0; i < n; i++){
-			if (ys[i] != yhats[i]){
-				num_misclassifications++;
+			if (!Double.isNaN(yhats[i])){
+				if (ys[i] != yhats[i]){
+					num_misclassifications++;
+				}
 			}
 		}
 		return num_misclassifications / (double)n;
