@@ -315,7 +315,7 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
 	}
     
     if (!is.null(prox_single_node_calc_script)){
-        .jcall(java_YARF, "V", "setProx_single_node_calc_function_str", prox_single_node_calc_script)
+        .jcall(yarf_mod$java_YARF, "V", "setProx_single_node_calc_function_str", prox_single_node_calc_script)
     }
 
     # preprocess inputs
@@ -324,8 +324,11 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
     X2 = pre_process_new_data(X2, yarf_mod)
 
     # calculate node path info for each input matrix
-    out = .jcall(obj$java_YARF, "[[S", "proximity", .jarray(X1, dispatch = TRUE),
+    #out = .jcall(yarf_mod$java_YARF, "[[S", "proximity", .jarray(X1, dispatch = TRUE),
+    #    .jarray(X2, dispatch = TRUE))
+    out = yarf_mod$java_YARF$proximity(.jarray(X1, dispatch = TRUE),
         .jarray(X2, dispatch = TRUE))
+    out = t(sapply(.jevalArray(out), .jevalArray))
 
     # process array into pieces
     X1 = out[1:nx1,]

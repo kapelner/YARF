@@ -156,7 +156,7 @@ we will automatically serialize after other operations that add data (such as th
 \item{calculate_oob_error}{Should we also calculate the OOB error? Default is \code{TRUE}. Automatically is turned off if
 \code{wait} becomes \code{FALSE}.}
 
-\item{fit_until_convergence}{Default is \code{FALSE}. If \code{TRUE}, then the \code{wait} parameter is set to \code{TRUE}
+\item{fit_until_convergence}{Default is \code{FALSE}. If \code{TRUE}, then the \code{wait} parameter is set to \code{FALSE}
                                             regardless of the user-specified value. Then, the Random Forest model is fit until "convergence"
                                             as defined below:  
 
