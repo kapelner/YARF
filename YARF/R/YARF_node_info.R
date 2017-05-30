@@ -284,17 +284,6 @@ tree_average_proximity_info = function(raw){
 	tree_average_proximity_info
 }
 
-shared_initial_substring = function(s1, s2){
-	for (i in 1 : nchar(s1)){
-		if (identical(substr(s1, 1, i), substr(s2, 1, i))){
-			next
-		} else {
-			i = i - 1
-			break
-		}		
-	}
-	substr(s1, 1, i)
-}
 
 #' Computes information about the "proximity" of observations within the YARF model. Given two datasets,
 #' information is computed for all pairs of observations. Information returned is the prediction nodes (for all trees) 
@@ -350,6 +339,18 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
 #    vals_2 = str_split(matt[,2], '[LR]')
 #    strings_2 = sapply(str_split(matt[,2], '[0-9.]'), paste0, collapse='')
 
+}
+
+shared_initial_substring = function(s1, s2){
+	for (i in 1 : nchar(s1)){
+		if (identical(substr(s1, 1, i), substr(s2, 1, i))){
+			next
+		} else {
+			i = i - 1
+			break
+		}		
+	}
+	substr(s1, 1, i)
 }
 
 
