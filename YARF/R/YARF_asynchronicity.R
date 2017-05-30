@@ -20,9 +20,17 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 	converged = .jcall(yarf_mod$java_YARF, "Z", "converged")
 	stopped = .jcall(yarf_mod$java_YARF, "Z", "stopped")
 	if (console_message && stopped && !converged){
-		cat("Construction of this model was halted at", num_trees_completed, "trees before all", yarf_mod$num_trees, "trees were constructed.\n")
+		if (yarf_mod$fit_until_convergence){
+			cat("Construction of this model was halted at", num_trees_completed, "trees.\n")
+		} else {
+			cat("Construction of this model was halted at", num_trees_completed, "trees before all", yarf_mod$num_trees, "trees were constructed.\n")
+		}
 	} else if (console_message && .jcall(yarf_mod$java_YARF, "Z", "converged")){
-		cat("This model converged at", num_trees_completed, "trees (as defined by the user-specified\noob cost function and tolerance level).\n");
+		cat("This model converged in", 
+			num_trees_completed, 
+			"trees (as defined by the user-specified\noob cost function and tolerance level) within", 
+			round(time_elapsed_in_min, 1), 
+			"min.\n");
 	} else {
 		#now estimate how long it will take to complete
 		if (num_trees_completed >= 1 & progress < 1){

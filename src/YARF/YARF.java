@@ -929,7 +929,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	private void assessConvergenceAndStop() {
 		//first determine the first vacillation point
 		int t0 = Integer.MAX_VALUE;
-		for (int t = 0; t < oob_costs_changes.size(); t++){
+		int l = oob_costs_changes.size();
+		for (int t = 0; t < l; t++){
 			if (oob_costs_changes.get(t) > 0){
 				t0 = t;
 				break;
@@ -940,10 +941,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			return;
 		}
 		
-		double[] vacillations = oob_costs_changes.subList(t0, oob_costs_changes.size()).toArray();
+		double[] vacillations = oob_costs_changes.subList(t0, l).toArray();
 		double vacillations_avg = StatUtils.mean(vacillations);
 		double vacillations_var = StatUtils.variance(vacillations);
-		double moe = Math.sqrt(vacillations_var) / Math.sqrt(vacillations.length);
+		if (vacillations_var == 0){
+			return;
+		}
+		double moe = Math.sqrt(vacillations_var) / Math.sqrt(l - t0);
 		//now see if v-bar +- s / sqrt(n) is inside the tolerance window
 
 //		System.out.println("vacillations: " + Tools.StringJoin(vacillations));
@@ -953,15 +957,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		
 		if ((vacillations_avg - moe > -tolerance) && (vacillations_avg + moe < tolerance)){ //i.e. convergence
 			//we're done
-			synchronized(this) {
+			synchronized (this){
 				if (!stopped){
-					System.out.println("YARF model converged in " + progress() + " trees.");
+					System.out.println("YARF model converged in " + (num_cores > 1 ? "approximately " : "") + progress() + " trees.");
 					StopBuilding();
 					converged = true;
-				}
+				}				
 			}
-
-			
 		}		
 	}
 	

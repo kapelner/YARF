@@ -24,7 +24,7 @@ summary.YARF = function(object, ...){
 	progress_report = YARF_progress(object, console_message = FALSE)
 	
 	if (progress_report$done){
-		cat("Model construction completed in", round(progress_report$time_elapsed_in_min, 2), "minutes.\n")
+		cat("Model construction completed within", round(progress_report$time_elapsed_in_min, 2), "minutes.\n")
 	} else {
 		#just print out a progress report
 		YARF_progress(object, console_message = TRUE)
