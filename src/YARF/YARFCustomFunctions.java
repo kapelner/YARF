@@ -20,6 +20,8 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public static final String NodesizeLegalScriptFunctionName = "makeNodeIntoLeaf";
 	private String cost_single_node_calc_function_str;
 	public static final String SingleNodeCostScriptFunctionName = "nodeCost";
+    private String prox_single_node_calc_function_str;
+    public static final String ProxSingleNodeCostScriptFunctionName = "proxNodeCost";
 	private String cost_both_children_calc_function_str;
 	public static final String TotalNodeCostScriptFunctionName = "totalChildrenCost";
 	private String node_assignment_function_str;
@@ -46,6 +48,7 @@ public abstract class YARFCustomFunctions extends Classifier {
     private transient Invocable split_vals_fun;
     private transient Invocable make_node_into_leaf_fun;
     private transient Invocable cost_single_node_calc_fun;
+    private transient Invocable prox_single_node_calc_fun;
     private transient Invocable cost_both_children_calc_fun;
     private transient Invocable node_assignment_fun;
     private transient Invocable after_node_birth_fun;
@@ -180,6 +183,26 @@ public abstract class YARFCustomFunctions extends Classifier {
 		}
 		return YARFNode.BAD_FLAG_double;
 	}
+    
+    public double runProxSingleNodeCost(YARFNode node){
+        if (prox_single_node_calc_fun == null){
+            prox_single_node_calc_fun = stringToInvokableCompiledFunction(prox_single_node_calc_function_str, ProxSingleNodeCostScriptFunctionName);
+        }
+        try {
+            return (double)prox_single_node_calc_fun.invokeFunction(ProxSingleNodeCostScriptFunctionName, node);
+        } catch (NoSuchMethodException e) {
+            StopBuilding();
+            System.err.println("Your node cost script must include the function \"" + ProxSingleNodeCostScriptFunctionName + "(node)\" and return the cost as a double.");
+            e.printStackTrace();
+            System.err.println("Your function:\n\n" + prox_single_node_calc_function_str);
+        } catch (ScriptException e) {
+            StopBuilding();
+            System.err.println("There was a problem evaluating your \"" + ProxSingleNodeCostScriptFunctionName + "\" function:");
+            e.printStackTrace();
+            System.err.println("Your function:\n\n" + prox_single_node_calc_function_str);
+        }
+        return YARFNode.BAD_FLAG_double;
+    }
 		
 	public double runBothChildrenCost(YARFNode leftNode, YARFNode rightNode){
 		if (cost_both_children_calc_fun == null){
@@ -361,6 +384,10 @@ public abstract class YARFCustomFunctions extends Classifier {
 	public boolean customFunctionSingleNodeCostCalc(){
 		return cost_single_node_calc_function_str != null;
 	}
+    
+    public boolean customFunctionProxSingleNodeCostCalc(){
+        return prox_single_node_calc_function_str != null;
+    }
 	
 	public boolean customFunctionBothChildrenCostCalc(){
 		return cost_both_children_calc_function_str != null;
@@ -430,6 +457,16 @@ public abstract class YARFCustomFunctions extends Classifier {
 		this.cost_single_node_calc_function_str = cost_single_node_calc_function_str;
 		cost_single_node_calc_fun = null; //reset
 	}
+    
+    public String getProx_single_node_calc_function_str() {
+        return prox_single_node_calc_function_str;
+    }
+    
+    public void setProx_single_node_calc_function_str(
+                                                       String prox_single_node_calc_function_str) {
+        this.prox_single_node_calc_function_str = prox_single_node_calc_function_str;
+        prox_single_node_calc_fun = null; //reset
+    }
 
 	public String getCost_both_children_calc_function_str() {
 		return cost_both_children_calc_function_str;

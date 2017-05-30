@@ -970,5 +970,24 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	public boolean converged(){
 		return converged;
 	}
+    
+    public String[][] proximity(double[][] X1, double[][] X2){
+        int nx1 = X1.length;
+        int nx2 = X2.length;
+        final String[][] out = new String[nx1 + nx2][num_trees];
+        
+        for (int t = 0; t < num_trees; t++){
+            for(int i = 0; i < nx1; i++){
+                out[i][t] = yarf_trees[t].root.prox_info(X1[i]);
+            }
+        }
+        
+        for (int t = 0; t < num_trees; t++){
+            for(int i = 0; i < nx2; i++){
+                out[i + nx1][t] = yarf_trees[t].root.prox_info(X2[i]);
+            }
+        }
+        return out;
+    }
 	
 }

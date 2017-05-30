@@ -424,5 +424,29 @@ public class YARFNode implements Cloneable {
 
 	public double[] uniqueXvals(int j) {
 		return Tools.unique_values(node_Xs_by_feature(j)).toArray();
-	}	
+    }
+    
+    public String prox_info(double[] record) {
+        YARFNode evalNode = this;
+        String out = "";
+        while (true){
+            if (evalNode.is_leaf){
+                return out;
+            }
+            else if (record[evalNode.split_attribute] <= evalNode.split_value){
+                if (tree.yarf.customFunctionProxSingleNodeCostCalc()){
+                    out += Double.toString(tree.yarf.runProxSingleNodeCost(evalNode));
+                }
+                evalNode = evalNode.left;
+                out += "L";
+            }
+            else {
+                if (tree.yarf.customFunctionProxSingleNodeCostCalc()){
+                    out += Double.toString(tree.yarf.runProxSingleNodeCost(evalNode));
+                }
+                evalNode = evalNode.right;
+                out += "R";
+            }
+        }
+    }
 }

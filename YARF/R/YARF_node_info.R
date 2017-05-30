@@ -295,3 +295,62 @@ shared_initial_substring = function(s1, s2){
 	}
 	substr(s1, 1, i)
 }
+
+#' Computes information about the "proximity" of observations within the YARF model. Given two datasets,
+#' information is computed for all pairs of observations. Information returned is the prediction nodes (for all trees) 
+#' for both objects and their common node in the tree structure plus much information about the nodes.   
+#' 
+#' @param yarf_mod 					A YARF model object.
+#' @param X1 				        A n* x p matrix where each row is an observation. If \code{NULL} (the default), 
+#' 									then this parameter is set to the model's training data.
+#' @param X2 				        A n x p matrix where each row is an observation. If \code{NULL} (the default), 
+#' @param prox_single_node_calc_script Script ...
+#' @return 							A list indexed by the row number of \code{X1} whose elements are a list indexed by
+#' 									the row number of \code{X2} whose elements are a list indexed by tree number whose
+#' 									elements are a list consisting of the following information: (a) X1 prediction node 
+#' 									(b) X2 prediction node, (c) shared node, (d) locations of all three nodes indicating
+#' 									left/right directions, (e) depth differences to shared node where 0 indicates they
+#' 									are in the same node, (f) parent node's cost for all three (where the parent cost
+#' 									of the root is the null model cost)
+#'                          
+#' 
+#' @author Olson
+#' @export
+proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
+
+    # check prox_single_node_calc_script
+    if (!is.null(prox_single_node_calc_script)){
+		if (class(prox_single_node_calc_script) != "character"){
+			stop("'prox_single_node_calc_script' must be a character string of Javascript code")
+		}
+	}
+    
+    if (!is.null(prox_single_node_calc_script)){
+        .jcall(java_YARF, "V", "setProx_single_node_calc_function_str", prox_single_node_calc_script)
+    }
+
+    # preprocess inputs
+    nx1 = nrow(X1)
+    X1 = pre_process_new_data(X1, yarf_mod)
+    X2 = pre_process_new_data(X2, yarf_mod)
+
+    # calculate node path info for each input matrix
+    out = .jcall(obj$java_YARF, "[[S", "proximity", .jarray(X1, dispatch = TRUE),
+        .jarray(X2, dispatch = TRUE))
+
+    # process array into pieces
+    X1 = out[1:nx1,]
+    X2 = out[-(1:nx1),]
+
+    list(X1=X1, X2=X2)
+    
+#    vals_1 = str_split(matt[,1], '[LR]')
+#    strings_1 = sapply(str_split(matt[,1], '[0-9.]'), paste0, collapse='')
+
+#    vals_2 = str_split(matt[,2], '[LR]')
+#    strings_2 = sapply(str_split(matt[,2], '[0-9.]'), paste0, collapse='')
+
+}
+
+
+    
