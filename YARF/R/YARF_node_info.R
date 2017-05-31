@@ -286,24 +286,16 @@ tree_average_proximity_info = function(raw){
 
 
 #' Computes information about the "proximity" of observations within the YARF model. Given two datasets,
-#' information is computed for all pairs of observations. Information returned is the prediction nodes (for all trees) 
-#' for both objects and their common node in the tree structure plus much information about the nodes.   
+#' information is computed for all pairs of observation.
 #' 
 #' @param yarf_mod 					A YARF model object.
 #' @param X1 				        A n* x p matrix where each row is an observation. If \code{NULL} (the default), 
 #' 									then this parameter is set to the model's training data.
 #' @param X2 				        A n x p matrix where each row is an observation. If \code{NULL} (the default), 
 #' @param prox_single_node_calc_script Script ...
-#' @return 							A list indexed by the row number of \code{X1} whose elements are a list indexed by
-#' 									the row number of \code{X2} whose elements are a list indexed by tree number whose
-#' 									elements are a list consisting of the following information: (a) X1 prediction node 
-#' 									(b) X2 prediction node, (c) shared node, (d) locations of all three nodes indicating
-#' 									left/right directions, (e) depth differences to shared node where 0 indicates they
-#' 									are in the same node, (f) parent node's cost for all three (where the parent cost
-#' 									of the root is the null model cost)
-#'                          
+#' @return 							(For now, a list of raw information for rows in each dataset)
 #' 
-#' @author Olson
+#' @author Matt Olson
 #' @export
 proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
 
@@ -324,8 +316,6 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
     X2 = pre_process_new_data(X2, yarf_mod)
 
     # calculate node path info for each input matrix
-    #out = .jcall(yarf_mod$java_YARF, "[[S", "proximity", .jarray(X1, dispatch = TRUE),
-    #    .jarray(X2, dispatch = TRUE))
     out = yarf_mod$java_YARF$proximity(.jarray(X1, dispatch = TRUE),
         .jarray(X2, dispatch = TRUE))
     out = t(sapply(.jevalArray(out), .jevalArray))
@@ -334,14 +324,9 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
     X1 = out[1:nx1,]
     X2 = out[-(1:nx1),]
 
-    list(X1=X1, X2=X2)
+    list(X1=list(path=f_path(X1), vals=f_vals(X1)),
+         X2=list(path=f_path(X2), vals=f_vals(X2)))
     
-#    vals_1 = str_split(matt[,1], '[LR]')
-#    strings_1 = sapply(str_split(matt[,1], '[0-9.]'), paste0, collapse='')
-
-#    vals_2 = str_split(matt[,2], '[LR]')
-#    strings_2 = sapply(str_split(matt[,2], '[0-9.]'), paste0, collapse='')
-
 }
 
 shared_initial_substring = function(s1, s2){
@@ -356,5 +341,18 @@ shared_initial_substring = function(s1, s2){
 	substr(s1, 1, i)
 }
 
+f_path = function(X){
+    z = sapply(str_split(X, '[0-9.]'), paste0, collapse='')
+    out = matrix(z, nrow=nrow(X), byrow=F)
+    out
+}
 
-    
+f_vals = function(X){
+    out = list()
+    n = nrow(X)
+    for(i in 1:n){
+        z = str_split(X[1,], '[LR]')
+        out[[i]] = sapply(z, function(x) as.numeric(x[nchar(x) > 0]))
+    }
+    out
+}
