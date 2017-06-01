@@ -351,7 +351,7 @@ f_vals = function(X){
     out = list()
     n = nrow(X)
     for(i in 1:n){
-        z = str_split(X[i,], '[LR]')
+        z = str_split(X[i,], '[LRT]')
         out[[i]] = sapply(z, function(x) as.numeric(x[nchar(x) > 0]))
     }
     out

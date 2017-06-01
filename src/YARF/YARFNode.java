@@ -431,7 +431,10 @@ public class YARFNode implements Cloneable {
         String out = "";
         while (true){
             if (evalNode.is_leaf){
-                return out;
+                if (tree.yarf.customFunctionProxSingleNodeCostCalc()){
+                    out += Double.toString(tree.yarf.runProxSingleNodeCost(evalNode));
+                }
+                return out += "T";
             }
             else if (record[evalNode.split_attribute] <= evalNode.split_value){
                 if (tree.yarf.customFunctionProxSingleNodeCostCalc()){

@@ -60,16 +60,19 @@ test = oned_model(1e2, 10)
 X = as.data.frame(train$X)
 y = as.factor(train$y)
 
-yarf_mod = YARF(X, y, num_trees = 100, mtry=10, shared_scripts=shared_scripts)
+boot_ind = lapply(1:100, function(x) 1:500)
+
+yarf_mod = YARF(X, y, num_trees = 100, mtry=1, shared_scripts=shared_scripts, nodesize=1,
+    bootstrap_indices=boot_ind, calculate_oob_error = FALSE)
+
 out = proximity_info(yarf_mod, X, X, prox_single_node_calc_script=prox_script)
 
-out$X1$path[3,1]
-out$X1$vals[[3]][[1]]
+out$X1$path[3,5]
+out$X1$vals[[3]][[5]]
+library(dplyr)
+matt = data.frame(path=as.character(out$X1$path[,1]), sign=as.character(y))
+matt %>% arrange(path)
 
-for(i in 1:500){
-    if(nchar(out$X1$path[i,1]) != length(out$X1$vals[[i]][[1]])){
-        print(i)
-        break
-    }
-        
-}
+get_tree_num_nodes_leaves_max_depths(yarf_mod)
+apply(out$X1$path, 2, function(x) max(nchar(x)))
+apply(out$X1$path, 2, function(x) length(unique(x)))
