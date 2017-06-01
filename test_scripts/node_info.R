@@ -50,3 +50,26 @@ shared_initial_substring = function(s1, s2){
 yarf_mod = YARF(X, y, num_trees = 100, mtry=1, shared_scripts=shared_scripts)
 out = proximity_info(yarf_mod, X, X, prox_single_node_calc_script=prox_script)
 shared_initial_substring(out$X1$path[1,1], out$X2$path[1,1])
+
+## JUNKME ##
+set.seed(123)
+source('../../ProbabilityEstimation/Code/models.R')
+train = oned_model(5e2, 10)
+test = oned_model(1e2, 10)
+
+X = as.data.frame(train$X)
+y = as.factor(train$y)
+
+yarf_mod = YARF(X, y, num_trees = 100, mtry=10, shared_scripts=shared_scripts)
+out = proximity_info(yarf_mod, X, X, prox_single_node_calc_script=prox_script)
+
+out$X1$path[3,1]
+out$X1$vals[[3]][[1]]
+
+for(i in 1:500){
+    if(nchar(out$X1$path[i,1]) != length(out$X1$vals[[i]][[1]])){
+        print(i)
+        break
+    }
+        
+}
