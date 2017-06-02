@@ -317,9 +317,7 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script = NULL)
     # calculate node path info for each input matrix
 	num_cores = get("YARF_NUM_CORES", YARF_globals)
     out = yarf_mod$java_YARF$proximity(.jarray(X1, dispatch = TRUE), .jarray(X2, dispatch = TRUE), as.integer(num_cores))
-    cat("after proximity")
 	out = t(sapply(.jevalArray(out), .jevalArray))
-	cat("after jevalArray")
 	
     # process array into pieces and overwrite initialy arguments to save memory
     nx1 = nrow(X1)
