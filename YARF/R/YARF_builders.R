@@ -461,11 +461,9 @@ YARF = function(
 		.jcall(java_YARF, "V", "writeStdOutToLogFile")
 	}
 	
-	#load the number of cores the user set (default is declared in zzz.R)
-	num_cores = get("YARF_NUM_CORES", YARF_globals)
+
 	
 	#build YARF to spec with what the user wants
-	.jcall(java_YARF, "V", "setNumCores", as.integer(num_cores)) #this must be set FIRST!!!
 	.jcall(java_YARF, "V", "setNumTrees", as.integer(num_trees))
 	.jcall(java_YARF, "V", "setVerbose", verbose)
 	.jcall(java_YARF, "V", "setPredType", pred_type)
@@ -556,7 +554,9 @@ YARF = function(
 	if (verbose){
 		cat("Beginning YARF", pred_type, "model construction...")
 	}
-	.jcall(java_YARF, "V", "Build") #Finally get it built
+	#load the number of cores the user set (default is declared in zzz.R)
+	num_cores = get("YARF_NUM_CORES", YARF_globals)
+	.jcall(java_YARF, "V", "Build", as.integer(num_cores)) #Finally get it built
 	if (verbose){
 		cat("done.\n")
 	}

@@ -433,6 +433,9 @@ public class YARFNode implements Cloneable {
             if (evalNode.is_leaf){
                 if (tree.yarf.customFunctionProxSingleNodeCostCalc()){
                     out += Double.toString(tree.yarf.runProxSingleNodeCost(evalNode));
+                } 
+                else {
+                	out += evalNode.cost();
                 }
                 return out += "T";
             }
@@ -440,12 +443,18 @@ public class YARFNode implements Cloneable {
                 if (tree.yarf.customFunctionProxSingleNodeCostCalc()){
                     out += Double.toString(tree.yarf.runProxSingleNodeCost(evalNode));
                 }
+                else {
+                	out += evalNode.cost();
+                }
                 evalNode = evalNode.left;
                 out += "L";
             }
             else {
                 if (tree.yarf.customFunctionProxSingleNodeCostCalc()){
                     out += Double.toString(tree.yarf.runProxSingleNodeCost(evalNode));
+                }
+                else {
+                	out += evalNode.cost();
                 }
                 evalNode = evalNode.right;
                 out += "R";

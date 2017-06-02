@@ -3,8 +3,7 @@
 \name{proximity_info}
 \alias{proximity_info}
 \title{Computes information about the "proximity" of observations within the YARF model. Given two datasets,
-information is computed for all pairs of observations. Information returned is the prediction nodes (for all trees) 
-for both objects and their common node in the tree structure plus much information about the nodes.}
+information is computed for all pairs of observation.}
 \usage{
 proximity_info(yarf_mod, X1, X2, prox_single_node_calc_script = NULL)
 }
@@ -19,19 +18,12 @@ then this parameter is set to the model's training data.}
 \item{prox_single_node_calc_script}{Script ...}
 }
 \value{
-A list indexed by the row number of \code{X1} whose elements are a list indexed by
-									the row number of \code{X2} whose elements are a list indexed by tree number whose
-									elements are a list consisting of the following information: (a) X1 prediction node 
-									(b) X2 prediction node, (c) shared node, (d) locations of all three nodes indicating
-									left/right directions, (e) depth differences to shared node where 0 indicates they
-									are in the same node, (f) parent node's cost for all three (where the parent cost
-									of the root is the null model cost)
+(For now, a list of raw information for rows in each dataset)
 }
 \description{
 Computes information about the "proximity" of observations within the YARF model. Given two datasets,
-information is computed for all pairs of observations. Information returned is the prediction nodes (for all trees) 
-for both objects and their common node in the tree structure plus much information about the nodes.
+information is computed for all pairs of observation.
 }
 \author{
-Olson
+Matt Olson
 }

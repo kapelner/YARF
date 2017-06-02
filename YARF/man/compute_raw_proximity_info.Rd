@@ -25,6 +25,9 @@ If \code{X1} is not \code{NULL}, this parameter has no effect on output.}
 \item{oob_only_2}{If \code{X2} is \code{NULL}, setting this to \code{TRUE} (the default) 
 will only return proximity information for trees where each observation is out-of-bag. 
 If \code{X2} is not \code{NULL}, this parameter has no effect on output.}
+
+\item{verbose}{Print out periodic messages on progress of the computation of the proximity information.
+The default is \code{TRUE}.}
 }
 \value{
 A list indexed by the row number of \code{X1} whose elements are a list indexed by
@@ -41,5 +44,5 @@ information is computed for all pairs of observations. Information returned is t
 for both objects and their common node in the tree structure plus much information about the nodes.
 }
 \author{
-Kapelner
+Adam Kapelner
 }

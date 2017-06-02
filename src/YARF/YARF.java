@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.math3.stat.StatUtils;
@@ -32,7 +33,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	public static final boolean DEBUG = false;
 	
 	/** the number of CPU cores to use in YARF operations */
-	protected int num_cores;
+//	protected int num_cores;
 	/** the number of trees in this YARF model */
 	protected int num_trees;
 	/** is this a regression problem? (or a classification problem) */
@@ -88,12 +89,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	/** If the user wishes to wait until convergence, this records that it converged */
 	private boolean converged;
 
+	private ExecutorService yarf_tree_grow_threadpool;
+
 
 
 	public static void main(String[] args){
 		YARF yarf = new YARF();
 		yarf.setWait(true);
-		yarf.setNumCores(1);
 		yarf.setNumTrees(1);
 		yarf.setNodesize(2);
 		yarf.setPredType("classification");
@@ -205,10 +207,6 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		this.other_data_names = other_data_names;
 	}
 	
-	public void setNumCores(int num_cores){
-		this.num_cores = num_cores;
-	}
-	
 	public void setNumTrees(int num_trees){
 		this.num_trees = num_trees;
 	}
@@ -300,7 +298,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	}
 
 	/** This function builds the forest by building all the trees */
-	public void Build() {
+	public void Build(int num_cores) {
 
 		//System.err.println("inside YARF");
 //		all_attribute_sorts = new TIntObjectHashMap<int[]>(p);
@@ -317,10 +315,10 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		//run a build on all threads
 		long t0 = System.currentTimeMillis();
 		//System.err.println("inside 2");
-		ExecutorService tree_grow_pool = Executors.newFixedThreadPool(num_cores);
+		yarf_tree_grow_threadpool = Executors.newFixedThreadPool(num_cores);
 		for (int t = 0; t < num_trees; t++){
 			final int tf = t;
-	    	tree_grow_pool.execute(new Runnable(){
+	    	yarf_tree_grow_threadpool.execute(new Runnable(){
 				public void run() {	
 					if (stopped){ //user hit the brakes or the model converged, so ditch
 						return;
@@ -336,11 +334,11 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 				}
 			});
 		}
-		tree_grow_pool.shutdown();
+		yarf_tree_grow_threadpool.shutdown();
 		Thread await_completion = new Thread(){
 			public void run(){
 				try {
-					tree_grow_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS); //infinity
+					yarf_tree_grow_threadpool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS); //infinity
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -897,7 +895,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	}
 
 	private double calcOOBCost() {
-		double[] y_hats = predictOutOfBag(1);
+		double[] y_hats = predictOutOfBag(1); //since this is run within one thread, this should be done in serial, hence the "1"
 //		System.out.println("y_hats: " + Tools.StringJoin(y_hats));
 //		System.out.println("y: " + Tools.StringJoin(y));
 		
@@ -959,7 +957,12 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			//we're done
 			synchronized (this){
 				if (!stopped){
-					System.out.println("YARF model converged in " + (num_cores > 1 ? "approximately " : "") + progress() + " trees.");
+					System.out.println(
+						"YARF model converged in " + 
+						(((ThreadPoolExecutor)yarf_tree_grow_threadpool).getPoolSize() > 1 ? "approximately " : "") + 
+						progress() + 
+						" trees."
+					);
 					StopBuilding();
 					converged = true;
 				}				
@@ -971,23 +974,46 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		return converged;
 	}
     
-    public String[][] proximity(double[][] X1, double[][] X2){
+    public String[][] proximity(double[][] X1, double[][] X2, int num_cores){
+//    	System.out.println("run proximity function with " + num_cores + " cores!");
         int nx1 = X1.length;
         int nx2 = X2.length;
         final String[][] out = new String[nx1 + nx2][num_trees];
         
-        for (int t = 0; t < num_trees; t++){
-            for(int i = 0; i < nx1; i++){
-                out[i][t] = yarf_trees[t].root.prox_info(X1[i]);
-            }
-        }
-        
-        for (int t = 0; t < num_trees; t++){
-            for(int i = 0; i < nx2; i++){
-                out[i + nx1][t] = yarf_trees[t].root.prox_info(X2[i]);
-            }
-        }
+		ExecutorService proximity_info_getter_pool = Executors.newFixedThreadPool(num_cores);
+		for (int t = 0; t < num_trees; t++){
+			final int tf = t;
+	    	proximity_info_getter_pool.execute(new Runnable(){
+				public void run() {
+//					System.out.println("tree " + tf + " thread: " + Thread.currentThread().getId());
+					try {
+						YARFNode root = yarf_trees[tf].root;
+			            for (int i = 0; i < nx1; i++){
+			                out[i][tf] = root.prox_info(X1[i]);
+			            }
+			            for (int i = 0; i < nx2; i++){
+			                out[i + nx1][tf] = root.prox_info(X2[i]);
+			            }
+					} catch (Exception e){
+						e.printStackTrace();
+						proximity_info_getter_pool.shutdownNow();
+					}
+				}
+	    	});
+		}		
+		proximity_info_getter_pool.shutdown();
+		try {
+			proximity_info_getter_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS); //infinity
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
         return out;
     }
+
+	@Override
+	public void Build() {
+		Build(1);
+	}
 	
 }

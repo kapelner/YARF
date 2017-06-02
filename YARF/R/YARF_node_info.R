@@ -87,7 +87,7 @@ get_nodes_matrix = function(X, yarf_mod){
 #' @param oob_only_2          		If \code{X2} is \code{NULL}, setting this to \code{TRUE} (the default) 
 #' 									will only return proximity information for trees where each observation is out-of-bag. 
 #' 									If \code{X2} is not \code{NULL}, this parameter has no effect on output.
-#' @verbose							Print out periodic messages on progress of the computation of the proximity information.
+#' @param verbose					Print out periodic messages on progress of the computation of the proximity information.
 #' 									The default is \code{TRUE}.
 #' @return 							A list indexed by the row number of \code{X1} whose elements are a list indexed by
 #' 									the row number of \code{X2} whose elements are a list indexed by tree number whose
@@ -98,7 +98,7 @@ get_nodes_matrix = function(X, yarf_mod){
 #' 									of the root is the null model cost)
 #'                          
 #' 
-#' @author Kapelner
+#' @author Adam Kapelner
 #' @export
 compute_raw_proximity_info = function(yarf_mod, X1 = NULL, X2 = NULL, oob_only_1 = TRUE, oob_only_2 = TRUE, verbose = TRUE){
 	## error checks
@@ -297,7 +297,7 @@ tree_average_proximity_info = function(raw){
 #' 
 #' @author Matt Olson
 #' @export
-proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
+proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script = NULL){
 
     # check prox_single_node_calc_script
     if (!is.null(prox_single_node_calc_script)){
@@ -311,24 +311,39 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script=NULL){
     }
 
     # preprocess inputs
-    nx1 = nrow(X1)
     X1 = pre_process_new_data(X1, yarf_mod)
     X2 = pre_process_new_data(X2, yarf_mod)
 
     # calculate node path info for each input matrix
-    out = yarf_mod$java_YARF$proximity(.jarray(X1, dispatch = TRUE),
-        .jarray(X2, dispatch = TRUE))
-    out = t(sapply(.jevalArray(out), .jevalArray))
+	num_cores = get("YARF_NUM_CORES", YARF_globals)
+    out = yarf_mod$java_YARF$proximity(.jarray(X1, dispatch = TRUE), .jarray(X2, dispatch = TRUE), as.integer(num_cores))
+    cat("after proximity")
+	out = t(sapply(.jevalArray(out), .jevalArray))
+	cat("after jevalArray")
+	
+    # process array into pieces and overwrite initialy arguments to save memory
+    nx1 = nrow(X1)
+    X1 = out[1 : nx1, ]
+    X2 = out[-(1 : nx1), ]
 
-    # process array into pieces
-    X1 = out[1:nx1,]
-    X2 = out[-(1:nx1),]
-
-    list(X1=list(path=f_path(X1), vals=f_vals(X1)),
-         X2=list(path=f_path(X2), vals=f_vals(X2)))
+    list(X1 = list(path = f_path(X1), vals = f_vals(X1)),
+         X2 = list(path = f_path(X2), vals = f_vals(X2)))
     
 }
 
+#' Returns the shared initial portion of a string
+#' 
+#' Given two strings, return the identical portion beginning from the first character and on.
+#' 
+#' @param s1		The first string 
+#' @param s2 		The second string
+#' @return 			The shared substring
+#' 
+#' @author Adam Kapelner
+#' @export
+#' @examples 
+#' shared_initial_substring("money can't buy me love", "money can buy me love") 
+#' #> "money can"
 shared_initial_substring = function(s1, s2){
 	for (i in 1 : nchar(s1)){
 		if (identical(substr(s1, 1, i), substr(s2, 1, i))){
