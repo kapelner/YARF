@@ -224,7 +224,7 @@ public class StatToolbox {
 				aggregate += class_freq * (n - class_freq);
 			}
 		}
-		return aggregate / n;
+		return aggregate / Math.pow(n, 2);
 	}	
 
 	public static TDoubleIntHashMap class_freqs(double[] data) {
