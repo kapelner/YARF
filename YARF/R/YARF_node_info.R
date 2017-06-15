@@ -318,12 +318,14 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script = NULL)
 	num_cores = get("YARF_NUM_CORES", YARF_globals)
     out = yarf_mod$java_YARF$proximity(.jarray(X1, dispatch = TRUE), .jarray(X2, dispatch = TRUE), as.integer(num_cores))
 	out = t(sapply(.jevalArray(out), .jevalArray))
+    if(dim(out)[1] == 1)
+        out = t(out)
 	
     # process array into pieces and overwrite initialy arguments to save memory
     nx1 = nrow(X1)
-    X1 = out[1 : nx1, ]
-    X2 = out[-(1 : nx1), ]
-
+    X1 = out[1 : nx1,, drop=FALSE]
+    X2 = out[-(1 : nx1),, drop=FALSE]
+    
     list(X1 = list(path = f_path(X1), vals = f_vals(X1)),
          X2 = list(path = f_path(X2), vals = f_vals(X2)))
     
@@ -355,8 +357,8 @@ shared_initial_substring = function(s1, s2){
 }
 
 f_path = function(X){
-    z = sapply(str_split(X, '[0-9.]'), paste0, collapse='')
-    out = matrix(z, nrow=nrow(X), byrow=F)
+    z = str_replace_all(X, '[0-9.E-]', '')
+    out = matrix(z, nrow=nrow(X))
     out
 }
 

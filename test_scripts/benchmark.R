@@ -2,6 +2,7 @@ options(java.parameters = c("-Xmx4000m"))
 library(YARF)
 library(mlbench)
 library(randomForest)
+library(dplyr)
 
 # ------------------------------------------------------------------------------
 #                               Helper Funcs
@@ -112,7 +113,10 @@ train_test_split_list = function(df, train_frac=0.8){
   # Returns a train / test 'list'
   #
   # df: list with items 'y' and 'X'
-  if(!all(names(df) %in% c('y', 'X'))) stop('Bad df names')
+
+  
+  #if(!all(names(df) %in% c('y', 'X'))) stop('Bad df names')
+  df = list(y=df$y, X=select(df, contains('x')))
   n = length(df$y)
   n_train = floor(n*train_frac)
   train_ix = sample(1:n, n_train, replace=F)
@@ -201,7 +205,9 @@ save(rmse, results, file='bench_regression.RData')
 #                                   Bakeoff (Classification)
 # ------------------------------------------------------------------------------
 
-dsets = list.files(path='../Data/', pattern='*.RData', full.names=TRUE)
+n_reps = 10
+dsets = list.files(path='../../MLDataSets/R_Data/',
+    pattern='*.RData', full.names=TRUE)
 dsets = dsets[c(-3, -7)]
 misclass = list()
 t1 = Sys.time()
@@ -215,10 +221,10 @@ for(i in 1:n_reps){
         test = dfs$test
         train$y = as.factor(train$y); levels(train$y) = c(1,2)
         test$y = as.factor(test$y); levels(test$y) = c(1,2)
-        # tryCatch({
+        tryCatch({
             out = simulation_run(train$X, train$y, test$X)
             misclass[[dset_name]][[i]] = misclass_list(out, test$y)
-        # }, error=function(e) cat('Bad dset: ', dset_name, 'at ', i))
+        }, error=function(e) cat('Bad dset: ', dset_name, 'at ', i))
         
         #yarf_mod = YARF(train$X, train$y, mtry = 1, num_trees = 500,
         #    verbose=F)
@@ -234,4 +240,5 @@ for(i in 1:n_reps){
 }
 
 save(misclass, file='results_class.RData')
- 
+
+
