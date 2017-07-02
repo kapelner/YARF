@@ -80,20 +80,20 @@ is.missing = function(x){
 	is.na(x) || is.nan(x)
 }
 
-pre_process_new_data = function(new_data, yarf){
+pre_process_new_data = function(new_data, yarf_mod){
 	new_data = as.data.frame(new_data)
 	n = nrow(new_data)
 	
 	#preprocess the new data with the training data to ensure proper dummies
-	new_data_and_training_data = rbind(new_data, yarf$X)
+	new_data_and_training_data = rbind(new_data, yarf_mod$X)
 	#kill all factors again
 	predictors_which_are_factors = names(which(sapply(new_data_and_training_data, is.factor)))
 	for (predictor in predictors_which_are_factors){
 		new_data_and_training_data[, predictor] = factor(new_data_and_training_data[, predictor])
 	}
 	
-	new_data = pre_process_data(new_data_and_training_data, yarf$use_missing_data_dummies_as_vars)$data
-	training_data_features = yarf$training_data_features
+	new_data = pre_process_data(new_data_and_training_data, yarf_mod$use_missing_data_dummies_as_vars)$data
+	training_data_features = yarf_mod$training_data_features
 	
 	#The new data features has to be a superset of the training data features, so pare it down even more
 	new_data_features_before = colnames(new_data)	
@@ -101,7 +101,8 @@ pre_process_new_data = function(new_data, yarf){
 	new_data = new_data[1 : n, training_data_features, drop = FALSE]
 	
 	differences = setdiff(new_data_features_before, training_data_features)
-	
+	#never throw a warning if the "new" feature happened to be a created missing feature.
+	differences = Filter(function(name){!grepl("M_", name)}, differences)
 	if (length(differences) > 0){
 		warning("The following features were found in records for prediction which were not found in the original training data:\n    ", paste(differences, collapse = ", "), "\n  These features will be ignored during prediction.")
 	}

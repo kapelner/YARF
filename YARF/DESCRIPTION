@@ -14,7 +14,9 @@ Depends:
 	stringr,
 	pander,
 	ggplot2,
+	gridExtra,
 	R6,
+	Bolstad2,
     R (>= 3.2.0)
 Imports:
     graphics,

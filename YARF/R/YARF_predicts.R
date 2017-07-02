@@ -17,9 +17,12 @@
 predict.YARF = function(object, new_data, ...){
 	check_serialization(object) #ensure the Java object exists and fire an error if not
 	
-	if (class(new_data) != "data.frame"){		
-		new_data = data.frame(new_data)
-		setNames(new_data, names(objet$X))
+	if (class(new_data) != "data.frame"){
+		stop("Data frame required for \"new_data\".")
+	}
+	if (!all.equal(colnames(new_data), colnames(object$X))){
+		warning("Prediction set column names did not match training set column names.\nNow coercing the prediction set column names.")
+		colnames(new_data) = colnames(object$X)
 	}
 	if (!object$use_missing_data){
 		nrow_before = nrow(new_data)

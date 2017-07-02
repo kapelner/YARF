@@ -222,7 +222,7 @@ YARF = function(
 		calculate_oob_error = TRUE,
 		fit_until_convergence = FALSE,
 		oob_cost_calculation_script = NULL,
-		tolerance = 0.1,
+		tolerance = 0.01,
 		verbose = TRUE,
 		debug_log = FALSE
 	){
@@ -295,14 +295,19 @@ YARF = function(
 	}
 	
 	if (verbose){
-		cat("YARF initializing with", num_trees, "trees...\n")	
+		if (fit_until_convergence){
+			cat("YARF initializing with as many trees as it needs to converge (but max 10,000)...\n")	
+		} else {
+			cat("YARF initializing with a fixed", num_trees, "trees...\n")	
+		}
+		
 	}	
 	t0 = Sys.time()
 	
 	if ((is.null(X) && is.null(Xy)) || is.null(y) && is.null(Xy)){
 		stop("You need to give YARF a training set either by specifying X and y or by specifying a matrix Xy which contains the response named \"y.\"\n")
 	} else if (!is.null(X) && !is.null(y) && !is.null(Xy)){
-		stop("You cannot specify both X,y and Xy simultaneously.")		
+		stop("You cannot specify both [X,y] and Xy simultaneously.")		
 	} else if (is.null(X) && is.null(y)){ #they specified Xy, so now just pull out X,y
 		#first ensure it's a dataframe
 		if (class(Xy) != "data.frame"){

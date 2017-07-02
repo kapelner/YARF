@@ -1,6 +1,6 @@
 options(java.parameters = c("-Xmx4000m")) #this means 4GB of RAM for YARF
 library(YARF)
-set_YARF_num_cores(3)
+set_YARF_num_cores(7)
 
 n = 8000
 p = 10
@@ -23,11 +23,12 @@ head(yarf_mod$model_matrix_training_data) # among other things...
 #on the subset of trees that have been built. Here, you can see
 #if there are major problems and cut your losses
 YARF_update_with_oob_results(yarf_mod)
+
 #If you would like to wait until the model is built, you
 #can set up a process to notify you about the progress which
 #will return to the prompt when the model is completed
 #and you can also see a illustration of the convergence
-YARF_progress_reports(yarf_mod, time_delay_in_seconds = 4, plot_oob_error = TRUE, trail = 30)
+YARF_convergence(yarf_mod, time_delay_in_seconds = 5, trail_pts = 30)
 #you can "stop" this function at any time without stopping the
 #model construction if you would like to return to the console
 

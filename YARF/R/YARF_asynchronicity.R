@@ -58,44 +58,49 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 	))
 }
 
-#' Prints out a messages reflecting the progress of the YARF model construction until completion
+#' Prints out a messages reflecting the progress of the YARF model construction until completion.
+#' 
+#' Note: running this function once will slow down your model construction since it will forever
+#' be calculating OOB statistics after each tree.
 #' 
 #' @param yarf_mod 							The yarf model object
 #' @param time_delay_in_seconds				Frequency of messages in seconds. Default is \code{5} seconds.
-#' @param trail_pts							If \code{plot_oob_error} is \code{TRUE}, this optional parameter
-#' 											if non null will plot a secondary window with only the trees in the last \code{trail_trees}
+#' @param trail_pts							If non-null, it will plot a secondary window with only the trees in the last \code{trail_trees}
 #' 											number of progress updates defined by \code{time_delay_in_seconds} 
 #' 											versus error which allows assessing the convergence more closely.
 #' 											Default is \code{50}. 								
 #' 
-#' @author Kapelner
+#' @author Adam Kapelner
 #' @export
 YARF_convergence = function(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50){
 	if (!is.null(yarf_mod$oob_cost_calculation)){
-		ylab = "oob total cost (custom)"
+		ylab = "OOB total cost (custom)"
 	} else if (yarf_mod$pred_type == "regression"){
-		ylab = "oob 1-R^2"
+		ylab = "OOB 1-R^2"
 	} else {
-		ylab = "oob misclassification rate"
+		ylab = "OOB misclassification rate"
 	}
 	
+	.jcall(yarf_mod$java_YARF, "V", "iterativelyCalcOob")
 	repeat {
 		#first get the iteration data
 		oob_costs_by_iteration = .jcall(yarf_mod$java_YARF, "[D", "OOBCostsByIteration")
 		t = length(oob_costs_by_iteration)
-#		cat("t", t, "trail_pts", trail_pts, "\n")
+#		cat("t", t, "trail_pts", trail_pts, "oob_costs_by_iteration", oob_costs_by_iteration, "\n")
 		
 		#now plot it if the user wishes
 		if (t > 0){
-			if (t > trail_pts){
-				par(mfrow = c(1, 2))
-			} else {
-				par(mfrow = c(1, 1))
-			}
+
 			
-			plot(1 : t, oob_costs_by_iteration, type = "o", xlab = "# trees completed", ylab = ylab)
-			if (t > trail_pts){
-				plot((t - trail_pts) : t, oob_costs_by_iteration[(t - trail_pts) : t], type = "o", xlab = "# trees completed", ylab = ylab)
+			long_range_plot = ggplot(data.frame(x = 1 : t, y = oob_costs_by_iteration), aes(x, y)) +
+					geom_point() + geom_line() + xlab("# trees completed") + ylab(ylab)
+			
+			if (!is.null(trail_pts) && t > trail_pts){
+				short_range_plot = ggplot(data.frame(x = (t - trail_pts) : t, y = oob_costs_by_iteration[(t - trail_pts) : t]), aes(x, y)) +
+						geom_point() + geom_line() + xlab("# trees completed") + ylab(ylab)
+				grid.arrange(long_range_plot, short_range_plot, ncol = 2)
+			} else {
+				print(long_range_plot)				
 			}
 
 		}

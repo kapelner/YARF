@@ -3,6 +3,7 @@ package YARF;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.Serializable;
@@ -79,6 +80,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	private YARFRandomness r;
 	/** the random seed */
 	private Integer seed;
+	/** should we iteratively look at oob? */
+	private boolean iteratively_calc_oob;
 	/** should we build until convergence? */
 	private boolean stop_at_convergence;
 	/** if we are building until convergence, what tolerance do we stop at? */
@@ -464,6 +467,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	 */
 	public double[] Evaluate(double[][] records, int num_cores_evaluate){
 		int n_star = records.length;
+//		System.out.println("Evaluate nstar: " + n_star);
 		final double[] y_hats = new double[n_star];
 		
 		//speedup for the dumb user
@@ -567,11 +571,26 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	}
 	
 	public double[] allNodeAssignments(double[] record){
-		double[] y_preds = new double[num_trees];
-		for (int t = 0; t < num_trees; t++){
-			y_preds[t] = yarf_trees[t].Evaluate(record);	
+		int num_trees_currently = progress();
+		//if they're all done, use a fast method
+		if (num_trees_currently == num_trees){
+			double[] y_preds = new double[num_trees_currently];
+			for (int t = 0; t < num_trees; t++){
+				y_preds[t] = yarf_trees[t].Evaluate(record);	
+			}
+			return y_preds;	
 		}
-		return y_preds;		
+		//if they're not all done, use a slow method - evaluate only on trees that are completed and aggregate
+		else {
+			TDoubleHashSet y_preds = new TDoubleHashSet(num_trees_currently);
+			for (int t = 0; t < num_trees; t++){
+				YARFTree tree = yarf_trees[t];
+				if (tree.completed){
+					y_preds.add(tree.Evaluate(record));
+				}
+			}
+			return y_preds.toArray();
+		}
 	}
 //	
 //	/**
@@ -865,18 +884,28 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	public void stopAtConvergence(){
 		stop_at_convergence = true;
 	}
-
+	
+	public void iterativelyCalcOob(){
+		iteratively_calc_oob = true;
+	}
+	
+	public void stopIterativelyCalcOob(){
+		iteratively_calc_oob = false;
+	}
+	
 	public void setTolerance(double tolerance){
 		this.tolerance = tolerance;
 	}
 
 	public void treeCompletedCallback() {
-		if (stop_at_convergence){
+		if (stop_at_convergence || iteratively_calc_oob){
 			oob_cost_by_iteration.add(calcOOBCost());
+		}
+		if (stop_at_convergence){
 //			System.out.println("costs: " + Tools.StringJoin(oob_cost_by_iteration));
 			calcOOBCostChanges();
 //			System.out.println("deltas: " + Tools.StringJoin(oob_costs_changes));
-			assessConvergenceAndStop();
+			assessConvergenceAndStopIfSo();
 		}
 	}
 
@@ -924,7 +953,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		return costs;
 	}
 	
-	private void assessConvergenceAndStop() {
+	private void assessConvergenceAndStopIfSo() {
 		//first determine the first vacillation point
 		int t0 = Integer.MAX_VALUE;
 		int l = oob_costs_changes.size();

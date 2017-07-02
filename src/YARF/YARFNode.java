@@ -80,6 +80,8 @@ public class YARFNode implements Cloneable {
 	 * @return				The returned prediction from the terminal node that this tree structure maps the record to
 	 */
 	public double Evaluate(double[] record) {
+
+//		System.out.println("Evaluate TREE record: " + Tools.StringJoin(record));
 		YARFNode evalNode = this;
 		while (true){
 			if (evalNode.is_leaf){
