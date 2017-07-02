@@ -1,6 +1,7 @@
 .onLoad = function(libname, pkgname) {
 	.jpackage(pkgname, lib.loc = libname)
 	assign("YARF_globals", new.env(), envir = parent.env(environment()))
+	assign("MAX_TREES", 10000, YARF_globals)
 }
 
 .onAttach = function(libname, pkgname){

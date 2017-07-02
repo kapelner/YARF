@@ -14,6 +14,13 @@ YARF_update_with_oob_results(yarf_mod_cores_1)
 
 library(randomForest)
 randomForest(X, y)
+
+data(iris)
+yarf_mod_cores_1 = YARF(iris[, 1 : 4], iris[, 5], num_trees = num_trees)
+YARF_update_with_oob_results(yarf_mod_cores_1)
+
+library(randomForest)
+randomForest(iris[, 1 : 4], iris[, 5])
 # we have an elaborate benchmark file that demonstrates YARF's equal performance with Liaw's package
 # see benchmarking folder
 

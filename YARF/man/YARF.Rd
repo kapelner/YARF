@@ -47,7 +47,9 @@ of 10,000.}
 \item{bootstrap_indices}{A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
 of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
-to say indices specified here will not be part of the out-of-bag collection of indices.}
+to say indices specified here will not be part of the out-of-bag collection of indices.    You may
+specify more than enough (i.e. more than \code{num_trees}) elements in this list. Only the first
+\code{num_trees} will be used. No warning message will be displayed if you include too many.}
 
 \item{other_indices}{An optional list with keys 1,2,..., num_trees where each value is indices of the training data
 you wish to use in some custom way for each tree using a custom function. If not custom function
