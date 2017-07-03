@@ -15,7 +15,7 @@ calcAUC(res)
 res = YARFROC(Pima.tr[, 1 : 7], Pima.tr$type, 
               desired_interval = 0.05, 
               y_axis_fine_resolution = TRUE,
-              x_axis = "fnr", y_axis = "fdr")
+              x_axis = "fdr", y_axis = "fnr")
 res = YARFROC(Pima.tr[, 1 : 7], Pima.tr$type, 
               x_axis = "fomr", y_axis = "fdr", 
               desired_interval = 0.05, 

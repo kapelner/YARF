@@ -9,12 +9,14 @@ num_trees = 500
 set_YARF_num_cores(1)
 
 #YARF/RF on Iris
-YARF(iris[, 1 : 4], iris[, 5], num_trees = num_trees)
 randomForest(iris[, 1 : 4], iris[, 5])
+YARF(iris[, 1 : 4], iris[, 5], num_trees = num_trees)
+
 #YARF/RF on BHD
 X = Boston[, 1 : 13]; y = Boston[, 14]
-YARF(X, y, num_trees = num_trees)
 randomForest(X, y)
+yarf_mod_cores_1 = YARF(X, y, num_trees = num_trees, seed = seed)
+yarf_mod_cores_1
 
 
 # we have an elaborate benchmark file that demonstrates YARF's equal performance with Liaw's package

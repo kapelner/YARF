@@ -318,7 +318,7 @@ public class YARFNode implements Cloneable {
 				node_X_others.add(tree.yarf.Xother.get(indices.get(i)));
 			}
 		}
-		return node_Xs_by_obs;
+		return node_X_others;
 	}
 	
 	protected void maxDepth(int[] max_depth) {

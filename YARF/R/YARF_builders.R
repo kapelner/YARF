@@ -324,7 +324,7 @@ YARF = function(
 	}
 	
 	#make sure it's a data frame
-	if (class(X) != "data.frame"){
+	if (!("data.frame" %in% class(X))){
 		stop(paste("The training data X must be a data frame."), call. = FALSE)	
 	}
 	#make sure it's a well-formed data frame
@@ -528,12 +528,12 @@ YARF = function(
 	.jcall(java_YARF, "V", "setTrainingDataNames", colnames(model_matrix_training_data))
 	
 	if (!is.null(Xother)){
-		.jcall(java_YARF, "V", "setOtherDataNames", as.character(colnames(Xother)))
+		.jcall(java_YARF, "V", "setOtherDataNames", .jarray(as.character(colnames(Xother))))
 		#now load the "other" data into YARF
 		for (i in 1 : n){
 			row_as_char = as.character(Xother[i, ])
 			row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
-			.jcall(java_YARF, "V", "addOtherDataRow", row_as_char)
+			.jcall(java_YARF, "V", "addOtherDataRow", .jarray(row_as_char))
 		}
 	}
 	

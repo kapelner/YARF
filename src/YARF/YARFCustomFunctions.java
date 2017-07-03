@@ -165,9 +165,14 @@ public abstract class YARFCustomFunctions extends Classifier {
 	}
 	
 	public double runSingleNodeCost(YARFNode node){
-		if (cost_single_node_calc_fun == null){
-			cost_single_node_calc_fun = stringToInvokableCompiledFunction(cost_single_node_calc_function_str, SingleNodeCostScriptFunctionName);	
+		synchronized (this){
+			if (cost_single_node_calc_fun == null){
+				cost_single_node_calc_fun = stringToInvokableCompiledFunction(cost_single_node_calc_function_str, SingleNodeCostScriptFunctionName);	
+//				System.out.println("Just compiled cost_single_node_calc_fun " + cost_single_node_calc_fun.toString());
+				
+			}			
 		}
+
 		try {
 			return (double)cost_single_node_calc_fun.invokeFunction(SingleNodeCostScriptFunctionName, node);
 		} catch (NoSuchMethodException e) {
