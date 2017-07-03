@@ -9,7 +9,6 @@ function getAvgByTrt(node, tx){
 //	print("getAvgByTrt" + node + "tx" + tx);
 	var node_tx = Java.from(node.node_X_others());
 	
-	
 	var sum_y = 0.0;
 	var n_tx = 0;
 //	print("node_tx" + node_tx + "n" + n);

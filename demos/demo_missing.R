@@ -16,6 +16,10 @@ xstar = data.frame(x1 = 1, x2 = 1)
 xstar = rbind(xstar, c(1, NA))
 xstar = rbind(xstar, c(NA, NA))
 predict(yarf_mod, xstar)
+#############################
+
+
+
 
 
 library(MASS); data(Boston)

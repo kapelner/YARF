@@ -25,9 +25,7 @@ yarf_mod_cores_1
 #(1) demonstrate parallelism and reproducibility with the seed argument
 set_YARF_num_cores(7)
 yarf_mod_cores_all = YARF(X, y, num_trees = num_trees, seed = seed)
-
-YARF_update_with_oob_results(yarf_mod_cores_1)
-YARF_update_with_oob_results(yarf_mod_cores_all)
+yarf_mod_cores_all
 
 
 #(2) demonstrate illustrations
@@ -46,6 +44,31 @@ illustrate_trees(yarf_mod_cores_1, trees = c(159), max_depth = 4,
 		print_at_leaf_script = print_at_leaf_script,
 		print_at_split_node_script = print_at_split_node_script,
 		open_file = TRUE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #(2) demonstrate asynchronicity / convergence
