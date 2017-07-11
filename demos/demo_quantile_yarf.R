@@ -1,6 +1,8 @@
 options(java.parameters = c("-Xmx4000m"))
 library(YARF)
 set_YARF_num_cores(7)
+library(MASS)
+library(quantregForest)
 
 quantile_loss = function(quantile, y, yhat){
   error = 0
@@ -19,9 +21,10 @@ quantile_loss = function(quantile, y, yhat){
 ##### the case of the exponential errors
 #### true mean is x + 1/gamma
 
+p = 5
 ntrain = 500
-gamma = 5
-quantile = 0.01
+gamma = 2
+quantile = 0.25
 Nsim = 1000  
 num_trees = 500
 nodesize = 50
@@ -29,17 +32,20 @@ ntest = 1000
 
 res = matrix(NA, nrow = Nsim, ncol = 5)
 
-cef = function(x){
-  x^4
+cef = function(X){
+  X[, 1] + X[, 2] + X[, 1] * X[, 2]
 }
 
 for (nsim in 1 : Nsim){
-  Xtrain = data.frame(x1 = (sort(runif(ntrain, 0, 1))))
-  
-  Xtest = data.frame(x1 = seq(0, 1, length.out = ntest))
-  ytrain = 0 + 2 * cef(Xtrain$x1) + rexp(nrow(Xtrain), gamma)
-  ytest_true = 2 * cef(Xtest$x1) + qexp(quantile, gamma) 
-  ytest = 2 * cef(Xtest$x1) + rexp(nrow(Xtest), gamma)
+  X = data.frame(mvrnorm(ntrain + ntest, rep(0, p), Sigma = matrix(rep(1, p * p), nrow = p)))
+
+  Xtrain = X[1 : ntrain, ]
+  Xtrain = Xtrain[order(Xtrain[,1]), ]
+  Xtest = X[(ntrain + 1) : (ntrain + ntest), ]
+  Xtest = Xtest[order(Xtest[,1]), ]
+  ytrain = 0 + 2 * cef(Xtrain) + rexp(ntrain, gamma)
+  ytest_true = 2 * cef(Xtest) + qexp(quantile, gamma) 
+  ytest = 2 * cef(Xtest) + rexp(ntest, gamma)
   
   
   # plot(X$x1, y, xlab = "x")
@@ -70,7 +76,7 @@ for (nsim in 1 : Nsim){
   quantile = as.numeric(quantile)
   
   
-  library(quantregForest)
+  
   qrf <- quantregForest(Xtrain, ytrain, ntree = num_trees, nodesize = nodesize, nthread = 7, importance = TRUE)
   
   #see who's better
@@ -78,11 +84,11 @@ for (nsim in 1 : Nsim){
   yhat_qrf <- predict(qrf, Xtest, what = quantile)
   
   #plot it for pretty pics
-  plot(Xtrain$x1, ytrain, xlab = "x")
-  points(Xtest$x1, ytest_true, type = "l", col = "red")
-  points(Xtest$x1, ytest, col = "yellow")
-  points(Xtest$x1, yhat_yarf, type = "l", col = "blue", lwd = 3)
-  points(Xtest$x1, yhat_qrf, type = "l", col = "brown", lwd = 2)
+  plot(Xtrain[, 1], ytrain, xlab = "x")
+  points(Xtest[, 1], ytest_true, type = "l", col = "red")
+  points(Xtest[, 1], ytest, col = "yellow")
+  points(Xtest[, 1], yhat_yarf, type = "l", col = "blue", lwd = 3)
+  points(Xtest[, 1], yhat_qrf, type = "l", col = "brown", lwd = 2)
   
   #find error
   ql_yarf = quantile_loss(quantile, ytest, yhat_yarf)
@@ -101,3 +107,4 @@ for (nsim in 1 : Nsim){
   save(res, file = "quantile_res.RData")
 }
 res[1 : nsim, ]
+
