@@ -457,6 +457,11 @@ YARF = function(
 	
 	model_matrix_training_data = pre_process_data(X, use_missing_data_dummies_as_vars)$data
 	p = ncol(model_matrix_training_data) # we subtract one because we tacked on the response as the last column
+
+	if (!is.null(mtry) && mtry > p){
+		stop("\"mtry\" cannot be greater than the number of features.")	
+	}
+	
 #	factor_lengths = pre_process_obj$factor_lengths
 	if (verbose){
 		cat("YARF after data preprocessed...", ncol(model_matrix_training_data), "total features...\n")
