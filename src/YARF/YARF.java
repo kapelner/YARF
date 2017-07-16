@@ -1003,11 +1003,10 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		return converged;
 	}
     
-    public String[][] proximity(double[][] X1, double[][] X2, int num_cores){
+    public String[][] proximity(double[][] X, int num_cores){
 //    	System.out.println("run proximity function with " + num_cores + " cores!");
-        int nx1 = X1.length;
-        int nx2 = X2.length;
-        final String[][] out = new String[nx1 + nx2][num_trees];
+        int n = X.length;
+        final String[][] out = new String[n][num_trees];
         
 		ExecutorService proximity_info_getter_pool = Executors.newFixedThreadPool(num_cores);
 		for (int t = 0; t < num_trees; t++){
@@ -1017,11 +1016,8 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //					System.out.println("tree " + tf + " thread: " + Thread.currentThread().getId());
 					try {
 						YARFNode root = yarf_trees[tf].root;
-			            for (int i = 0; i < nx1; i++){
-			                out[i][tf] = root.prox_info(X1[i]);
-			            }
-			            for (int i = 0; i < nx2; i++){
-			                out[i + nx1][tf] = root.prox_info(X2[i]);
+			            for (int i = 0; i < n; i++){
+			                out[i][tf] = root.prox_info(X[i]);
 			            }
 					} catch (Exception e){
 						e.printStackTrace();
