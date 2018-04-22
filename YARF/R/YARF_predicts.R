@@ -27,7 +27,14 @@ predict.YARF = function(object, new_data, ...){
 	
 	if (!isTRUE(all.equal(colnames(new_data), colnames(object$X)))){
 		warning("Prediction set column names did not match training set column names.\nAttempting to subset to training set columns.\n")
-		new_data =new_data[, colnames(object$X)]
+		
+		tryCatch(
+			{new_data = new_data[, colnames(object$X)]},
+			error = function(e){
+				stop("one or more features in the training data are not found in the prediction set")
+			},
+			finally = {}
+		)
 	}
 	if (!object$use_missing_data){
 		nrow_before = nrow(new_data)
