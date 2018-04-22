@@ -2,7 +2,7 @@
 % Please edit documentation in R/YARF_asynchronicity.R
 \name{YARF_convergence}
 \alias{YARF_convergence}
-\title{Prints out a messages reflecting the progress of the YARF model construction until completion}
+\title{Prints out a messages reflecting the progress of the YARF model construction until completion.}
 \usage{
 YARF_convergence(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50)
 }
@@ -17,7 +17,8 @@ versus error which allows assessing the convergence more closely.
 Default is \code{50}.}
 }
 \description{
-Prints out a messages reflecting the progress of the YARF model construction until completion
+Note: running this function once will slow down your model construction since it will forever
+be calculating OOB statistics after each tree.
 }
 \author{
 Adam Kapelner

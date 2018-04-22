@@ -5,15 +5,13 @@
 \title{Computes information about the "proximity" of observations within the YARF model. Given two datasets,
 information is computed for all pairs of observation.}
 \usage{
-proximity_info(yarf_mod, X1, X2, prox_single_node_calc_script = NULL)
+proximity_info(yarf_mod, X, prox_single_node_calc_script = NULL)
 }
 \arguments{
 \item{yarf_mod}{A YARF model object.}
 
-\item{X1}{A n* x p matrix where each row is an observation. If \code{NULL} (the default), 
+\item{X}{A n* x p matrix where each row is an observation. If \code{NULL} (the default), 
 then this parameter is set to the model's training data.}
-
-\item{X2}{A n x p matrix where each row is an observation. If \code{NULL} (the default),}
 
 \item{prox_single_node_calc_script}{Script ...}
 }

@@ -3,7 +3,7 @@ Version: 1.0
 Title: YARF JARs
 Type: Package
 Date: 2016-08-26
-Author: Adam Kapelner and Suzanne Adlof see COPYRIGHTS file for the authors of the java libraries
+Author: Adam Kapelner see COPYRIGHTS file for the authors of the java libraries
 Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
 Description: These are YARF's Java dependency libraries. Note: this package has no functionality of its own and should not be installed as a standalone package without YARF.
 License: GPL-3
