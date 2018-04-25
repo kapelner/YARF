@@ -418,8 +418,8 @@ YARF = function(
 			cat("Warning: The response y is integer, YARF will default to regression.\n")
 		}
 	} else if (class(y) == "factor"){ #if y is a factor and binary
-		if (num_y_levels > 8){
-			cat("Warning: You are doing classification with more than 8 classes. Cast y to numeric if you wish to do regression.")
+		if (num_y_levels > 5){
+			cat("Warning: You are doing classification with more than 5 classes. Cast y to numeric if you wish to do regression.\n")
 		}		
 		pred_type = "classification"
 	} else { #otherwise throw an error
