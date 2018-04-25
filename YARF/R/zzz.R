@@ -24,6 +24,8 @@
   )
   if (!is.na(num_cores)){
 	  set_YARF_num_cores(max(num_cores - 1, 1))
+  } else {
+	  assign("YARF_NUM_CORES", 1, YARF_globals)
   }
   
 }
