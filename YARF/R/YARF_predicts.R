@@ -24,6 +24,9 @@ predict.YARF = function(object, new_data, ...){
 		warning("Prediction set column names did not match training set column names.\nNow coercing the prediction set column names.")
 		colnames(new_data) = colnames(object$X)
 	}
+	### we should now pull out the columns that are in new_data and then if there
+	#are any left over, make NA cols - this is a convenience for the user
+	
 	if (!object$use_missing_data){
 		nrow_before = nrow(new_data)
 		new_data = na.omit(new_data)

@@ -21,7 +21,7 @@ quantile_loss = function(quantile, y, yhat){
 ##### the case of the exponential errors
 #### true mean is x + 1/gamma
 
-p = 5
+p = 2
 ntrain = 500
 gamma = 2
 quantile = 0.25
@@ -33,19 +33,20 @@ ntest = 1000
 res = matrix(NA, nrow = Nsim, ncol = 5)
 
 cef = function(X){
-  X[, 1] + X[, 2] + X[, 1] * X[, 2]
+  # X[, 1] + X[, 2] + X[, 1] * X[, 2]
+  X[, 1]
 }
 
 for (nsim in 1 : Nsim){
-  X = data.frame(mvrnorm(ntrain + ntest, rep(0, p), Sigma = matrix(rep(1, p * p), nrow = p)))
+  X = data.frame(mvrnorm(ntrain + ntest, rep(0, p), Sigma = matrix(rep(0.1, p * p), nrow = p)))
 
   Xtrain = X[1 : ntrain, ]
   Xtrain = Xtrain[order(Xtrain[,1]), ]
   Xtest = X[(ntrain + 1) : (ntrain + ntest), ]
   Xtest = Xtest[order(Xtest[,1]), ]
-  ytrain = 0 + 2 * cef(Xtrain) + rexp(ntrain, gamma)
-  ytest_true = 2 * cef(Xtest) + qexp(quantile, gamma) 
-  ytest = 2 * cef(Xtest) + rexp(ntest, gamma)
+  ytrain = cef(Xtrain) + rexp(ntrain, gamma)
+  ytest_true = cef(Xtest) + qexp(quantile, gamma) 
+  ytest = cef(Xtest) + rexp(ntest, gamma)
   
   
   # plot(X$x1, y, xlab = "x")
@@ -89,6 +90,10 @@ for (nsim in 1 : Nsim){
   points(Xtest[, 1], ytest, col = "yellow")
   points(Xtest[, 1], yhat_yarf, type = "l", col = "blue", lwd = 3)
   points(Xtest[, 1], yhat_qrf, type = "l", col = "brown", lwd = 2)
+  
+  plot(yhat_yarf, ytest_true, col = "green")
+  points(yhat_qrf, ytest_true, col = "red")
+  abline(a = 0, b = 1)
   
   #find error
   ql_yarf = quantile_loss(quantile, ytest, yhat_yarf)

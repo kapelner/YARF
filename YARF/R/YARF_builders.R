@@ -327,6 +327,9 @@ YARF = function(
 	if (!("data.frame" %in% class(X))){
 		stop(paste("The training data X must be a data frame."), call. = FALSE)	
 	}
+	#officially coerce it to be a data.frame. dplyr support coming later
+	X = data.frame(X)
+	
 	#make sure it's a well-formed data frame
 	if (ncol(X) == 0){
 		stop("Your data matrix must have at least one attribute.")

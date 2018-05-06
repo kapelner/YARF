@@ -24,14 +24,14 @@ YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = 
 	y = yarf_mod$y
 	n = yarf_mod$n
 	
-	if (is.null(oob_cost_calculation_script)){
-		.jcall(yarf_mod$java_YARF, "V", "setOob_cost_calculation_str", .jnull(class = "java/lang/String"))
-	} else {
-		if (class(oob_cost_calculation_script) != "character"){
-			stop("'oob_cost_calculation_script' must be a character string of Javascript code")
-		}
-		.jcall(yarf_mod$java_YARF, "V", "setOob_cost_calculation_str", oob_cost_calculation_script)
-	}
+#	if (is.null(oob_cost_calculation_script)){
+#		.jcall(yarf_mod$java_YARF, "V", "setOob_cost_calculation_str", .jnull(class = "java/lang/String"))
+#	} else {
+#		if (class(oob_cost_calculation_script) != "character"){
+#			stop("'oob_cost_calculation_script' must be a character string of Javascript code")
+#		}
+#		.jcall(yarf_mod$java_YARF, "V", "setOob_cost_calculation_str", oob_cost_calculation_script)
+#	}
 	
 	yarf_mod$oob_cost_calculation_script = oob_cost_calculation_script
 
