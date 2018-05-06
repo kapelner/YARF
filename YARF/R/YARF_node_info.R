@@ -289,15 +289,14 @@ tree_average_proximity_info = function(raw){
 #' information is computed for all pairs of observation.
 #' 
 #' @param yarf_mod 					A YARF model object.
-#' @param X1 				        A n* x p matrix where each row is an observation. If \code{NULL} (the default), 
+#' @param X 				        A n* x p matrix where each row is an observation. If \code{NULL} (the default), 
 #' 									then this parameter is set to the model's training data.
-#' @param X2 				        A n x p matrix where each row is an observation. If \code{NULL} (the default), 
 #' @param prox_single_node_calc_script Script ...
 #' @return 							(For now, a list of raw information for rows in each dataset)
 #' 
 #' @author Matt Olson
 #' @export
-proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script = NULL){
+proximity_info = function(yarf_mod, X, prox_single_node_calc_script = NULL){
 
     # check prox_single_node_calc_script
     if (!is.null(prox_single_node_calc_script)){
@@ -311,23 +310,20 @@ proximity_info = function(yarf_mod, X1, X2, prox_single_node_calc_script = NULL)
     }
 
     # preprocess inputs
-    X1 = pre_process_new_data(X1, yarf_mod)
-    X2 = pre_process_new_data(X2, yarf_mod)
+    X = pre_process_new_data(X, yarf_mod)
 
     # calculate node path info for each input matrix
 	num_cores = get("YARF_NUM_CORES", YARF_globals)
-    out = yarf_mod$java_YARF$proximity(.jarray(X1, dispatch = TRUE), .jarray(X2, dispatch = TRUE), as.integer(num_cores))
+    out = yarf_mod$java_YARF$proximity(.jarray(X, dispatch = TRUE), as.integer(num_cores))
 	out = t(sapply(.jevalArray(out), .jevalArray))
     if(dim(out)[1] == 1)
         out = t(out)
 	
     # process array into pieces and overwrite initialy arguments to save memory
-    nx1 = nrow(X1)
-    X1 = out[1 : nx1,, drop=FALSE]
-    X2 = out[-(1 : nx1),, drop=FALSE]
+    n = nrow(X)
+    X = out[1 : n,, drop=FALSE]
     
-    list(X1 = list(path = f_path(X1), vals = f_vals(X1)),
-         X2 = list(path = f_path(X2), vals = f_vals(X2)))
+    list(path = f_path(X), vals = f_vals(X))
     
 }
 

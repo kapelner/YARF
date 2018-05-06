@@ -17,12 +17,24 @@
 predict.YARF = function(object, new_data, ...){
 	check_serialization(object) #ensure the Java object exists and fire an error if not
 	
-	if (class(new_data) != "data.frame"){
+	if (!("data.frame" %in% class(new_data))){
 		stop("Data frame required for \"new_data\".")
 	}
-	if (!all.equal(colnames(new_data), colnames(object$X))){
-		warning("Prediction set column names did not match training set column names.\nNow coercing the prediction set column names.")
-		colnames(new_data) = colnames(object$X)
+	new_data = data.frame(new_data) #cast it... doesn't work for tbl_df's e.g.
+	
+	#now we take the columns from the training set
+	
+	
+	if (!isTRUE(all.equal(colnames(new_data), colnames(object$X)))){
+		warning("Prediction set column names did not match training set column names.\nAttempting to subset to training set columns.\n")
+		
+		tryCatch(
+			{new_data = new_data[, colnames(object$X)]},
+			error = function(e){
+				stop("one or more features in the training data are not found in the prediction set")
+			},
+			finally = {}
+		)
 	}
 	### we should now pull out the columns that are in new_data and then if there
 	#are any left over, make NA cols - this is a convenience for the user

@@ -104,7 +104,7 @@ pre_process_new_data = function(new_data, yarf_mod){
 	#never throw a warning if the "new" feature happened to be a created missing feature.
 	differences = Filter(function(name){!grepl("M_", name)}, differences)
 	if (length(differences) > 0){
-		warning("The following features were found in records for prediction which were not found in the original training data:\n    ", paste(differences, collapse = ", "), "\n  These features will be ignored during prediction.")
+		warning("The following features were found in records for prediction which were not found in the original training data:\n    ", paste(differences, collapse = ", "), "\n  These features will be ignored during prediction.\n")
 	}
 	
 	new_data_features = colnames(new_data)

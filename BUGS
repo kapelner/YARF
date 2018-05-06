@@ -1,3 +1,0 @@
-* YARF_predict_all_trees produces a vector when 'factor' applied ... want matrix
-* When mtry > p (i.e. a bug in user-input), the Java code crashes in a non-elegant
-  way ... should have R code that checks for this condition

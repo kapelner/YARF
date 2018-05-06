@@ -32,7 +32,8 @@
 #' 											The default is \code{NULL} indicating you do not wish to specify any "other" data records. 
 #' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
 #' 											the out-of-box RF default which is floor(p / 3) for regression and floor(sqrt(p)) for
-#' 											classification. If you want a custom function, leave this NULL and see next parameter. 
+#' 											classification. If you want to use all possible features, set this parameter to "all".
+#' 											If you want a custom function, leave this NULL and see next parameter. 
 #' @param mtry_script						A custom javascript function which selects the variables to be greedily searched (see below)
 #' 											The default is \code{NULL} which employs the \code{mtry} argument. If you specify your function
 #' 											please randomize the order of the returned attributes to arbitrate ties.
@@ -310,9 +311,10 @@ YARF = function(
 		stop("You cannot specify both [X,y] and Xy simultaneously.")		
 	} else if (is.null(X) && is.null(y)){ #they specified Xy, so now just pull out X,y
 		#first ensure it's a dataframe
-		if (class(Xy) != "data.frame"){
+		if ("data.frame" %in% class(Xy)){
 			stop(paste("The training data Xy must be a data frame."), call. = FALSE)	
 		}
+		Xy = data.frame(Xy)
 		y = Xy[, ncol(Xy)]
 		for (cov in 1 : (ncol(Xy) - 1)){
 			if (colnames(Xy)[cov] == ""){
@@ -327,9 +329,8 @@ YARF = function(
 	if (!("data.frame" %in% class(X))){
 		stop(paste("The training data X must be a data frame."), call. = FALSE)	
 	}
-	#officially coerce it to be a data.frame. dplyr support coming later
-	X = data.frame(X)
 	
+	X = data.frame(X) #cast it just to make sure (doesn't work with tbl_df's e.g.)
 	#make sure it's a well-formed data frame
 	if (ncol(X) == 0){
 		stop("Your data matrix must have at least one attribute.")
@@ -418,8 +419,8 @@ YARF = function(
 			cat("Warning: The response y is integer, YARF will default to regression.\n")
 		}
 	} else if (class(y) == "factor"){ #if y is a factor and binary
-		if (num_y_levels > 8){
-			cat("Warning: You are doing classification with more than 8 classes. Cast y to numeric if you wish to do regression.")
+		if (num_y_levels > 5){
+			cat("Warning: You are doing classification with more than 5 classes. Cast y to numeric if you wish to do regression.\n")
 		}		
 		pred_type = "classification"
 	} else { #otherwise throw an error
@@ -461,6 +462,9 @@ YARF = function(
 	model_matrix_training_data = pre_process_data(X, use_missing_data_dummies_as_vars)$data
 	p = ncol(model_matrix_training_data) # we subtract one because we tacked on the response as the last column
 
+	if (!is.null(mtry) && mtry == "all"){
+		mtry = p
+	}
 	if (!is.null(mtry) && mtry > p){
 		stop("\"mtry\" cannot be greater than the number of features.")	
 	}
