@@ -1,4 +1,8 @@
-#' A convenience method to build a CART model via YARF. There are many customizations available.
+#' A convenience method to build a Bagged Tree model via YARF. 
+#' 
+#' You can conceptualize this as a random forest without the feature that de-correlates the trees, namely
+#' trying random subsets of variables at each split. Here, all splits are considered. You can also think about
+#' this as model averaging many CART trees built from bootstrap samples (or specific samples you choose).
 #' 
 #' @param X 								The data frame of training data
 #' @param y 								The vector of training responses
@@ -6,7 +10,18 @@
 #' @param Xother 							Other data that is used in the training but the RF doesn't split on it
 #' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
 #' 											handled in the custom functions, YARF will crash. Default is \code{FALSE}.
-#'  
+#' @param num_trees 						The number of trees in the RF. Default is \code{NULL} which sets the value to \code{500} 
+#' 											if \code{fit_until_convergence} is set to \code{FALSE} and 10,000 if \code{fit_until_convergence} 
+#' 											is set to \code{TRUE}.
+#' 											
+#' 											If the model is fit asynchronously via the \code{wait} parameter
+#' 											being set to \code{TRUE}, this number represents a vague contract between the user and the 
+#' 											software as the model fitting can be (a) halted by the user or the model can be (b) set 
+#' 											to converge automatically (by setting the \code{fit_until_convergence} parameter
+#' 											to \code{TRUE}). In the latter case, this parameter functions as the maximum number of trees
+#' 											that can be created and thus, it is recommended that this number is very large, hence the default
+#' 											of 10,000.
+#' 
 #' @param bootstrap_indices 				A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 #' 											you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
 #' 											of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
@@ -19,21 +34,6 @@
 #' 											the out-of-bag collection of indices. If this is not your wish, the elements in the vectors
 #' 											specified in this list's values should be a subset of those in the values of \code{bootstrap_indices}.
 #' 											The default is \code{NULL} indicating you do not wish to specify any "other" data records. 
-#' @param mtry 								The number of variables tried at every split. The default is \code{NULL} which indicates
-#' 											the out-of-box RF default which is floor(p / 3) for regression and floor(sqrt(p)) for
-#' 											classification. If you want a custom function, leave this NULL and see next parameter. 
-#' @param mtry_script						A custom javascript function which selects the variables to be greedily searched (see below)
-#' 											The default is \code{NULL} which employs the \code{mtry} argument. If you specify your function
-#' 											please randomize the order of the returned attributes to arbitrate ties.
-#' 
-#' 											  function tryVars(node)\{ //node is of type YARF.YARFNode
-#' 
-#' 											    ...
-#' 
-#' 											    return int_array //a subset of {0,...,p-1}, indices indicating the variables to perform the exhaustive search on
-#' 
-#' 											  \}
-#' 
 #' @param split_vals_script					A custom javascript function which selects the split values to be greedily searched in feature j.
 #' 											The default is \code{NULL} which employs the midpoints of all sorted values.
 #' 
@@ -120,7 +120,7 @@
 #' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
 #' 											time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
 #' 											we will automatically serialize after other operations that add data (such as the OOB evaluation).
-#' @param seed								Set a random seed for reproducibility.
+#' @param seed								Set a random seed for reproducibility. 
 #' @param calculate_oob_error				Should we also calculate the OOB error? Default is \code{TRUE}. Automatically is turned off if
 #' 											\code{wait} becomes \code{FALSE}.
 #' @param oob_cost_calculation_script		This parameter will determine the out-of-bag cost of the RF forest model. Default is \code{NULL}. If
@@ -142,7 +142,11 @@
 #' 
 #' 											If this script is specified (i.e. the argument is non-\code{NULL}), this will also affect the output of the 
 #' 											\code{\link{YARF_update_with_oob_results}} function. This script can be reset after the model is built if necessary.
-#'
+#' @param tolerance							This parameter is ignored unless \code{fit_until_convergence} is set to \code{TRUE}. If so, this controls the tolerance
+#' 											used when assessing the convergence of the RF model. Default is \code{0.1}. If \code{oob_cost_calculation_script} is 
+#' 											specified, this should also be specified as 0.1 may not be appropriate for a custom oob cost function.
+#' 
+#' @param wait								Should we hang R to wait for the YARF model to complete? The default is \code{TRUE}.
 #' @param verbose 							Should we print out messages verbosely during construction? Default is \code{FALSE}.
 #' @param debug_log							Should we print out messages from Java? Default is \code{FALSE}.
 #' 
@@ -157,14 +161,15 @@
 #' 
 #' @author Adam Kapelner
 #' @export
-YARFCART = function(
+YARFBAG = function(
 		#data arguments
 		X = NULL, y = NULL, Xy = NULL, Xother = NULL,
 		allow_missingness_in_y = FALSE,
+		#pick the trees
+		num_trees = NULL,
 		#customizable bootstrap
 		bootstrap_indices = NULL, #if you want to specify data indices for the trees
 		other_indices = NULL, #other indices you pass to the tree which will NOT be included in the OOB
-		mtry = NULL,
 		nodesize = NULL,
 		#all custom scripts/functions
 		mtry_script = NULL,
@@ -181,45 +186,46 @@ YARFCART = function(
 		#other arguments for Java
 		serialize = FALSE,
 		seed = NULL,
+		wait = TRUE,
 		calculate_oob_error = TRUE,
+		fit_until_convergence = FALSE,
 		oob_cost_calculation_script = NULL,
+		tolerance = 0.01,
 		verbose = TRUE,
 		debug_log = FALSE
 ){
-	
-	bootstrap_indices = list()
-	bootstrap_indices[[1]] = 1 : nrow(X)
-	
 	YARF(
-			#data arguments
-			X = X, y = y, Xother = Xother,
-			allow_missingness_in_y = allow_missingness_in_y,
-			#pick the trees		
-			num_trees = 1,
-			#customizable bootstrap
-			bootstrap_indices = bootstrap_indices, #if you want to specify data indices for the trees
-			other_indices = other_indices, #other indices you pass to the tree which will NOT be included in the OOB
-			mtry = "all",
-			nodesize = nodesize,
-			#all custom scripts/functions
-			mtry_script = mtry_script,
-			split_vals_script = split_vals_script,
-			make_node_to_leaf_script = make_node_to_leaf_script,
-			cost_single_node_calc_script = cost_single_node_calc_script,
-			node_assign_script = node_assign_script,
-			after_node_birth_function_script = after_node_birth_function_script,
-			shared_scripts = shared_scripts, 
-			#everything that has to do with possible missing values (MIA stuff)
-			use_missing_data = use_missing_data,
-			use_missing_data_dummies_as_vars = use_missing_data_dummies_as_vars,
-			replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
-			#other arguments for Java
-			serialize = serialize,
-			seed = seed,
-			wait = TRUE,
-			calculate_oob_error = calculate_oob_error,
-			oob_cost_calculation_script = oob_cost_calculation_script,
-			verbose = verbose,
-			debug_log = debug_log
-		)
+		#data arguments
+		X = X, y = y, Xother = Xother,
+		allow_missingness_in_y = allow_missingness_in_y,
+		#pick the trees		
+		num_trees = num_trees,
+		#customizable bootstrap
+		bootstrap_indices = bootstrap_indices, #if you want to specify data indices for the trees
+		other_indices = other_indices, #other indices you pass to the tree which will NOT be included in the OOB
+		mtry = "all",
+		nodesize = nodesize,
+		#all custom scripts/functions
+		mtry_script = mtry_script,
+		split_vals_script = split_vals_script,
+		make_node_to_leaf_script = make_node_to_leaf_script,
+		cost_single_node_calc_script = cost_single_node_calc_script,
+		node_assign_script = node_assign_script,
+		after_node_birth_function_script = after_node_birth_function_script,
+		shared_scripts = shared_scripts, 
+		#everything that has to do with possible missing values (MIA stuff)
+		use_missing_data = use_missing_data,
+		use_missing_data_dummies_as_vars = use_missing_data_dummies_as_vars,
+		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
+		#other arguments for Java
+		serialize = serialize,
+		seed = seed,
+		wait = wait,
+		calculate_oob_error = calculate_oob_error,
+		fit_until_convergence = fit_until_convergence,
+		oob_cost_calculation_script = oob_cost_calculation_script,
+		tolerance = tolerance,
+		verbose = verbose,
+		debug_log = debug_log
+	)
 }
