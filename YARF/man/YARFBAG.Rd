@@ -6,8 +6,8 @@
 \usage{
 YARFBAG(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
   allow_missingness_in_y = FALSE, num_trees = NULL,
-  bootstrap_indices = NULL, other_indices = NULL, nodesize = NULL,
-  mtry_script = NULL, split_vals_script = NULL,
+  bootstrap_indices = NULL, n_max_per_tree = NULL, other_indices = NULL,
+  nodesize = NULL, mtry_script = NULL, split_vals_script = NULL,
   make_node_to_leaf_script = NULL, cost_single_node_calc_script = NULL,
   node_assign_script = NULL, after_node_birth_function_script = NULL,
   shared_scripts = NULL, use_missing_data = TRUE,
@@ -47,6 +47,9 @@ of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default
 to say indices specified here will not be part of the out-of-bag collection of indices.    You may
 specify more than enough (i.e. more than \code{num_trees}) elements in this list. Only the first
 \code{num_trees} will be used. No warning message will be displayed if you include too many.}
+
+\item{n_max_per_tree}{An upper limit on the number of observations used to build each tree. If this parameter is specified,
+there is no need to specify \code{bootstrap_indices}. Default is \code{NULL} for the entire dataset, \code{n}.}
 
 \item{other_indices}{An optional list with keys 1,2,..., num_trees where each value is indices of the training data
 you wish to use in some custom way for each tree using a custom function. If not custom function

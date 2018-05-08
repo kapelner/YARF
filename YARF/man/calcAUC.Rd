@@ -2,15 +2,18 @@
 % Please edit documentation in R/YARF_ROC.R
 \name{calcAUC}
 \alias{calcAUC}
-\title{Title}
+\title{Calculates the area under the curve}
 \usage{
 calcAUC(roc_results, plot = TRUE)
 }
 \arguments{
-\item{roc_results}{}
+\item{roc_results}{The results from the function \code{YARFROC}.}
 
-\item{plot}{}
+\item{plot}{Make a plot of the ROC with the AUC shaded in? Default is \code{TRUE}.}
+}
+\value{
+The area under the curve approximated via numerical integration.
 }
 \description{
-Title
+Calculates the area under the curve
 }

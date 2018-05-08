@@ -28,6 +28,8 @@
 #' 											to say indices specified here will not be part of the out-of-bag collection of indices.	You may
 #' 											specify more than enough (i.e. more than \code{num_trees}) elements in this list. Only the first
 #' 											\code{num_trees} will be used. No warning message will be displayed if you include too many.
+#' @param n_max_per_tree					An upper limit on the number of observations used to build each tree. If this parameter is specified,
+#' 											there is no need to specify \code{bootstrap_indices}. Default is \code{NULL} for the entire dataset, \code{n}.
 #' @param other_indices						An optional list with keys 1,2,..., num_trees where each value is indices of the training data
 #' 											you wish to use in some custom way for each tree using a custom function. If not custom function
 #' 											is specified which makes use of this, it will be ignored. However, indices specified here will not be part of 
@@ -169,6 +171,7 @@ YARFBAG = function(
 		num_trees = NULL,
 		#customizable bootstrap
 		bootstrap_indices = NULL, #if you want to specify data indices for the trees
+		n_max_per_tree = NULL,
 		other_indices = NULL, #other indices you pass to the tree which will NOT be included in the OOB
 		nodesize = NULL,
 		#all custom scripts/functions
@@ -202,6 +205,7 @@ YARFBAG = function(
 		num_trees = num_trees,
 		#customizable bootstrap
 		bootstrap_indices = bootstrap_indices, #if you want to specify data indices for the trees
+		n_max_per_tree = n_max_per_tree,
 		other_indices = other_indices, #other indices you pass to the tree which will NOT be included in the OOB
 		mtry = "all",
 		nodesize = nodesize,

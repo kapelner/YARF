@@ -201,15 +201,13 @@ assessModelMetric = function(yarf_binary_mod, metric){
 }
 
 
-#' Title
+#' Calculates the area under the curve
 #'
-#' @param roc_results 
-#' @param plot 
+#' @param roc_results 		The results from the function \code{YARFROC}.
+#' @param plot 				Make a plot of the ROC with the AUC shaded in? Default is \code{TRUE}.
 #'
-#' @return
+#' @return					The area under the curve approximated via numerical integration.
 #' @export
-#'
-#' @examples
 calcAUC = function(roc_results, plot = TRUE){
   roc_results = roc_results[, 1 : 2]
   if (plot){

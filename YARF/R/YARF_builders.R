@@ -23,7 +23,10 @@
 #' 											of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
 #' 											to say indices specified here will not be part of the out-of-bag collection of indices.	You may
 #' 											specify more than enough (i.e. more than \code{num_trees}) elements in this list. Only the first
-#' 											\code{num_trees} will be used. No warning message will be displayed if you include too many.
+#' 											\code{num_trees} will be used. No warning message will be displayed if you include too many. If 
+#' 											this parameter is specified, there is no need to specify \code{n_max_per_tree}.
+#' @param n_max_per_tree					An upper limit on the number of observations used to build each tree. If this parameter is specified,
+#' 											there is no need to specify \code{bootstrap_indices}. Default is \code{NULL} for the entire dataset, \code{n}.
 #' @param other_indices						An optional list with keys 1,2,..., num_trees where each value is indices of the training data
 #' 											you wish to use in some custom way for each tree using a custom function. If not custom function
 #' 											is specified which makes use of this, it will be ignored. However, indices specified here will not be part of 
@@ -201,6 +204,7 @@ YARF = function(
 		num_trees = NULL,
 		#customizable bootstrap
 		bootstrap_indices = NULL, #if you want to specify data indices for the trees
+		n_max_per_tree = NULL,
 		other_indices = NULL, #other indices you pass to the tree which will NOT be included in the OOB
 		mtry = NULL,
 		nodesize = NULL,
@@ -366,9 +370,16 @@ YARF = function(
 	if (is.null(bootstrap_indices)){ #the user wants the standard non-parametric bootstrap sampling with replacement
 		bootstrap_indices = list()
 		one_to_n = seq(1, n)
+		
+		if (is.null(n_max_per_tree)){
+			num_to_sample = n	
+		} else {
+			num_to_sample = n_max_per_tree
+		}
+		
 		for (t in 1 : num_trees){
-			bootstrap_indices[[t]] = sort(sample(one_to_n, replace = TRUE)) #easier to debug
-#			bootstrap_indices[[t]] = sample(one_to_n, replace = TRUE)
+#			bootstrap_indices[[t]] = sort(sample(one_to_n, replace = TRUE)) #easier to debug
+			bootstrap_indices[[t]] = sample(one_to_n, num_to_sample, replace = TRUE)
 		}
 	} else {
 		#ensure the indicies is the correct format
@@ -380,6 +391,9 @@ YARF = function(
 			if (!isTRUE(all.equal(indices, as.integer(indices))) || any(indices < 1) || any(indices > n)){
 				stop("The bootstrap_indicies values must all be vectors whose elements are all in {1,...,n}")
 			}
+		}
+		if (!is.null(n_max_per_tree)){
+			warning("Argument \"n_max_per_tree\" ignored since \"bootstrap_indices\" was specified.")
 		}
 	}
 
