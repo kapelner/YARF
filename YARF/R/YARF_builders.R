@@ -212,7 +212,8 @@ YARF = function(
 		mtry_script = NULL,
 		split_vals_script = NULL,
 		make_node_to_leaf_script = NULL,
-		cost_single_node_calc_script = NULL,
+		cost_single_node_calc_script = NULL,		
+		cost_both_children_calc_script = NULL,
 		node_assign_script = NULL,
 		after_node_birth_function_script = NULL,
 		shared_scripts = NULL, 
@@ -272,6 +273,12 @@ YARF = function(
 	if (!is.null(cost_single_node_calc_script)){
 		if (class(cost_single_node_calc_script) != "character"){
 			stop("'cost_single_node_calc_script' must be a character string of Javascript code")
+		}
+	}
+		
+	if (!is.null(cost_both_children_calc_script)){
+		if (class(cost_both_children_calc_script) != "character"){
+			stop("'cost_both_children_calc_script' must be a character string of Javascript code")
 		}
 	}
 	
@@ -529,6 +536,10 @@ YARF = function(
 	
 	if (!is.null(node_assign_script)){
 		.jcall(java_YARF, "V", "setNode_assignment_function_str", node_assign_script)
+	}
+	
+	if (!is.null(cost_both_children_calc_script)){
+		.jcall(java_YARF, "V", "setCost_both_children_calc_function_str", cost_both_children_calc_script)
 	}
 	
 	if (!is.null(after_node_birth_function_script)){

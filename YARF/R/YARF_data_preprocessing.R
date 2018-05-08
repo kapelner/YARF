@@ -35,7 +35,7 @@ pre_process_data = function(data, use_missing_data_dummies_as_vars){
 		data[, character_var] = as.factor(data[, character_var])
 	}
 	
-	factors = names(which(sapply(data, class) == "factor"))
+	factors = names(which(sapply(data, class) == "factor")) #note: ordered factors don't count!!
 	
 	factor_lengths = c()
 	for (fac in factors){
@@ -73,7 +73,7 @@ pre_process_data = function(data, use_missing_data_dummies_as_vars){
 	}	
 	
 	#make sure to cast it as a data matrix and return it along with the factor_lengths
-	list(data = data.matrix(data), factor_lengths = factor_lengths)
+	list(data = data.matrix(data), factor_lengths = factor_lengths) #note: ordered factors get coerced to numbers at this step
 }
 
 is.missing = function(x){
