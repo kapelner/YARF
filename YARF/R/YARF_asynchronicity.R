@@ -93,11 +93,11 @@ YARF_convergence = function(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50)
 
 			
 			long_range_plot = ggplot(data.frame(x = 1 : t, y = oob_costs_by_iteration), aes(x, y)) +
-					geom_point() + geom_line() + xlab("# trees completed") + ylab(ylab)
+					geom_point() + geom_line() + xlab("# periods") + ylab(ylab)
 			
 			if (!is.null(trail_pts) && t > trail_pts){
 				short_range_plot = ggplot(data.frame(x = (t - trail_pts) : t, y = oob_costs_by_iteration[(t - trail_pts) : t]), aes(x, y)) +
-						geom_point() + geom_line() + xlab("# trees completed") + ylab(ylab)
+						geom_point() + geom_line() + xlab("# periods") + ylab(ylab)
 				grid.arrange(long_range_plot, short_range_plot, ncol = 2)
 			} else {
 				print(long_range_plot)				

@@ -20,7 +20,12 @@ predict.YARF = function(object, new_data, ...){
 	if (!("data.frame" %in% class(new_data))){
 		stop("Data frame required for \"new_data\".")
 	}
-	new_data = data.frame(new_data) #cast it... doesn't work for tbl_df's e.g.
+	
+	#cast it just to make sure (doesn't work with tbl_df's e.g.) but ensure it keeps the same column names. Casting using data.frame 
+	#changes "(Intercept)" to "X.Intercept." for some terrrrrrible reason.
+	original_col_names = colnames(new_data)
+	new_data = data.frame(new_data)
+	colnames(new_data) = original_col_names
 	
 	#now we take the columns from the training set
 	

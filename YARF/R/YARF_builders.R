@@ -341,7 +341,12 @@ YARF = function(
 		stop(paste("The training data X must be a data frame."), call. = FALSE)	
 	}
 	
-	X = data.frame(X) #cast it just to make sure (doesn't work with tbl_df's e.g.)
+	#cast it just to make sure (doesn't work with tbl_df's e.g.) but ensure it keeps the same column names. Casting using data.frame 
+	#changes "(Intercept)" to "X.Intercept." for some terrrrrrible reason.
+	original_col_names = colnames(X)
+	X = data.frame(X)
+	colnames(X) = original_col_names
+	
 	#make sure it's a well-formed data frame
 	if (ncol(X) == 0){
 		stop("Your data matrix must have at least one attribute.")

@@ -35,7 +35,7 @@ summary.YARF = function(object, ...){
 		miss = object$num_oob_obs_missing
 		pct_reporting = round((n - miss) / n * 100, 2)
 		if (pct_reporting == 0){
-			cat("No OOB results to show (no trees have been fit as of yet).\n")
+			cat("No OOB results to show (no trees have been fit as of yet).\n") #BUG FOR 1 tree
 		}
 		else {
 			if (miss > 0){
