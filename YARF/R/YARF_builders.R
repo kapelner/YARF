@@ -369,6 +369,12 @@ YARF = function(
 		if (verbose){
 			cat("Imputed missing data using attribute averages.\n")
 		}
+	} else {
+	    M = apply(is.na(X), 2, as.numeric)
+        colnames(M) = paste("is_missing_", colnames(X), sep = "")
+        colsums_M = colSums(M)
+        M = M[,colsums_M > 0 & colsums_M < n]
+        X = cbind(X, M)
 	}
 	if (verbose){
 		cat("YARF before preprocess...\n")
@@ -453,7 +459,7 @@ YARF = function(
 	if (verbose){
 		cat("YARF training data finalized...\n")
 	}
-	
+	cat('COLUMNS: ', colnames(model_matrix_training_data), '\n')
 	.jcall(java_YARF, "V", "setTrainingDataNames", colnames(model_matrix_training_data))
 	
 	if (!is.null(Xother)){
