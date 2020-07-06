@@ -187,10 +187,10 @@ YARFCART = function(
 		verbose = TRUE,
 		debug_log = FALSE
 ){
-	
-	bootstrap_indices = list()
-	bootstrap_indices[[1]] = 1 : nrow(X)
-	
+    if (is.null(bootstrap_indices)) {
+	    bootstrap_indices = list()
+	    bootstrap_indices[[1]] = 1 : nrow(X)
+    }
 	YARF(
 			#data arguments
 			X = X, y = y, Xother = Xother,
