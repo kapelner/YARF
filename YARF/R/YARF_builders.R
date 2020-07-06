@@ -322,7 +322,7 @@ YARF = function(
 		stop("You cannot specify both [X,y] and Xy simultaneously.")		
 	} else if (is.null(X) && is.null(y)){ #they specified Xy, so now just pull out X,y
 		#first ensure it's a dataframe
-		if ("data.frame" %in% class(Xy)){
+		if (!("data.frame" %in% class(Xy))){
 			stop(paste("The training data Xy must be a data frame."), call. = FALSE)	
 		}
 		Xy = data.frame(Xy)
