@@ -130,9 +130,7 @@
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 #' 											default is \code{TRUE}.	
-#' @param use_missing_data_dummies_as_vars	For each predictor in the dataset that is missing, create a new variable \code{M_<name>} that
-#' 											is one for observations that are missing and 0 if not. The default is \code{TRUE}.	
-#' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing 
+#' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing
 #' 											time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
 #' 											we will automatically serialize after other operations that add data (such as the OOB evaluation).
 #' @param seed								Set a random seed for reproducibility. 
@@ -219,7 +217,6 @@ YARF = function(
 		shared_scripts = NULL, 
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = TRUE,
-		use_missing_data_dummies_as_vars = TRUE,
 		replace_missing_data_with_x_j_bar = FALSE,
 		#other arguments for Java
 		serialize = FALSE,
@@ -485,7 +482,8 @@ YARF = function(
 		}
 	}
 	
-	model_matrix_training_data = pre_process_data(X, use_missing_data_dummies_as_vars)$data
+	model_matrix_training_data = pre_process_data(X)$data
+
 	p = ncol(model_matrix_training_data) # we subtract one because we tacked on the response as the last column
 
 	if (!is.null(mtry) && mtry == "all"){
@@ -494,18 +492,28 @@ YARF = function(
 	if (!is.null(mtry) && mtry > p){
 		stop("\"mtry\" cannot be greater than the number of features.")	
 	}
-	
+	# # now take care of missing data - add each column as a missingness dummy
+    # predictor_columns_with_missingness = as.numeric(which(colSums(is.na(data)) > 0))
+	#
+    # # only do something if there are predictors with missingness
+    # if (length(predictor_columns_with_missingness) > 0){
+	# 	M = list()
+	# 	for (col in predictor_columns_with_missingness) {
+	# 		M[[as.character(col)]] = as.numeric(is.missing(model_matrix_training_data[,col]))
+	# 	}
+    # }
+
 #	factor_lengths = pre_process_obj$factor_lengths
 	if (verbose){
 		cat("YARF after data preprocessed...", ncol(model_matrix_training_data), "total features...\n")
 	}
-	
+
 	#now set whether we want the program to log to a file
 	if (debug_log){
 		cat("warning: printing out the log file will slow down the runtime significantly.\n")
 		.jcall(java_YARF, "V", "writeStdOutToLogFile")
 	}
-	
+
 
 	
 	#build YARF to spec with what the user wants
@@ -566,6 +574,11 @@ YARF = function(
 		.jcall(java_YARF, "V", "addTrainingDataRow", row_as_char)
 	}
 	.jcall(java_YARF, "V", "addTrainingDataResponse", y)
+
+	# for (col in predictor_columns_with_missingness) {
+	# 	.jcall(java_YARF, "V", "addMissingnessDummy", as.integer(col), M[[as.character(col)]])
+	# }
+
 	.jcall(java_YARF, "V", "finalizeTrainingData")
 	.jcall(java_YARF, "V", "setTrainingDataNames", colnames(model_matrix_training_data))
 	
@@ -627,7 +640,6 @@ YARF = function(
 		after_node_birth_function_script = after_node_birth_function_script,
 		shared_scripts = shared_scripts, 
 		use_missing_data = use_missing_data,
-		use_missing_data_dummies_as_vars = use_missing_data_dummies_as_vars,
 		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
 		serialize = serialize,
 		seed = seed,

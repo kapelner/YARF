@@ -11,6 +11,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
 
@@ -43,6 +44,7 @@ public abstract class Classifier implements Serializable{
 	
 	/** an array of the raw training data by ROW i.e. consisting of xi = [xi1, ..., xiM, yi] */
 	protected transient ArrayList<double[]> X;
+	// protected transient HashMap<Integer, double[]> M;
 	protected transient double[] y;
 	/** the number of records in the training set */
 	public int n;
@@ -94,6 +96,10 @@ public abstract class Classifier implements Serializable{
 		String[] x_i_vec = {x_i};
 		addTrainingDataRow(x_i_vec);	
 	}
+
+//	public void addMissingnessDummy(int j, double[] m_j) {
+//		M.put(j, m_j);
+//	}
 	
 	public void addTrainingDataResponse(double[] y){
 		this.y = y;

@@ -27,7 +27,7 @@ imputeMatrixByXbarjContinuousOrModalForBinary = function(X_with_missing, X_for_c
 }
 
 ##private function that handles all pre-processing (dummification, missing data, etc.)
-pre_process_data = function(data, use_missing_data_dummies_as_vars){
+pre_process_data = function(data){
 
 	#first convert characters to factors
 	character_vars = names(which(sapply(data, class) == "character"))
@@ -52,26 +52,8 @@ pre_process_data = function(data, use_missing_data_dummies_as_vars){
 	}
 	
 	
-	if (use_missing_data_dummies_as_vars){		
-		#now take care of missing data - add each column as a missingness dummy
-		predictor_columns_with_missingness = as.numeric(which(colSums(is.na(data)) > 0))
-		
-		#only do something if there are predictors with missingness
-		if (length(predictor_columns_with_missingness) > 0){
-			M = matrix(0, nrow = nrow(data), ncol = length(predictor_columns_with_missingness))
-			for (i in 1 : nrow(data)){
-				for (j in 1 : length(predictor_columns_with_missingness)){
-					if (is.missing(data[i, predictor_columns_with_missingness[j]])){
-						M[i, j] = 1
-					}
-				}
-			}
-			colnames(M) = paste("M_", colnames(data)[predictor_columns_with_missingness], sep = "")
-			#append the missing dummy columns to data as if they're real attributes themselves
-			data = cbind(data, M)			
-		}
-	}	
-	
+
+
 	#make sure to cast it as a data matrix and return it along with the factor_lengths
 	list(data = data.matrix(data), factor_lengths = factor_lengths) #note: ordered factors get coerced to numbers at this step
 }
@@ -92,7 +74,7 @@ pre_process_new_data = function(new_data, yarf_mod){
 		new_data_and_training_data[, predictor] = factor(new_data_and_training_data[, predictor])
 	}
 	
-	new_data = pre_process_data(new_data_and_training_data, yarf_mod$use_missing_data_dummies_as_vars)$data
+	new_data = pre_process_data(new_data_and_training_data)$data
 	training_data_features = yarf_mod$training_data_features
 	
 	#The new data features has to be a superset of the training data features, so pare it down even more

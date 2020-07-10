@@ -25,4 +25,4 @@ Xstar = data.frame(xs)
 colnames(Xstar)[1] = "x"
 points(xs, predict(yarf_mod, Xstar), col = "blue", type = "l")
 
-predict(yarf_mod, 0.5)
+predict(yarf_mod, data.frame(x = 0.5))
