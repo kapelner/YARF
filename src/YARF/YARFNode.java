@@ -36,7 +36,7 @@ public class YARFNode implements Cloneable {
 	/** the attribute this node makes a decision on */
 	public int split_attribute = BAD_FLAG_int;
 	/** the value this node makes a decision on */
-	public double split_value = BAD_FLAG_double;
+	public Double split_value = BAD_FLAG_double;
 	/** send missing data to the right? */ 
 	public boolean send_missing_data_right;
 	/** if this is a leaf node, then the result of the prediction for regression, otherwise null */
@@ -81,9 +81,14 @@ public class YARFNode implements Cloneable {
 	 */
 	public double Evaluate(double[] record) {
 
-//		System.out.println("Evaluate TREE record: " + Tools.StringJoin(record));
 		YARFNode evalNode = this;
 		while (true){
+			if (YARF.DEBUG) {
+				System.out.println("Evaluate TREE record: " + Tools.StringJoin(record));
+				System.out.println("Node: " + evalNode);
+				System.out.println("split_attribute " + evalNode.split_attribute);
+				System.out.println("record[evalNode.split_attribute]: " + record[evalNode.split_attribute]);
+			}
 			if (evalNode.is_leaf){
 				return evalNode.y_pred;
 			}
@@ -425,7 +430,7 @@ public class YARFNode implements Cloneable {
 	}
 
 	public double[] uniqueXvals(int j) {
-		return Tools.unique_values(node_Xs_by_feature(j)).toArray();
+		return Tools.unique_values_without_missing(node_Xs_by_feature(j)).toArray();
     }
     
     public String prox_info(double[] record) {

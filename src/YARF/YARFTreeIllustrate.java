@@ -119,42 +119,56 @@ public class YARFTreeIllustrate {
 	}	
 
 	private void drawSplit(YARFNode node, int x, int y) {
+		if (node.depth >= depth_in_num_splits){
+			return;
+		}
 //		System.out.println("drawSplit at " + node.stringLocation(true));
 		Graphics g = canvas.getGraphics();
 		//now set up canvas for drawing the foreground
 		g.setFont(new Font(font_family, Font.PLAIN, font_size));
 		g.setColor(text_color);
-		
+
+		String rule_and_n = "";
 		//paint a leaf node
-		if (node.is_leaf && node.y_pred != YARFNode.BAD_FLAG_double){
+		if (node.is_leaf){
 			String pred = two_digit_format.format(node.y_pred);//;
 			int draw_x = (int)Math.round(x - pred.length() / 2.0 * character_width_in_px);
-			g.drawString(pred + " (" + node.nodeSize() + ") ", draw_x, y + font_size);
+			rule_and_n = "Leaf: " + pred + " (" + node.nodeSize() + ") ";
+			//g.drawString(rule_and_n, draw_x, y + font_size);
 			if (yarf.customFunctionPrintAtLeafNode()){
 				drawStringWithBreaklines(g, "\n" + yarf.runPrintAtLeafNode(node), draw_x, y);
 			}
 		}
-		
-		if (node.depth >= depth_in_num_splits){
-			return;
-		}		
-		
 		//paint a split node
-		if (node.split_attribute != YARFNode.BAD_FLAG_int && node.split_value != YARFNode.BAD_FLAG_double) {
+		else if (node.split_attribute != YARFNode.BAD_FLAG_int && node.split_value != YARFNode.BAD_FLAG_double) {
 			int attr = node.split_attribute;
 			double val = node.split_value;
-			String rule_and_n = 
+			rule_and_n =
 					(use_real_names ? yarf.feature_names[attr] : ("X_" + (attr + 1))) +
-					" <= " + 
-					two_digit_format.format(val) + 
+					" <= " +
+					two_digit_format.format(val) +
 					(node.send_missing_data_right ? " M->" : " <-M") +
-					" (" + node.nodeSize() + ") " + 
+					" (" + node.nodeSize() + ") " +
 					(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");
-			int draw_x = (int)Math.round(x - rule_and_n.length() / 2.0 * character_width_in_px);
-			g.drawString(rule_and_n, draw_x, y - font_size / 2);
-			if (yarf.customFunctionPrintAtSplitNode()){
-				drawStringWithBreaklines(g, "\n" + yarf.runPrintAtSplitNode(node), draw_x, y);
-			}
+		}
+		else if (node.split_attribute == YARFNode.BAD_FLAG_int) {
+			rule_and_n = "j_is_null" +
+					(node.send_missing_data_right ? " M->" : " <-M") +
+					" (" + node.nodeSize() + ") " +
+					(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");
+		}
+		else {
+			int attr = node.split_attribute;
+			rule_and_n = "M_" +
+					(use_real_names ? yarf.feature_names[attr] : (attr + 1)) +
+							(node.send_missing_data_right ? " ->" : " <-") +
+							" (" + node.nodeSize() + ") " +
+							(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");
+		}
+		int draw_x = (int)Math.round(x - rule_and_n.length() / 2.0 * character_width_in_px);
+		g.drawString(rule_and_n, draw_x, y - font_size / 2);
+		if (yarf.customFunctionPrintAtSplitNode()){
+			drawStringWithBreaklines(g, "\n" + yarf.runPrintAtSplitNode(node), draw_x, y);
 		}
 		//now we have to recurse to draw the left and right
 		g.setColor(line_color);

@@ -381,10 +381,11 @@ public class Tools {
 		return sub_array;
 	}
 
-	public static TDoubleHashSet unique_values(double[] vals) {
+	public static TDoubleHashSet unique_values_without_missing(double[] vals) {
 		TDoubleHashSet unique_values = new TDoubleHashSet();
 		for (int i = 0; i < vals.length; i++){
-			unique_values.add(vals[i]);
+			if (!Double.isNaN(vals[i]))
+				unique_values.add(vals[i]);
 		}
 		return unique_values;
 	}

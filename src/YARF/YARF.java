@@ -31,7 +31,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	private static final long serialVersionUID = -6984205353140981153L;
 
 	/** debug mode -- prints lots of messages that are useful */
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
 	
 	/** the number of CPU cores to use in YARF operations */
 //	protected int num_cores;
@@ -170,7 +170,6 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 
 		yarf.finalizeTrainingData();
 		yarf.addBootstrapIndices(indices_t, 0);
-
 		yarf.Build();
 		
 	}
@@ -759,6 +758,25 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			ordered_nonmissing_indices_j.add(non_missing_pairs.get(i_s).ind);
 		}
 
+		for (int i : ordered_nonmissing_indices_j.toArray()) {
+			if (missing_indices_j.contains(i)) {
+				System.out.println("Duplicate indices between missing/non-missing");
+				Integer n = null;
+				int k = n;
+			}
+		}
+		TIntHashSet s = new TIntHashSet(ordered_nonmissing_indices_j);
+		if (s.size() != ordered_nonmissing_indices_j.size()) {
+			System.out.println("Duplicates in ordered_nonmissing");
+			Integer n = null;
+			int k = n;
+		}
+
+		if (ordered_nonmissing_indices_j.size() + missing_indices_j.size() != n_sub) {
+			System.out.println("Missing indices between the two");
+			Integer n = null;
+			int k = n;
+		}
 		//System.out.println("sortedIndices j = " + j + " ordered_nonmissing_indices_j = " + Tools.StringJoin(ordered_nonmissing_indices_j));
 	}
 	
