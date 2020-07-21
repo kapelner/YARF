@@ -31,7 +31,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	private static final long serialVersionUID = -6984205353140981153L;
 
 	/** debug mode -- prints lots of messages that are useful */
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 	
 	/** the number of CPU cores to use in YARF operations */
 //	protected int num_cores;
@@ -725,7 +725,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //		return split_point_to_cutoff_index;
 //	}
 	
-	protected void sortedIndices(int j, TIntArrayList sub_indices, TIntArrayList ordered_nonmissing_indices_j, TIntHashSet missing_indices_j){
+	protected void sortedIndices(int j, TIntArrayList sub_indices, TIntArrayList ordered_nonmissing_indices_j, TIntArrayList missing_indices_j){
 		//we only do the sorting ONCE per attribute... this ensures this runs with a minimal 
 		//amount of thread butting
 //		synchronized(sorter_locks[j]){
@@ -737,6 +737,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //		}
 		//////the above code is not used anywhere.... why???
 
+//		TIntHashSet sub_indices_set = new TIntHashSet(sub_indices);
+//		if (sub_indices_set.size() != sub_indices.size()) {
+//			System.out.println("Duplicates in sub_indices");
+//			System.out.println(Tools.StringJoin(sub_indices));
+//			Integer n = null;
+//			int k = n;
+//		}
 		//System.out.println("sortedIndices j = " + j + " indices_sorted_j = " + Tools.StringJoin(indices_sorted_j));
 		int n_sub = sub_indices.size();
 		//System.out.println("sortedIndices j = " + j + " sub_indices = " + Tools.StringJoin(sub_indices));
@@ -758,25 +765,30 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 			ordered_nonmissing_indices_j.add(non_missing_pairs.get(i_s).ind);
 		}
 
-		for (int i : ordered_nonmissing_indices_j.toArray()) {
-			if (missing_indices_j.contains(i)) {
-				System.out.println("Duplicate indices between missing/non-missing");
-				Integer n = null;
-				int k = n;
-			}
-		}
+//		for (int i : ordered_nonmissing_indices_j.toArray()) {
+//			if (missing_indices_j.contains(i)) {
+//				System.out.println("Duplicate indices between missing/non-missing");
+//				System.out.println(Tools.StringJoin(missing_indices_j));
+//				Integer n = null;
+//				int k = n;
+//			}
+//		}
 		TIntHashSet s = new TIntHashSet(ordered_nonmissing_indices_j);
-		if (s.size() != ordered_nonmissing_indices_j.size()) {
-			System.out.println("Duplicates in ordered_nonmissing");
-			Integer n = null;
-			int k = n;
-		}
-
-		if (ordered_nonmissing_indices_j.size() + missing_indices_j.size() != n_sub) {
-			System.out.println("Missing indices between the two");
-			Integer n = null;
-			int k = n;
-		}
+//		if (s.size() != ordered_nonmissing_indices_j.size()) {
+//			System.out.println("Duplicates in ordered_nonmissing");
+//			System.out.println(Tools.StringJoin(ordered_nonmissing_indices_j));
+//			Integer n = null;
+//			int k = n;
+//		}
+//		TIntHashSet sub_indices_set = new TIntHashSet(sub_indices);
+//		if (s.size() + missing_indices_j.size() != sub_indices_set.size()) {
+//			System.out.println("Missing indices between the two");
+//			System.out.println("s.size: " + s.size() + " missing size: " + missing_indices_j.size() + " n_sub: " + n_sub);
+//			System.out.println(Tools.StringJoin(s));
+//			System.out.println(Tools.StringJoin(missing_indices_j));
+//			Integer n = null;
+//			int k = n;
+//		}
 		//System.out.println("sortedIndices j = " + j + " ordered_nonmissing_indices_j = " + Tools.StringJoin(ordered_nonmissing_indices_j));
 	}
 	

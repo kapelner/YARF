@@ -119,7 +119,13 @@ public class YARFTreeIllustrate {
 	}	
 
 	private void drawSplit(YARFNode node, int x, int y) {
+		if (YARF.DEBUG) {
+			System.out.println("Drawing split for node " + node.stringLocation());
+		}
 		if (node.depth >= depth_in_num_splits){
+			if (YARF.DEBUG) {
+				System.out.println("max depth (" + depth_in_num_splits + ") reached with depth " + node.depth + " aborting");
+			}
 			return;
 		}
 //		System.out.println("drawSplit at " + node.stringLocation(true));
@@ -131,6 +137,9 @@ public class YARFTreeIllustrate {
 		String rule_and_n = "";
 		//paint a leaf node
 		if (node.is_leaf){
+			if (YARF.DEBUG) {
+				System.out.println("Drawing leaf");
+			}
 			String pred = two_digit_format.format(node.y_pred);//;
 			int draw_x = (int)Math.round(x - pred.length() / 2.0 * character_width_in_px);
 			rule_and_n = "Leaf: " + pred + " (" + node.nodeSize() + ") ";
@@ -140,6 +149,14 @@ public class YARFTreeIllustrate {
 			}
 		}
 		//paint a split node
+		else if (node.split_value == null) {
+			int attr = node.split_attribute;
+			rule_and_n = "M_" +
+					(use_real_names ? yarf.feature_names[attr] : (attr + 1)) +
+							"-> (" + node.nodeSize() + ") " +
+							(node.y_pred != YARFNode.BAD_FLAG_double ? two_digit_format.format(node.y_pred) : "");
+
+		}
 		else if (node.split_attribute != YARFNode.BAD_FLAG_int && node.split_value != YARFNode.BAD_FLAG_double) {
 			int attr = node.split_attribute;
 			double val = node.split_value;

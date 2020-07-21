@@ -7,6 +7,7 @@ import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 /**
  * A class that contains many generally useful convenience methods.
@@ -205,7 +206,16 @@ public class Tools {
 	 */	
 	public static String StringJoin(Collection<String> all){
 		return StringJoinStrings(all, ", ");
-	}	
+	}
+
+	public static String sortAndJoin(int[] arr) {
+		Arrays.sort(arr);
+		return StringJoin(arr);
+	}
+
+	public static String sortAndJoin(TIntArrayList arr) {
+		return sortAndJoin(arr.toArray());
+	}
 	
 	/**
 	 * Returns the max of a vector

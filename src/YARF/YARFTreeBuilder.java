@@ -1,6 +1,6 @@
 package YARF;
 
-import java.util.Arrays;
+import java.util.*;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
@@ -48,7 +48,9 @@ public class YARFTreeBuilder {
 		if (makeNodeLeaf(node)){
 			node.is_leaf = true;
 			node.assignYHat();
-			if (YARF.DEBUG){node.printNodeDebugInfo("");}
+			if (YARF.DEBUG){
+				node.printNodeDebugInfo("");
+			}
 			return; //ditch... because we're done...
 		}
 
@@ -92,7 +94,7 @@ public class YARFTreeBuilder {
 			}
 			node.is_leaf = true;
 			node.assignYHat();
-//			if (YARF.DEBUG){node.printNodeDebugInfo("");}
+			if (YARF.DEBUG){node.printNodeDebugInfo("");}
 			return;
 		}
 		
@@ -108,11 +110,11 @@ public class YARFTreeBuilder {
 		//otherwise we use the optimal split
 		//first indicate the splitting rule in this node converting the two lucky zygotes into a fetus
 		node.split_attribute = split_data.lowest_cost_split_attribute;
-		if (node.split_attribute == YARFNode.BAD_FLAG_int) {
-			System.out.println("split attr bad, lowest_total_split_cost: " + split_data.lowest_total_split_cost + " node.cost: " + node.cost);
-			Integer n = null;
-			node.split_attribute = n;
-		}
+//		if (node.split_attribute == YARFNode.BAD_FLAG_int) {
+//			System.out.println("split attr bad, lowest_total_split_cost: " + split_data.lowest_total_split_cost + " node.cost: " + node.cost);
+//			Integer n = null;
+//			node.split_attribute = n;
+//		}
 //		System.out.println("  splitValue " + yarf.getXj(lowest_cost_split_attribute)[lowest_cost_split_index]);
 		node.split_value = split_data.lowest_cost_split_value;
 		node.send_missing_data_right = split_data.lowest_send_missing_data_right;
@@ -136,7 +138,7 @@ public class YARFTreeBuilder {
 	private void tryFeature(YARFNode node, int j, SplitDataWrap split_data, boolean[] trueFalseRandomOrder) {
 		//first get the indices for this note sorted on attribute j and get the missings as well
 		TIntArrayList ordered_nonmissing_indices_j = new TIntArrayList();
-		TIntHashSet missing_indices_j = new TIntHashSet(); //order is not necessary here since there is no order
+		TIntArrayList missing_indices_j = new TIntArrayList(); //order is not necessary here since there is no order
 		//FUTURE: ordered_nonmissing_indices_j not used... need to optimize this
 		yarf.sortedIndices(j, node.indices, ordered_nonmissing_indices_j, missing_indices_j);
 //		if (YARF.DEBUG){System.out.println("node.indices: " + Tools.StringJoin(node.indices));}
@@ -165,7 +167,7 @@ public class YARFTreeBuilder {
 	}
 
 
-	private void trySplitVal(YARFNode node, Double split_value, double[] xj, int j, TIntArrayList ordered_nonmissing_indices_j, TIntHashSet missing_indices_j, SplitDataWrap split_data, boolean[] trueFalseRandomOrder) {
+	private void trySplitVal(YARFNode node, Double split_value, double[] xj, int j, TIntArrayList ordered_nonmissing_indices_j, TIntArrayList missing_indices_j, SplitDataWrap split_data, boolean[] trueFalseRandomOrder) {
 
 		for (boolean send_missing_data_right : trueFalseRandomOrder){ //iterate within here over the direction of missingness
 			//set up zygotes
@@ -176,7 +178,10 @@ public class YARFTreeBuilder {
 
 			//FUTURE: this loop is obviously unneeded for each iteration
 			//it is costing about 25% of total runtime
-			if (split_value  != null) { // dealing with non-missing indices only
+			if (split_value == null) { // dealing with non-missing indices only
+				putative_left.indices.addAll(ordered_nonmissing_indices_j);
+			}
+			else { // dealing with non-missing indices only
 				for (int index : ordered_nonmissing_indices_j.toArray()) {
 					if (xj[index] <= split_value) {
 						putative_left.indices.add(index);
@@ -184,14 +189,8 @@ public class YARFTreeBuilder {
 						putative_right.indices.add(index);
 					}
 				}
-			}
-			else {
-				putative_left.indices.addAll(ordered_nonmissing_indices_j);
-			}
 
-			//putative_left.indices = (TIntArrayList)node.indices.subList(0, i + 1);
-			//putative_right.indices = (TIntArrayList)node.indices.subList(i + 1, num_split_points);		
-			
+			}
 			if (!missing_indices_j.isEmpty()){ // handle the indices from missingness L/R now
 				if (send_missing_data_right){
 					putative_right.indices.addAll(missing_indices_j);
@@ -200,18 +199,29 @@ public class YARFTreeBuilder {
 					putative_left.indices.addAll(missing_indices_j);
 				}
 			}
+			//putative_left.indices = (TIntArrayList)node.indices.subList(0, i + 1);
+			//putative_right.indices = (TIntArrayList)node.indices.subList(i + 1, num_split_points);
+
 
 			if (putative_left.indices.isEmpty() || putative_right.indices.isEmpty()) return;
 
-			if (YARF.DEBUG){System.out.println("left indices: " + Tools.StringJoin(putative_left.indices));}
-			if (YARF.DEBUG){System.out.println("left ys: " + Tools.StringJoin(putative_left.node_ys()));}
-			if (YARF.DEBUG){System.out.println("right indices: " + Tools.StringJoin(putative_right.indices));}
-			if (YARF.DEBUG){System.out.println("right ys: " + Tools.StringJoin(putative_right.node_ys()));}
-			if (putative_left.nodeSize() + putative_right.nodeSize() != node.nodeSize()) {
-				System.out.println("node size");
-				Integer q = null;
-				int i = q;
+			if (YARF.DEBUG) {
+				System.out.println("parent indices: " + Tools.sortAndJoin(node.indices));
+				System.out.println("ordered_nonmissing: " + Tools.sortAndJoin(ordered_nonmissing_indices_j));
+				System.out.println("missing: " + Tools.sortAndJoin(missing_indices_j.toArray()));
+				System.out.println("left indices: " + Tools.sortAndJoin(putative_left.indices));
+				System.out.println("left ys: " + Tools.StringJoin(putative_left.node_ys()));
+				System.out.println("left size: " + putative_left.nodeSize());
+				System.out.println("right indices: " + Tools.sortAndJoin(putative_right.indices));
+				System.out.println("right ys: " + Tools.StringJoin(putative_right.node_ys()));
+				System.out.println("right size: " + putative_right.nodeSize());
+				System.out.println("parent size: " + node.nodeSize());
 			}
+//			if (putative_left.nodeSize() + putative_right.nodeSize() != node.nodeSize()) {
+//				System.out.println("node size");
+//				Integer q = null;
+//				int i = q;
+//			}
 			//these are now viable splits, so we compute cost on each node and the overall cost of the split
 			computeNodeCost(putative_left);
 			computeNodeCost(putative_right);			
@@ -280,10 +290,7 @@ public class YARFTreeBuilder {
 		if (yarf.customFunctionMakeNodeIntoLeaf()){
 			return yarf.runNodesizeLegal(node);
 		//the default is if it's less than the minimum node size as specified by the user at build time
-		} else if (node.nodeSize() < yarf.nodesize){
-			return true;
-		}
-		return false;
+		} else return node.nodeSize() < yarf.nodesize;
 	}
 
 	private int[] selectAttributesToTry(YARFNode node) {
