@@ -95,9 +95,8 @@ public class YARFTree extends Classifier {
 	}
 
 	public int depth() {
-		int[] d = {0};
-		root.maxDepth(d);
-		return d[0];
+		//int[] d = {0};
+		return root.maxDepth();
 	}
 
 	public int numLeaves() {

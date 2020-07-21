@@ -29,8 +29,8 @@ public class YARFNode implements Cloneable {
 	protected double cost = BAD_FLAG_double;
 	/** Information kept for the user during customization */
 	public Object other_info;
-	/** the generation of this node from the top node (root note has generation = 0 by definition) */
-	public int depth = 0;
+	/** the generation of this node from the top node (root node has generation = 1 by definition) */
+	public int depth = 1;
 	/** is this node a terminal node? */
 	public boolean is_leaf = false;
 	/** the attribute this node makes a decision on */
@@ -85,22 +85,25 @@ public class YARFNode implements Cloneable {
 		while (true){
 			if (YARF.DEBUG) {
 				System.out.println("Evaluate TREE record: " + Tools.StringJoin(record));
-				System.out.println("Node: " + evalNode);
+				System.out.println("Node: " + evalNode.stringLocation() + " ID: " + evalNode.toString());
 				System.out.println("split_attribute " + evalNode.split_attribute);
-				System.out.println("record[evalNode.split_attribute]: " + record[evalNode.split_attribute]);
 			}
-			if (evalNode.is_leaf){
+			if (evalNode.is_leaf) {
 				return evalNode.y_pred;
+			}
+			if (YARF.DEBUG) {
+				System.out.println("record[evalNode.split_attribute]: " + record[evalNode.split_attribute]);
 			}
 			//all split rules are less than or equals (this is merely a convention)
 			//handle missing data first
-			if (Classifier.isMissing(record[evalNode.split_attribute])){
+			if (Classifier.isMissing(record[evalNode.split_attribute])) {
 				evalNode = evalNode.send_missing_data_right ? evalNode.right : evalNode.left;
-			}			
-			else if (record[evalNode.split_attribute] <= evalNode.split_value){
-				evalNode = evalNode.left;
+			} else if (evalNode.split_value == null) {
+				evalNode = evalNode.send_missing_data_right ? evalNode.left : evalNode.right;
 			}
-			else {
+			else if (record[evalNode.split_attribute] <= evalNode.split_value) {
+				evalNode = evalNode.left;
+			} else {
 				evalNode = evalNode.right;
 			}
 		}
@@ -224,7 +227,7 @@ public class YARFNode implements Cloneable {
 	 * 
 	 * @param title		A string to print within this message
 	 */
-	public void printNodeDebugInfo(String title) {		
+	public void printNodeDebugInfo(String title) {
 		System.out.println("\n" + title + " node debug info for " + this.stringLocation(true) + (is_leaf ? " (LEAF) " : " (INTERNAL NODE) ") + " d = " + depth);
 		System.out.println("-----------------------------------------");
 		System.out.println("n_eta = " + nodeSize());
@@ -326,20 +329,22 @@ public class YARFNode implements Cloneable {
 		return node_X_others;
 	}
 	
-	protected void maxDepth(int[] max_depth) {
-		if (this.depth > max_depth[0]){
-			max_depth[0] = this.depth;
-		}
-		if (this.is_leaf){
-			return;
-		}
-		left.maxDepth(max_depth);
-		right.maxDepth(max_depth);
+	protected int maxDepth() {
+		if (this.is_leaf) return this.depth;
+		else return 1 + Math.max(this.left.maxDepth(), this.right.maxDepth());
+//		if (this.depth > max_depth[0]){
+//			max_depth[0] = this.depth;
+//		}
+//		if (this.is_leaf){
+//			return;
+//		}
+//		left.maxDepth(max_depth);
+//		right.maxDepth(max_depth);
 	}
 	
-	public int maxDepth() {
-		return this.tree.depth();
-	}
+//	public int maxDepth() {
+//		return this.tree.depth();
+//	}
 	
 	public void assignYHat() {
 		//System.out.println("assignYHat");
