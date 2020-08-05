@@ -6,8 +6,12 @@
 We permute the covariates column(s) and build YARF models \code{num_permutation_samples} times.
 The p-val is determined by a permutation-like test.}
 \usage{
-cov_importance_test(yarf_mod, covariates = NULL,
-  num_permutation_samples = 100, plot = TRUE)
+cov_importance_test(
+  yarf_mod,
+  covariates = NULL,
+  num_permutation_samples = 100,
+  plot = TRUE
+)
 }
 \arguments{
 \item{yarf_mod}{The fit model to test against permuted training data.}

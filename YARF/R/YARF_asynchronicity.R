@@ -7,6 +7,9 @@
 #' @author Kapelner
 #' @export
 YARF_progress = function(yarf_mod, console_message = TRUE){
+	assertClass(yarf_mod, "YARF")
+	assertLogical(console_message)
+	
 	num_trees_completed = .jcall(yarf_mod$java_YARF, "I", "progress")
 	progress = num_trees_completed / yarf_mod$num_trees
 	
@@ -64,7 +67,7 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 #' be calculating OOB statistics after each tree.
 #' 
 #' @param yarf_mod 							The yarf model object
-#' @param time_delay_in_seconds				Frequency of messages in seconds. Default is \code{5} seconds.
+#' @param time_delay_in_seconds				Frequency of messages in seconds. Default is \code{5} seconds. Minimum is 0.1.
 #' @param trail_pts							If non-null, it will plot a secondary window with only the trees in the last \code{trail_trees}
 #' 											number of progress updates defined by \code{time_delay_in_seconds} 
 #' 											versus error which allows assessing the convergence more closely.
@@ -73,6 +76,10 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 #' @author Adam Kapelner
 #' @export
 YARF_convergence = function(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50){
+	assertClass(yarf_mod, "YARF")
+	assertNumeric(time_delay_in_seconds, lower = 0.1)
+	assertCount(trail_pts, positive = TRUE, null.ok = TRUE)
+	
 	if (!is.null(yarf_mod$oob_cost_calculation)){
 		ylab = "OOB total cost (custom)"
 	} else if (yarf_mod$pred_type == "regression"){
@@ -84,7 +91,7 @@ YARF_convergence = function(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50)
 	.jcall(yarf_mod$java_YARF, "V", "iterativelyCalcOob")
 	repeat {
 		#first get the iteration data
-		oob_costs_by_iteration = .jcall(yarf_mod$java_YARF, "[D", "OOBCostsByIteration")
+		oob_costs_by_iteration = .jcall(yarf_mod$java_YARF, "[D", "OOBCostsByIteration", simplify = TRUE)
 		t = length(oob_costs_by_iteration)
 #		cat("t", t, "trail_pts", trail_pts, "oob_costs_by_iteration", oob_costs_by_iteration, "\n")
 		
@@ -125,6 +132,8 @@ YARF_convergence = function(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50)
 #' @author Adam Kapelner
 #' @export
 YARF_stop = function(yarf_mod){
+	assertClass(yarf_mod, "YARF")
+	
 	yarf_mod$stopped = TRUE
 	.jcall(yarf_mod$java_YARF, "V", "StopBuilding")
 	yarf_mod

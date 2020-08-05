@@ -68,8 +68,7 @@ get_nodes_matrix = function(X, yarf_mod){
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))	
 	
 	X = pre_process_new_data(X, yarf_mod)
-#	nodes_matrix = .jcall(yarf_mod$java_YARF, "[[LYARF/YARFNode;", "predictNodes", .jarray(X, dispatch = TRUE), as.integer(num_cores))
-	t(sapply(.jcall(yarf_mod$java_YARF, "[[LYARF/YARFNode;", "predictNodes", .jarray(X, dispatch = TRUE), as.integer(num_cores)), .jevalArray))
+	.jcall(yarf_mod$java_YARF, "[[LYARF/YARFNode;", "predictNodes", .jarray(X, dispatch = TRUE), as.integer(num_cores), simplify = TRUE)
 }
 
 #' Computes information about the "proximity" of observations within the YARF model. Given two datasets,

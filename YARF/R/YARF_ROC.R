@@ -39,34 +39,43 @@ YARFROC = function(X, y,
 		verbose = TRUE, 
 		...){
 	
-  x_axis = tolower(x_axis)
-  y_axis = tolower(y_axis)
+	assertDataFrame(X)
+	assertFactor(y)
+	assertNumeric(use_prop_data, lower = 0, upper = 1)
+	assertNumeric(minimum_class_proportion, lower = 0, upper = 1)
+	assertNumeric(desired_interval, lower = 0, upper = 1)
+	assertNumeric(tolerance, lower = .Machine$double.xmin)
+	assertLogical(y_axis_fine_resolution)
+	assertLogical(plot)
+	assertLogical(verbose)
+	x_axis = tolower(x_axis)
+	y_axis = tolower(y_axis)
 	
-  #all the error checking
-  if (x_axis == y_axis){
+	  #all the error checking
+	  if (x_axis == y_axis){
 		stop("\"x_axis\" and \"y_axis\" must be different.")
-  }
-	if (!(x_axis %in% c("tpr","fnr","fpr","tnr","ppv","fdr","fomr","npv"))){
+	  }
+	  if (!(x_axis %in% c("tpr","fnr","fpr","tnr","ppv","fdr","fomr","npv"))){
 		stop("\"x_axis\" must be a legal metric.")
-	}
-	if (!(y_axis %in% c("tpr","fnr","fpr","tnr","ppv","fdr","fomr","npv"))){
+	  }
+	  if (!(y_axis %in% c("tpr","fnr","fpr","tnr","ppv","fdr","fomr","npv"))){
 		stop("\"y_axis\" must be a legal metric.")
-	}
-  if (identical(c(x_axis, y_axis), c("tpr", "fnr")) || 
-      identical(c(x_axis, y_axis), c("fnr", "tpr")) ||
-      identical(c(x_axis, y_axis), c("fpr", "tnr")) ||
-      identical(c(x_axis, y_axis), c("tnr", "fpr")) ||
-      identical(c(x_axis, y_axis), c("fomr", "npv")) ||
-      identical(c(x_axis, y_axis), c("npv", "fomr")) ||
-      identical(c(x_axis, y_axis), c("ppv", "fdr")) ||
-      identical(c(x_axis, y_axis), c("fdr", "ppv"))
-  ){
-    stop("Trivial plot since y = 1 - x by definition.")
-  }
+		}
+	  if (identical(c(x_axis, y_axis), c("tpr", "fnr")) || 
+	  identical(c(x_axis, y_axis), c("fnr", "tpr")) ||
+	  identical(c(x_axis, y_axis), c("fpr", "tnr")) ||
+	  identical(c(x_axis, y_axis), c("tnr", "fpr")) ||
+	  identical(c(x_axis, y_axis), c("fomr", "npv")) ||
+	  identical(c(x_axis, y_axis), c("npv", "fomr")) ||
+	  identical(c(x_axis, y_axis), c("ppv", "fdr")) ||
+	  identical(c(x_axis, y_axis), c("fdr", "ppv"))
+	  ){
+	    stop("Trivial plot since y = 1 - x by definition.")
+	  }
 	
 	y_levels = levels(y)
 	num_y_levels = length(y_levels)
-	if (class(y) != "factor" || num_y_levels != 2){
+	if (num_y_levels != 2){
 		stop("Your response must be a factor with two levels.")
 	}
 	
@@ -77,38 +86,38 @@ YARFROC = function(X, y,
 	
 	#let's nail the x-axis first
 
-	
-	
+
+
 	ROCResults = R6Class("ROCResults",
-    public = list(
-      results = NULL,
-      x_axis = NULL,
-      y_axis = NULL,
-      initialize = function(x_axis, y_axis) {
-        self$x_axis = x_axis
-        self$y_axis = y_axis
-        self$results = data.frame(matrix(NA, nrow = 0, ncol = 3))
-        colnames(self$results) = c(x_axis, y_axis, "p_pos")       
-      },
-      addResults = function(x) {
-        self$results = rbind(self$results, x)
-        colnames(self$results) = c(x_axis, y_axis, "p_pos") 
-      }
-    )
+	public = list(
+	  results = NULL,
+	  x_axis = NULL,
+	  y_axis = NULL,
+	  initialize = function(x_axis, y_axis) {
+	    self$x_axis = x_axis
+	    self$y_axis = y_axis
+	    self$results = data.frame(matrix(NA, nrow = 0, ncol = 3))
+	    colnames(self$results) = c(x_axis, y_axis, "p_pos")       
+	  },
+	  addResults = function(x) {
+	    self$results = rbind(self$results, x)
+	    colnames(self$results) = c(x_axis, y_axis, "p_pos") 
+	  }
 	)
-	
-	#pass by reference... easiest way I could think of unfortunately is to use R6...
-	roc_results <- ROCResults$new(x_axis, y_axis)
-	p_pos = 0.5
-	YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, minimum_class_proportion, p_pos, desired_interval, x_axis, y_axis, FALSE, tolerance, plot, ...)
-	YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, p_pos, 1 - minimum_class_proportion, desired_interval, x_axis, y_axis, FALSE, tolerance, plot, ...)
-	if (y_axis_fine_resolution){
-	  p_pos = 0.5 + rnorm(1, 0, 0.05) #seems reasonable to begin + a little noise to prevent x, y resolution points bunching up
-	  YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, minimum_class_proportion, p_pos, desired_interval, y_axis, x_axis, TRUE, tolerance, plot, ...)
-	  YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, p_pos, 1 - minimum_class_proportion, desired_interval, y_axis, x_axis, TRUE, tolerance, plot, ...)
-	}
-	#return the results ordered so it's easy to pick out the point that suits your needs
-	roc_results$results[order(roc_results$results[, 1]), ]
+)
+
+#pass by reference... easiest way I could think of unfortunately is to use R6...
+roc_results <- ROCResults$new(x_axis, y_axis)
+p_pos = 0.5
+YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, minimum_class_proportion, p_pos, desired_interval, x_axis, y_axis, FALSE, tolerance, plot, ...)
+YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, p_pos, 1 - minimum_class_proportion, desired_interval, x_axis, y_axis, FALSE, tolerance, plot, ...)
+if (y_axis_fine_resolution){
+  p_pos = 0.5 + rnorm(1, 0, 0.05) #seems reasonable to begin + a little noise to prevent x, y resolution points bunching up
+  YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, minimum_class_proportion, p_pos, desired_interval, y_axis, x_axis, TRUE, tolerance, plot, ...)
+  YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, p_pos, 1 - minimum_class_proportion, desired_interval, y_axis, x_axis, TRUE, tolerance, plot, ...)
+}
+#return the results ordered so it's easy to pick out the point that suits your needs
+roc_results$results[order(roc_results$results[, 1]), ]
 }
 
 YARF_OOB_for_proportion_pos_class_recursive = function(X, y, 

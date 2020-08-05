@@ -1,7 +1,8 @@
 #' Builds a YARF Model. There are many customizations available.
 #' 
 #' @param X 								The data frame of training data
-#' @param y 								The vector of training responses
+#' @param y 								The vector of training responses which is either numeric (for regression 
+#' 											or factor (for classification).
 #' @param Xy 								The data frame of training data where the last column is responses
 #' @param Xother 							Other data that is used in the training but the RF doesn't split on it
 #' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
@@ -153,7 +154,7 @@
 #' 											it has converged since \code{num_trees} represents an upper limit. If left unspecified, \code{num_trees}
 #' 											is set to 10,000 when \code{fit_until_convergence} set to \code{TRUE}.
 #' 
-#' 											If the user wishes to view the convergence in real time, we recommend the \code{\link{YARF_progress_reports}} 
+#' 											If the user wishes to view the convergence in real time, we recommend the \code{\link{YARF_progress}} 
 #' 											function. However, this function will lock the console.
 #' 
 #' @param oob_cost_calculation_script		This parameter will determine the out-of-bag cost of the RF forest model. Default is \code{NULL}. If
@@ -229,6 +230,44 @@ YARF = function(
 		verbose = TRUE,
 		debug_log = FALSE
 	){
+		
+	assertDataFrame(X, null.ok = TRUE)
+	assertChoice(class(y), c("numeric", "integer", "factor"), null.ok = TRUE)
+	assertDataFrame(Xy, null.ok = TRUE)
+	assertDataFrame(Xother, null.ok = TRUE)
+	assertLogical(allow_missingness_in_y)
+	assertCount(num_trees, positive = TRUE, null.ok = TRUE)
+	assertList(bootstrap_indices, null.ok = TRUE)
+	assertCount(n_max_per_tree, positive = TRUE, null.ok = TRUE)
+	assertCount(mtry, positive = TRUE, null.ok = TRUE)
+	assertCount(nodesize, positive = TRUE, null.ok = TRUE)
+	assertCharacter(mtry_script, null.ok = TRUE)
+	assertStringContains(mtry_script, "function tryVars(node){")
+	assertCharacter(split_vals_script, null.ok = TRUE)
+	assertStringContains(split_vals_script, "function tryVars(node, j){")
+	assertCharacter(make_node_to_leaf_script, null.ok = TRUE)
+	assertStringContains(make_node_to_leaf_script, "function makeNodeIntoLeaf(node){")
+	assertCharacter(cost_single_node_calc_script, null.ok = TRUE)
+	assertStringContains(cost_single_node_calc_script, "function nodeCost(node){")
+	assertCharacter(cost_both_children_calc_script, null.ok = TRUE)
+	assertStringContains(cost_both_children_calc_script, "function totalChildrenCost(leftNode, rightNode){")
+	assertCharacter(node_assign_script, null.ok = TRUE)
+	assertStringContains(node_assign_script, "function assignYhatToNode(node){")
+	assertCharacter(after_node_birth_function_script, null.ok = TRUE)
+	assertStringContains(after_node_birth_function_script, "function nodeAfterNodeBirth(node){")
+	assertCharacter(shared_scripts, null.ok = TRUE)
+	assertLogical(use_missing_data)
+	assertLogical(replace_missing_data_with_x_j_bar)
+	assertLogical(serialize)
+	assertNumeric(seed, null.ok = TRUE)
+	assertLogical(wait)
+	assertLogical(calculate_oob_error)
+	assertLogical(fit_until_convergence)
+	assertCharacter(oob_cost_calculation_script, null.ok = TRUE)
+	assertStringContains(oob_cost_calculation_script, "function oobCost(y_hat, y){")
+	assertNumeric(tolerance, lower = .Machine$double.xmin)
+	assertLogical(verbose)
+	assertLogical(debug_log)
 	
 	if (fit_until_convergence){
 		wait = FALSE
@@ -356,6 +395,13 @@ YARF = function(
 	
 	#convenient to keep around
 	n = nrow(X)
+	if (!is.null(other_indices)){
+		assertSubset(other_indices, 1 : n)
+	}
+	if (!is.null(nodesize)){
+		assertTRUE(nodesize < n)
+	}
+	
 	
 	#now take a look at the "other" data
 	if (!is.null(Xother)){
@@ -382,9 +428,9 @@ YARF = function(
 		}
 		
 		if (!is.null(seed)){
-			#save old seed
-			old_seed = .Random.seed
-			#set the seed in R so that the boostrap indices will be the same
+			#save current RNG state
+			current_RNG_state = .Random.seed
+			#TEMPORARILY set the seed in R so that the boostrap indices will be the same
 			set.seed(seed)
 		}
 		
@@ -393,8 +439,8 @@ YARF = function(
 			bootstrap_indices[[t]] = sample(one_to_n, num_to_sample, replace = TRUE)
 		}
 		if (!is.null(seed)){
-			#return old seed
-			.Random.seed = old_seed
+			#pretend like it never happened: return the RNG state to what is just was
+			.Random.seed = current_RNG_state
 		}
 		
 		
@@ -493,6 +539,8 @@ YARF = function(
 	model_matrix_training_data = pre_process_data(X)$data
 
 	p = ncol(model_matrix_training_data) # we subtract one because we tacked on the response as the last column
+	cat("mtry", mtry, "p", p, "\n")
+	assertTRUE(mtry <= p)
 
 	if (!is.null(mtry) && mtry == "all"){
 		mtry = p
@@ -577,7 +625,7 @@ YARF = function(
 	
 	#now load the training data into YARF
 	for (i in 1 : n){
-		row_as_char = as.character(model_matrix_training_data[i, ]) ######FIX THIS
+		row_as_char = as.character(model_matrix_training_data[i, ]) #unfortunately I couldn't get the data setting in Java to work without casting. At least it's only a one time O(np) cost!
 		row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
 		.jcall(java_YARF, "V", "addTrainingDataRow", row_as_char)
 	}
@@ -642,7 +690,7 @@ YARF = function(
 		mtry = mtry,
 		nodesize = nodesize,
 		mtry_script = mtry_script,
-		node_to_leaf_script = make_node_to_leaf_script,
+		make_node_to_leaf_script = make_node_to_leaf_script,
 		cost_single_node_calc_script = cost_single_node_calc_script,
 		node_assign_script = node_assign_script,
 		after_node_birth_function_script = after_node_birth_function_script,
@@ -699,9 +747,8 @@ YARF = function(
 #' @author Adam Kapelner
 #' @export
 set_YARF_num_cores = function(num_cores){
-	if (num_cores != as.integer(num_cores) || num_cores <= 0){
-		stop("\"num_cores\" must be a natural number.")
-	}
+	assertCount(num_cores, positive = TRUE)
+	
 	assign("YARF_NUM_CORES", num_cores, YARF_globals)
 	if (num_cores == 1){
 		cat("YARF is now making use of one core. Are you sure?\n")
@@ -719,6 +766,8 @@ set_YARF_num_cores = function(num_cores){
 #' @author Adam Kapelner
 #' @export
 YARF_serialize = function(yarf_mod){
+	assertClass(yarf_mod, "YARF")
+	
 	cat("serializing so that the YARF model could potentially be saved and transported to future R sessions...")
 	.jcache(yarf_mod$java_YARF)
 	cat("done\n")	

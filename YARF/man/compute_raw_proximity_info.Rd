@@ -6,8 +6,14 @@
 information is computed for all pairs of observations. Information returned is the prediction nodes (for all trees) 
 for both objects and their common node in the tree structure plus much information about the nodes.}
 \usage{
-compute_raw_proximity_info(yarf_mod, X1 = NULL, X2 = NULL,
-  oob_only_1 = TRUE, oob_only_2 = TRUE, verbose = TRUE)
+compute_raw_proximity_info(
+  yarf_mod,
+  X1 = NULL,
+  X2 = NULL,
+  oob_only_1 = TRUE,
+  oob_only_2 = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{yarf_mod}{A YARF model object.}

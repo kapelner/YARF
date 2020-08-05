@@ -14,9 +14,9 @@ query_variable_counts = function(yarf_mod, type = "splits"){
 	if (!(type %in% c("trees", "splits"))){
 		stop("type must be \"trees\" or \"splits\"")
 	}
-	C = t(.jcall(yarf_mod$java_YARF, "[I", "getCountsForAllAttribute", type), .jevalArray)
-	names(C) = yarf_mod$training_data_features
-	C
+	count_matrix = .jcall(yarf_mod$java_YARF, "[I", "getCountsForAllAttribute", type, simplify = TRUE)
+	names(count_matrix) = yarf_mod$training_data_features
+	count_matrix
 }
 
 #' Function which queries the YARF model about the proportion of times the variables are used when splitting.
@@ -57,7 +57,7 @@ query_variable_proportions_across_trees = function(yarf_mod, type = "splits"){
 first_order_interaction_investigator = function(yarf_mod, plot = TRUE, num_var_plot = 50, cut_bottom_prop = NULL, bottom_margin = 10, ...){
 	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
 	
-	interaction_counts = sapply(.jcall(yarf_mod$java_YARF, "[[I", "getInteractionCounts"), .jevalArray)
+	interaction_counts = .jcall(yarf_mod$java_YARF, "[[I", "getInteractionCounts", simplify = TRUE)
 	rownames(interaction_counts) = yarf_mod$training_data_features
 	colnames(interaction_counts) = yarf_mod$training_data_features
 	
@@ -116,9 +116,9 @@ first_order_interaction_investigator = function(yarf_mod, plot = TRUE, num_var_p
 #' @export
 get_tree_num_nodes_leaves_max_depths = function(yarf_mod){
 	list(
-		num_nodes = .jcall(yarf_mod$java_YARF, "[I", "getNumNodes"),
-		num_leaves = .jcall(yarf_mod$java_YARF, "[I", "getNumLeaves"),
-		max_depths = .jcall(yarf_mod$java_YARF, "[I", "getMaxDepths")
+		num_nodes = .jcall(yarf_mod$java_YARF, "[I", "getNumNodes", simplify = TRUE),
+		num_leaves = .jcall(yarf_mod$java_YARF, "[I", "getNumLeaves", simplify = TRUE),
+		max_depths = .jcall(yarf_mod$java_YARF, "[I", "getMaxDepths", simplify = TRUE)
 	)
 }
 

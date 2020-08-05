@@ -9,7 +9,7 @@ YARF_convergence(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50)
 \arguments{
 \item{yarf_mod}{The yarf model object}
 
-\item{time_delay_in_seconds}{Frequency of messages in seconds. Default is \code{5} seconds.}
+\item{time_delay_in_seconds}{Frequency of messages in seconds. Default is \code{5} seconds. Minimum is 0.1.}
 
 \item{trail_pts}{If non-null, it will plot a secondary window with only the trees in the last \code{trail_trees}
 number of progress updates defined by \code{time_delay_in_seconds} 

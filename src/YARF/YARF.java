@@ -253,6 +253,34 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		yarf_trees[t].setOutOfBagIndices(oob_indices);
 	}
 	
+	public double[][] outOfBagByObservationAndTree(int num_cores){		
+		int m = progress();
+		final double[][] out_of_bag_by_tree_and_observation = new double[n][m];
+		
+		ExecutorService evaluator_pool = Executors.newFixedThreadPool(num_cores);
+		for (int i = 0; i < n; i++){
+			final int i_f = i;
+			final double[] x_i = X.get(i_f);
+	    	evaluator_pool.execute(new Runnable(){
+				public void run() {
+					double[] out_of_bag_by_observation = out_of_bag_by_tree_and_observation[i_f];
+					for (int t = 0; t < m; t++){
+						out_of_bag_by_observation[t] = yarf_trees[t].oob_indices.contains(i_f) ? 
+								yarf_trees[t].Evaluate(x_i) : Double.NaN;
+					}
+				}
+			});
+		}
+		evaluator_pool.shutdown();
+		try {
+			evaluator_pool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS); //infinity
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		return out_of_bag_by_tree_and_observation;
+	}
+	
 	public double[] predictOutOfBag(int num_cores){
 		//first get the trees that have this observation out of bag
 		final HashMap<Integer, ArrayList<Integer>> index_to_oob_on_trees = new HashMap<Integer, ArrayList<Integer>>(n);

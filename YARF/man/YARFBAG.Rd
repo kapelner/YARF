@@ -4,17 +4,37 @@
 \alias{YARFBAG}
 \title{A convenience method to build a Bagged Tree model via YARF.}
 \usage{
-YARFBAG(X = NULL, y = NULL, Xy = NULL, Xother = NULL,
-  allow_missingness_in_y = FALSE, num_trees = NULL,
-  bootstrap_indices = NULL, n_max_per_tree = NULL, other_indices = NULL,
-  nodesize = NULL, mtry_script = NULL, split_vals_script = NULL,
-  make_node_to_leaf_script = NULL, cost_single_node_calc_script = NULL,
-  node_assign_script = NULL, after_node_birth_function_script = NULL,
-  shared_scripts = NULL, use_missing_data = TRUE,
-  replace_missing_data_with_x_j_bar = FALSE, serialize = FALSE,
-  seed = NULL, wait = TRUE, calculate_oob_error = TRUE,
-  fit_until_convergence = FALSE, oob_cost_calculation_script = NULL,
-  tolerance = 0.01, verbose = TRUE, debug_log = FALSE)
+YARFBAG(
+  X = NULL,
+  y = NULL,
+  Xy = NULL,
+  Xother = NULL,
+  allow_missingness_in_y = FALSE,
+  num_trees = NULL,
+  bootstrap_indices = NULL,
+  n_max_per_tree = NULL,
+  other_indices = NULL,
+  nodesize = NULL,
+  mtry_script = NULL,
+  split_vals_script = NULL,
+  make_node_to_leaf_script = NULL,
+  cost_single_node_calc_script = NULL,
+  cost_both_children_calc_script = NULL,
+  node_assign_script = NULL,
+  after_node_birth_function_script = NULL,
+  shared_scripts = NULL,
+  use_missing_data = TRUE,
+  replace_missing_data_with_x_j_bar = FALSE,
+  serialize = FALSE,
+  seed = NULL,
+  wait = TRUE,
+  calculate_oob_error = TRUE,
+  fit_until_convergence = FALSE,
+  oob_cost_calculation_script = NULL,
+  tolerance = 0.01,
+  verbose = TRUE,
+  debug_log = FALSE
+)
 }
 \arguments{
 \item{X}{The data frame of training data}
@@ -98,6 +118,19 @@ will be used.}
 
                                               \}}
 
+\item{cost_both_children_calc_script}{A custom cost calculation in Javascript for an entire split considering both the putative left and right children
+                                            nodes (see below). The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
+                                            sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
+                                            to the number of observations in each node).
+
+                                              function totalChildrenCost(leftNode, rightNode)\{ //both nodes are of type YARF.YARFNode
+
+                                                ...
+
+                                                return double //where a higher number indicates a higher cost
+
+                                              \}}
+
 \item{node_assign_script}{A custom node assignment function in Javascript (see below). This function is run after RF greedily finds the 
                                             "lowest cost" split. The default is \code{NULL} corresponding to the sample average of the node responses 
                                             in regression or the modal class during classification. 
@@ -165,19 +198,6 @@ specified, this should also be specified as 0.1 may not be appropriate for a cus
 \item{verbose}{Should we print out messages verbosely during construction? Default is \code{FALSE}.}
 
 \item{debug_log}{Should we print out messages from Java? Default is \code{FALSE}.}
-
-\item{cost_both_children_calc_script}{A custom cost calculation in Javascript for an entire split considering both the putative left and right children
-                                            nodes (see below). The default is \code{NULL} which means the out-of-the-box default for Random Forests which is
-                                            sum of left and right nodes' costs for regression and average of left and right nodes' cost (relative
-                                            to the number of observations in each node).
-
-                                              function totalChildrenCost(leftNode, rightNode)\{ //both nodes are of type YARF.YARFNode
-
-                                                ...
-
-                                                return double //where a higher number indicates a higher cost
-
-                                              \}}
 }
 \value{
 A list that (a) reiterates all ob the above arguments passed in and (b) \code{pred_type} is the 

@@ -1,9 +1,9 @@
 Package: YARF
 Type: Package
 Title: Yet Another Random Forests Package, but not
-Version: 1.0
+Version: 1.1
 Date: 2017-07-16
-Author: Adam Kapelner, Matt Olson (R package)
+Author: Adam Kapelner, Matt Olson, Abhinav Patil (R package)
 Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
 Description: A fully customizable, asynchronous and parallelized Random Forests implementation with missing-incorporated-in-attributes and more.
 License: GPL-3
@@ -13,6 +13,7 @@ Depends:
 	readr,
 	stringr,
 	pander,
+	checkmate,
 	ggplot2,
 	gridExtra,
 	R6,
@@ -23,4 +24,4 @@ Imports:
     grDevices,
     stats
 SystemRequirements: Java (>= 1.8.0)
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.0

@@ -7,8 +7,14 @@ residuals of the model you wish to fit and performs an omnibus test of all covar
 residuals. This effecticely answers the question: "is there out-of-sample predictive information left over after 
 this model was fit?" The p-val is determined by a permutation-like test.}
 \usage{
-model_fit_test(X, y, model_fit = NULL, num_permutation_samples = 100,
-  plot = TRUE, ...)
+model_fit_test(
+  X,
+  y,
+  model_fit = NULL,
+  num_permutation_samples = 100,
+  plot = TRUE,
+  ...
+)
 }
 \arguments{
 \item{X}{The training data frame}

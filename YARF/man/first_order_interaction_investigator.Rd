@@ -5,8 +5,14 @@
 \title{This function investigates all two-way interactions in the forest by measuring how many times splits of one
 variable is nested in splits of another variable.}
 \usage{
-first_order_interaction_investigator(yarf_mod, plot = TRUE,
-  num_var_plot = 50, cut_bottom_prop = NULL, bottom_margin = 10, ...)
+first_order_interaction_investigator(
+  yarf_mod,
+  plot = TRUE,
+  num_var_plot = 50,
+  cut_bottom_prop = NULL,
+  bottom_margin = 10,
+  ...
+)
 }
 \arguments{
 \item{yarf_mod}{The YARF model in which to query}

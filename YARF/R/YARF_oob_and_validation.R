@@ -37,7 +37,7 @@ YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = 
 
 	#get it from java multithreaded
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
-	y_oob = .jcall(yarf_mod$java_YARF, "[D", "predictOutOfBag", num_cores)
+	y_oob = .jcall(yarf_mod$java_YARF, "[D", "predictOutOfBag", num_cores, simplify = TRUE)
 	
 	if (!is.null(indices)){
 		y = y[indices]
@@ -51,7 +51,7 @@ YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = 
 	
 	if (!is.null(yarf_mod$oob_cost_calculation)){
 		yarf_mod$y_oob = y_oob
-		yarf_mod$y_oob_costs = .jcall(yarf_mod$java_YARF, "[D", "customOutOfBagCostCalc", y, y_oob)
+		yarf_mod$y_oob_costs = .jcall(yarf_mod$java_YARF, "[D", "customOutOfBagCostCalc", y, y_oob, simplify = TRUE)
 		yarf_mod$y_oob_total_cost = sum(yarf_mod$y_oob_costs)
 		yarf_mod$y_oob_average_cost = yarf_mod$y_oob_total_cost / n
 		yarf_mod$y_oob_median_cost = median(yarf_mod$y_oob_costs)
@@ -150,4 +150,24 @@ YARF_update_with_oob_test_results = function(yarf_mod){
 }
 
 
+
+#' All OOB Results Matrix
+#' 
+#' Computes the out-of-bag (OOB) predictions for all observations in training data by tree,
+#' returning a matrix. This is useful for debugging or other analyses
+#' 
+#' @param yarf_mod 							The yarf model object such that \code{YARF_update_with_oob_validation_results}
+#' 											has been run before on a user-determined proportion of OOB samples 
+#' 											as data validation.
+#' 
+#' @author Adam Kapelner
+#' @export
+YARF_all_oob_results_matrix = function(yarf_mod){
+	assertClass(yarf_mod, "YARF")
+	
+	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
+	oob_matrix = .jcall(yarf_mod$java_YARF, "[[D", "outOfBagByObservationAndTree", num_cores, simplify = TRUE)
+	oob_matrix[is.nan(oob_matrix)] = NA
+	oob_matrix
+}
 

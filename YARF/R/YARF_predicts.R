@@ -61,7 +61,7 @@ predict.YARF = function(object, new_data, ...){
 	
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
 	
-	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores)
+	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores, simplify = TRUE)
 	if (object$pred_type == "classification"){ #convert back to the native factor representation
 		y_hats = factor(y_hats, labels = object$y_levels)
 	}
@@ -108,7 +108,7 @@ YARF_predict_all_trees = function(yarf_mod, new_data){
 	
 	y_hats = matrix(NA, nrow = nrow(new_data), ncol = yarf_mod$num_trees)
 	for (i in 1 : nrow(new_data)){
-		y_hats[i, ] = .jcall(yarf_mod$java_YARF, "[D", "allNodeAssignments", as.numeric(new_data[i, ]))
+		y_hats[i, ] = .jcall(yarf_mod$java_YARF, "[D", "allNodeAssignments", as.numeric(new_data[i, ]), simplify = TRUE)
 
 	}
 	if (yarf_mod$pred_type == "classification"){ #convert back to the native factor representation

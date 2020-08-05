@@ -4,10 +4,20 @@
 \alias{YARFROC}
 \title{ROC and ROC-like curves}
 \usage{
-YARFROC(X, y, x_axis = "FPR", y_axis = "TPR", use_prop_data = 1,
-  minimum_class_proportion = 0.02, desired_interval = 0.05,
-  tolerance = 0.001, y_axis_fine_resolution = FALSE, plot = TRUE,
-  verbose = TRUE, ...)
+YARFROC(
+  X,
+  y,
+  x_axis = "FPR",
+  y_axis = "TPR",
+  use_prop_data = 1,
+  minimum_class_proportion = 0.02,
+  desired_interval = 0.05,
+  tolerance = 0.001,
+  y_axis_fine_resolution = FALSE,
+  plot = TRUE,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{X}{The covariate data frame}

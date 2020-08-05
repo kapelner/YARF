@@ -4,14 +4,26 @@
 \alias{illustrate_trees}
 \title{Illustrates trees to PNG files in the local directory.}
 \usage{
-illustrate_trees(yarf_mod, trees = NULL, max_depth = -1,
-  background_rgb_color = c(255, 255, 255), line_rgb_color = c(100, 100,
-  100), text_rgb_color = c(0, 0, 0), font_family = "Arial",
-  font_size = 12, margin_in_px = 70, character_width_in_px = 4.2,
-  length_in_px_per_half_split = 20, depth_in_px_per_split = 100,
-  print_at_split_node_script = NULL, print_at_leaf_script = NULL,
-  file_format = "png", use_real_names = TRUE, title = "yarf_mod_tree",
-  open_file = FALSE)
+illustrate_trees(
+  yarf_mod,
+  trees = NULL,
+  max_depth = -1,
+  background_rgb_color = c(255, 255, 255),
+  line_rgb_color = c(100, 100, 100),
+  text_rgb_color = c(0, 0, 0),
+  font_family = "Arial",
+  font_size = 12,
+  margin_in_px = 70,
+  character_width_in_px = 4.2,
+  length_in_px_per_half_split = 20,
+  depth_in_px_per_split = 100,
+  print_at_split_node_script = NULL,
+  print_at_leaf_script = NULL,
+  file_format = "png",
+  use_real_names = TRUE,
+  title = "yarf_mod_tree",
+  open_file = FALSE
+)
 }
 \arguments{
 \item{yarf_mod}{The YARF model whose trees are to be illustrated}

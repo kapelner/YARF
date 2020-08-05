@@ -1,3 +1,11 @@
+version 1.1
+
+* Missing Incorporated in Attributed feature works now
+* checkmate checks on all functions' arguments
+* setting seed in the YARF constructor no longer sets the R seed
+* speedups when passing data from Java -> R
+* new function "YARF_all_oob_results_matrix" provides all oob results for each observation and tree
+
 version 1.0
 
 * Initial Release

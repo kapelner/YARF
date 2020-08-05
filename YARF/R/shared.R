@@ -1,0 +1,3 @@
+assertStringContains = function(str, contains){
+	
+}
