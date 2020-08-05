@@ -1,8 +1,11 @@
 options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
-set_YARF_num_cores(2)
+set_YARF_num_cores(1)
 
+seed = 1105
+
+set.seed(seed)
 
 generate_response_model = function(n, sigma_e = 1, Sigma = NULL, mu_vec = NULL){
 	p = 3
@@ -81,14 +84,16 @@ for (nsim in 1 : Nsim){
 		Xy_test_cc = generate_response_model(n)
 		Xy_test_all = generate_mar_model(Xy_test_cc, beta_0, beta)
 		
-		
 		#train models
+		#yarf_all = YARF(Xy = Xy_train_all, verbose = FALSE, seed = seed)
 		yarf_all = YARF(Xy = Xy_train_all, verbose = FALSE)
 		
 		#jet if we have exceedingly few rows in Xycc
 		if (nrow(Xy_train_cc) > 5){
-		  yarf_cc = YARF(Xy = Xy_train_all, verbose = FALSE)
+		  # yarf_cc = YARF(Xy = Xy_train_cc, verbose = FALSE, seed = seed)
+		  yarf_cc = YARF(Xy = Xy_train_cc, verbose = FALSE)
 		}
+		
 		#test models		
 		yhat = predict(yarf_all, Xy_test_all[, 1 : 3])
 		results_yarf_all_all_mar[g, nsim] = calc_rmse(yhat, Xy_test_all[, 4])
@@ -118,48 +123,87 @@ for (nsim in 1 : Nsim){
 	rel_mar_avgs_cc_cc = avgs_mar_cc_cc / avgs_mar_all_all[1]
 	sd_mar_cc_cc = apply(results_yarf_cc_cc_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
 	
-	
-	approx_prop_missing = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7) #this was figured out during simulation to be approximately accurate (the plots don't change that much anyway)
-
-	#Figure 2b
-	par(mar = c(4.2,2,0.3,0.2))
-	plot(approx_prop_missing, 
-			rel_mar_avgs_all_all, 
-			col = "blue", 
-			type = "o", 
-			ylim = c(1, max(rel_mar_avgs_all_all, rel_mar_avgs_all_cc, rel_mar_avgs_cc_all, rel_mar_avgs_cc_cc, na.rm = TRUE)),
-			xlab = "Proportion Missing",
-			ylab = "")
-	for (i in 2 : length(approx_prop_missing)){
-		x = approx_prop_missing[i]
-		y = rel_mar_avgs_all_all[i]
-		moe = 1.96 * sd_mar_all_all[i] / sqrt(nsim)
-		segments(x, y - moe, x, y + moe, col = "blue")
-	}
-	points(approx_prop_missing, rel_mar_avgs_all_cc, col = "blue", type = "o", lty = 3)
-	for (i in 2 : length(approx_prop_missing)){
-		x = approx_prop_missing[i]
-		y = rel_mar_avgs_all_cc[i]
-		moe = 1.96 * sd_mar_all_cc[i] / sqrt(nsim)
-		segments(x, y - moe, x, y + moe, col = "blue")
-	}
-	points(approx_prop_missing, rel_mar_avgs_cc_all, col = "red", type = "o")
-	for (i in 2 : length(approx_prop_missing)){
-		x = approx_prop_missing[i]
-		y = rel_mar_avgs_cc_all[i]
-		moe = 1.96 * sd_mar_cc_all[i] / sqrt(nsim)
-		segments(x, y - moe, x, y + moe, col = "red")
-	}
-	points(approx_prop_missing, rel_mar_avgs_cc_cc, col = "red", type = "o", lty = 3)
-	for (i in 2 : length(approx_prop_missing)){
-		x = approx_prop_missing[i]
-		y = rel_mar_avgs_cc_cc[i]
-		moe = 1.96 * sd_mar_cc_cc[i] / sqrt(nsim)
-		segments(x, y - moe, x, y + moe, col = "red")
-	}
-	
-	
 	save.image("sec_4.2_mar.RData")
 }
+	
+approx_prop_missing = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7) #this was figured out during simulation to be approximately accurate (the plots don't change that much anyway)
 
+# Figure 2b
+par(mar = c(4.2,2,0.3,0.2))
+plot(approx_prop_missing,
+		rel_mar_avgs_all_all,
+		col = "blue",
+		type = "o",
+		ylim = c(1, max(rel_mar_avgs_all_all, rel_mar_avgs_all_cc, rel_mar_avgs_cc_all, rel_mar_avgs_cc_cc, na.rm = TRUE)),
+		xlab = "Proportion Missing",
+		ylab = "")
+for (i in 2 : length(approx_prop_missing)){
+	x = approx_prop_missing[i]
+	y = rel_mar_avgs_all_all[i]
+	moe = 1.96 * sd_mar_all_all[i] / sqrt(nsim)
+	segments(x, y - moe, x, y + moe, col = "blue")
+}
+points(approx_prop_missing, rel_mar_avgs_all_cc, col = "blue", type = "o", lty = 3)
+for (i in 2 : length(approx_prop_missing)){
+	x = approx_prop_missing[i]
+	y = rel_mar_avgs_all_cc[i]
+	moe = 1.96 * sd_mar_all_cc[i] / sqrt(nsim)
+	segments(x, y - moe, x, y + moe, col = "blue")
+}
+points(approx_prop_missing, rel_mar_avgs_cc_all, col = "red", type = "o")
+for (i in 2 : length(approx_prop_missing)){
+	x = approx_prop_missing[i]
+	y = rel_mar_avgs_cc_all[i]
+	moe = 1.96 * sd_mar_cc_all[i] / sqrt(nsim)
+	segments(x, y - moe, x, y + moe, col = "red")
+}
+points(approx_prop_missing, rel_mar_avgs_cc_cc, col = "red", type = "o", lty = 3)
+for (i in 2 : length(approx_prop_missing)){
+	x = approx_prop_missing[i]
+	y = rel_mar_avgs_cc_cc[i]
+	moe = 1.96 * sd_mar_cc_cc[i] / sqrt(nsim)
+	segments(x, y - moe, x, y + moe, col = "red")
+}
 
+len_prop_missing = length(approx_prop_missing)
+
+# group = factor(
+#   c(
+#     rep('all_all', len_prop_missing),
+#     rep('all_cc', len_prop_missing),
+#     rep('cc_all', len_prop_missing),
+#     rep('cc_cc', len_prop_missing)
+#   )
+# )
+
+df = data.frame(approx_prop_missing=rep(approx_prop_missing, 4),
+                rel_mar_avgs =
+                  c(rel_mar_avgs_all_all, rel_mar_avgs_all_cc, rel_mar_avgs_cc_all, rel_mar_avgs_cc_cc),
+                # group = group,
+                train_group = c(rep('all', len_prop_missing*2), rep('cc', len_prop_missing*2)),
+                test_group = rep(c(rep('all', len_prop_missing), rep('cc', len_prop_missing)), 2)
+)
+
+df$moe = NA
+df[df$train_group=='all' & df$test_group=='all','moe'] = 1.96 * sd_mar_all_all / sqrt(Nsim) # df[df$group=='all_all','moe']
+df[df$train_group=='all' & df$test_group=='cc','moe'] = 1.96 * sd_mar_all_cc / sqrt(Nsim) # df[df$group=='all_cc','moe']
+df[df$train_group=='cc' & df$test_group=='all','moe'] = 1.96 * sd_mar_cc_all / sqrt(Nsim) # df[df$group=='cc_all','moe']
+df[df$train_group=='cc' & df$test_group=='cc','moe'] = 1.96 * sd_mar_cc_cc / sqrt(Nsim) #df[df$group=='cc_cc','moe']
+
+# ggplot(df, aes(x=approx_prop_missing, y = rel_mar_avgs, group = group, color = group)) +
+ggplot(df, aes(x=approx_prop_missing, y = rel_mar_avgs, color = train_group, linetype = test_group)) +
+  geom_point() +
+  geom_line() +
+  geom_linerange(aes(ymin=rel_mar_avgs - moe, ymax=rel_mar_avgs + moe)) +
+  scale_color_manual(name = "Trained with...",
+                     labels = c("missings", "no missings"),
+                     values = c("#8ce5ff", "#ff6c6c")) +
+  scale_linetype_manual(name = "Tested with...",
+                        labels = c("missings", "no missings"),
+                        values = c("solid", "dashed")) +
+  guides(col = guide_legend(order = 1), shape = guide_legend(order = 2)) +
+  ggtitle("MAR") +
+  xlab("Approx. Proportion Missing") +
+  ylab("Multiple of Baseline Error")
+
+illustrate_trees(yarf_all[[1]], max_depth = 6, open_file = TRUE)

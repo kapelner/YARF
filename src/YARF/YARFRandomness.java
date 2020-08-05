@@ -86,11 +86,19 @@ public class YARFRandomness {
 //		if (tree_num == 0){
 //			System.out.println(" pickNRandomElements: " + Tools.StringJoin(arr) + " subset_size: " + s);
 //		}
-		
+		// create hashset with size s
+		// while true: j = floor(sample standard uniform * arr.size) <- add to hashset; if hashset size == s, break
+
+		// would it be better to index on randomly generated indices rather than shuffling in place?
 		shuffleArray(arr);
 		int[] random_subset = new int[s];
 		for (int i = 0; i < s; i++){ //take the first s elements
 			random_subset[i] = arr[i];
+			if (arr[i] < 0) {
+				System.out.println("Negative index " + Tools.StringJoin(arr) + " subset size: " + s);
+				Integer j = null;
+				int k = j;
+			}
 		}
         return random_subset;
 

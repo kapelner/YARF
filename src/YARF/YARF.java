@@ -329,7 +329,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 						yarf_trees[tf].setSeed(seed);
 					}
 					if (DEBUG){
-						System.out.println("now building tree " + (tf + 1) + "/" + num_trees + " in the YARF model... bootstrap indicies: " + 
+						System.out.println("now building tree " + (tf + 1) + "/" + num_trees + " in the YARF model... bootstrap indices: " +
 							Tools.StringJoin(yarf_trees[tf].bootstrap_indices));
 					}
 					yarf_trees[tf].Build();
@@ -671,14 +671,20 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //		System.out.println("getXJ " + j + "n" + n + "p" + p);
 		double[] x_dot_j = X_by_col.get(j);
 		if (x_dot_j == null){ //gotta build it
-//			synchronized(X_by_col){ //don't wanna build it twice so sync it
+			synchronized(X_by_col){ //don't wanna build it twice so sync it
 				x_dot_j = new double[n];
 				for (int i = 0; i < n; i++){
 //					System.out.println("getXJ " + j + " i " + i);
 					x_dot_j[i] = X.get(i)[j];
 				}
-				X_by_col.put(j, x_dot_j);
-//			}	
+				try {
+					X_by_col.put(j, x_dot_j);
+				} catch (ArrayIndexOutOfBoundsException e) {
+					System.out.println("j less than zero with value " + j);
+					e.printStackTrace(System.out);
+					System.exit(1);
+				}
+			}
 		}
 		return x_dot_j;
 	 }
