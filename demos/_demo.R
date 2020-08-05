@@ -88,7 +88,7 @@ yarf_mod = YARF(X, y, num_trees = 500)
 nodes = prediction_nodes(yarf_mod)
 length(nodes)
 length(nodes[[1]])
-nodes[[1]][[169]]
+nodes[[1]][[1]]
 raw = compute_raw_proximity_info(yarf_mod, X[1, ], X[6 : 10, ])
 proximity_info = tree_average_proximity_info(raw)
 length(proximity_info[[1]])

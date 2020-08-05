@@ -230,11 +230,6 @@ YARF = function(
 		debug_log = FALSE
 	){
 	
-	if (!is.null(seed)){
-		#set the seed in R
-		set.seed(seed)
-	}
-	
 	if (fit_until_convergence){
 		wait = FALSE
 	}
@@ -386,10 +381,23 @@ YARF = function(
 			num_to_sample = n_max_per_tree
 		}
 		
+		if (!is.null(seed)){
+			#save old seed
+			old_seed = .Random.seed
+			#set the seed in R so that the boostrap indices will be the same
+			set.seed(seed)
+		}
+		
 		for (t in 1 : num_trees){
 #			bootstrap_indices[[t]] = sort(sample(one_to_n, replace = TRUE)) #easier to debug
 			bootstrap_indices[[t]] = sample(one_to_n, num_to_sample, replace = TRUE)
 		}
+		if (!is.null(seed)){
+			#return old seed
+			.Random.seed = old_seed
+		}
+		
+		
 	} else {
 		#ensure the indicies is the correct format
 		if (!(class(bootstrap_indices) %in% c("list"))){

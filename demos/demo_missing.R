@@ -11,6 +11,7 @@ eps = rnorm(n, 0, 0.2)
 y = x1 + 2 * x2 + eps
 
 yarf_mod = YARF(data.frame(x1, x2), y, seed = seed)
+yarf_mod
 
 xstar = data.frame(x1 = 1, x2 = 1)
 xstar = rbind(xstar, c(1, NA))
