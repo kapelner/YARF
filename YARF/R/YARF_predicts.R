@@ -85,10 +85,11 @@ predict.YARF = function(object, new_data, ...){
 #' @author Adam Kapelner
 #' @export
 YARF_predict_all_trees = function(yarf_mod, new_data){
+	assertClass(yarf_mod, "YARF")
 	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
+	assertDataFrame(new_data)
 	
-	if (class(new_data) != "data.frame"){
-		new_data = data.frame(new_data)
+	if (!all(names(new_data) == names(yarf_mod$X))){
 		setNames(new_data, names(yarf_mod$X))
 	}
 	if (!yarf_mod$use_missing_data){
@@ -157,6 +158,10 @@ sample_mode = function(arr) {
 #' @author Adam Kapelner
 #' @export
 YARF_set_aggregation_method = function(yarf_mod, aggregation_script){
+	assertClass(yarf_mod, "YARF")
+	assertCharacter(aggregation_script, null.ok = TRUE)
+	assertStringContains(aggregation_script, "function aggregateYhatsIntoOneYhat(y_hats, yarf){")
+	
 	if (is.null(aggregation_script)){
 		.jcall(yarf_mod$java_YARF, "V", "setAggregation_function_str", .jnull("java/lang/String"))
 	} else {

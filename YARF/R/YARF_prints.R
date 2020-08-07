@@ -7,6 +7,8 @@
 #' @author Adam Kapelner
 #' @export
 summary.YARF = function(object, ...){	
+	assertClass(object, "YARF")
+	
 	cat(paste("YARF v", VERSION, ifelse(object$pred_type == "regression", " for regression", " for classification"), "\n", sep = ""))
 	if (object$use_missing_data){
 		cat("Missing data feature ON.\n")

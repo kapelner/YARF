@@ -10,7 +10,7 @@ proximity_info(yarf_mod, X, prox_single_node_calc_script = NULL)
 \arguments{
 \item{yarf_mod}{A YARF model object.}
 
-\item{X}{A n* x p matrix where each row is an observation. If \code{NULL} (the default), 
+\item{X}{A n* x p data frame where each row is an observation. If \code{NULL} (the default), 
 then this parameter is set to the model's training data.}
 
 \item{prox_single_node_calc_script}{Script ...}

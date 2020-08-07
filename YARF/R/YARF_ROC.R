@@ -41,6 +41,8 @@ YARFROC = function(X, y,
 	
 	assertDataFrame(X)
 	assertFactor(y)
+	assertCharacter(x_axis)
+	assertCharacter(y_axis)
 	assertNumeric(use_prop_data, lower = 0, upper = 1)
 	assertNumeric(minimum_class_proportion, lower = 0, upper = 1)
 	assertNumeric(desired_interval, lower = 0, upper = 1)
@@ -48,6 +50,7 @@ YARFROC = function(X, y,
 	assertLogical(y_axis_fine_resolution)
 	assertLogical(plot)
 	assertLogical(verbose)
+	
 	x_axis = tolower(x_axis)
 	y_axis = tolower(y_axis)
 	
@@ -89,35 +92,35 @@ YARFROC = function(X, y,
 
 
 	ROCResults = R6Class("ROCResults",
-	public = list(
-	  results = NULL,
-	  x_axis = NULL,
-	  y_axis = NULL,
-	  initialize = function(x_axis, y_axis) {
-	    self$x_axis = x_axis
-	    self$y_axis = y_axis
-	    self$results = data.frame(matrix(NA, nrow = 0, ncol = 3))
-	    colnames(self$results) = c(x_axis, y_axis, "p_pos")       
-	  },
-	  addResults = function(x) {
-	    self$results = rbind(self$results, x)
-	    colnames(self$results) = c(x_axis, y_axis, "p_pos") 
-	  }
+		public = list(
+		  results = NULL,
+		  x_axis = NULL,
+		  y_axis = NULL,
+		  initialize = function(x_axis, y_axis) {
+		    self$x_axis = x_axis
+		    self$y_axis = y_axis
+		    self$results = data.frame(matrix(NA, nrow = 0, ncol = 3))
+		    colnames(self$results) = c(x_axis, y_axis, "p_pos")       
+		  },
+		  addResults = function(x) {
+		    self$results = rbind(self$results, x)
+		    colnames(self$results) = c(x_axis, y_axis, "p_pos") 
+		  }
+		)
 	)
-)
 
-#pass by reference... easiest way I could think of unfortunately is to use R6...
-roc_results <- ROCResults$new(x_axis, y_axis)
-p_pos = 0.5
-YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, minimum_class_proportion, p_pos, desired_interval, x_axis, y_axis, FALSE, tolerance, plot, ...)
-YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, p_pos, 1 - minimum_class_proportion, desired_interval, x_axis, y_axis, FALSE, tolerance, plot, ...)
-if (y_axis_fine_resolution){
-  p_pos = 0.5 + rnorm(1, 0, 0.05) #seems reasonable to begin + a little noise to prevent x, y resolution points bunching up
-  YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, minimum_class_proportion, p_pos, desired_interval, y_axis, x_axis, TRUE, tolerance, plot, ...)
-  YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, p_pos, 1 - minimum_class_proportion, desired_interval, y_axis, x_axis, TRUE, tolerance, plot, ...)
-}
-#return the results ordered so it's easy to pick out the point that suits your needs
-roc_results$results[order(roc_results$results[, 1]), ]
+	#pass by reference... easiest way I could think of unfortunately is to use R6...
+	roc_results = ROCResults$new(x_axis, y_axis)
+	p_pos = 0.5
+	YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, minimum_class_proportion, p_pos, desired_interval, x_axis, y_axis, FALSE, tolerance, plot, ...)
+	YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, p_pos, 1 - minimum_class_proportion, desired_interval, x_axis, y_axis, FALSE, tolerance, plot, ...)
+	if (y_axis_fine_resolution){
+	  p_pos = 0.5 + rnorm(1, 0, 0.05) #seems reasonable to begin + a little noise to prevent x, y resolution points bunching up
+	  YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, minimum_class_proportion, p_pos, desired_interval, y_axis, x_axis, TRUE, tolerance, plot, ...)
+	  YARF_OOB_for_proportion_pos_class_recursive(X, y, roc_results, y_pos_indices, y_neg_indices, use_prop_data, p_pos, 1 - minimum_class_proportion, desired_interval, y_axis, x_axis, TRUE, tolerance, plot, ...)
+	}
+	#return the results ordered so it's easy to pick out the point that suits your needs
+	roc_results$results[order(roc_results$results[, 1]), ]
 }
 
 YARF_OOB_for_proportion_pos_class_recursive = function(X, y, 
@@ -218,6 +221,9 @@ assessModelMetric = function(yarf_binary_mod, metric){
 #' @return					The area under the curve approximated via numerical integration.
 #' @export
 calcAUC = function(roc_results, plot = TRUE){
+	assertDataFrame(roc_results)
+	assertLogical(plot)
+	
   roc_results = roc_results[, 1 : 2]
   if (plot){
     print(ggplot(roc_results, aes_string(colnames(roc_results)[1], colnames(roc_results)[2])) + 

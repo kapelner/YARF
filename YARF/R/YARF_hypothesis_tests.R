@@ -20,7 +20,11 @@
 #' @author Adam Kapelner
 #' @export
 cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samples = 100, plot = TRUE){
+	assertClass(yarf_mod, "YARF")
 	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
+	assertCount(num_permutation_samples, positive = TRUE)
+	assertLogical(plot)
+	#covariates not checked with assert... possible bugs...TO DO
 	
 	all_covariates = yarf_mod$training_data_features
 	
@@ -117,9 +121,10 @@ cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samp
 #' 
 #' @param X							The training data frame 
 #' @param y 						The vector of training responses
-#' @param lin_mod 					An already-fit model that you wish to test if there
-#' 									is any predictive power left over. The default is \code{NULL}
-#' 									which indicates the standard linear model. Missingness not allowed.
+#' @param model_fit 				An already-fit model that you wish to test if there
+#' 									is any predictive power left over. This model's class must respond 
+#' 									to the "predict" S3 method. The default is \code{NULL}
+#' 									which indicates the standard linear model (missingness not allowed there).
 #' @param num_permutation_samples 	The resolution of the test. See \link{cov_importance_test}. The 
 #' 									default is \code{100}.
 #' @param plot 						Plot the result as a histogram. Default is \code{TRUE}.
@@ -129,6 +134,11 @@ cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samp
 #' @author Adam Kapelner
 #' @export
 model_fit_test = function(X, y, model_fit = NULL, num_permutation_samples = 100, plot = TRUE, ...){
+	assertDataFrame(X, null.ok = TRUE)
+	assertChoice(class(y), c("numeric", "integer"), null.ok = TRUE)
+	assertCount(num_permutation_samples, positive = TRUE)
+	assertLogical(plot)
+	
 	if (is.null(model_fit)){
 		model_fit = lm(y ~ as.matrix(X))
 	}
@@ -149,6 +159,8 @@ model_fit_test = function(X, y, model_fit = NULL, num_permutation_samples = 100,
 #' @author Adam Kapelner
 #' @export
 yarf_duplicate = function(yarf_mod, X = NULL, y = NULL){	
+	assertClass(yarf_mod, "YARF")
+	
 	if (is.null(X)){
 		X = yarf_mod$X
 	}

@@ -77,7 +77,7 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 #' @export
 YARF_convergence = function(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50){
 	assertClass(yarf_mod, "YARF")
-	assertNumeric(time_delay_in_seconds, lower = 0.1)
+	assertNumeric(time_delay_in_seconds, lower = 0.01)
 	assertCount(trail_pts, positive = TRUE, null.ok = TRUE)
 	
 	if (!is.null(yarf_mod$oob_cost_calculation)){
@@ -136,5 +136,6 @@ YARF_stop = function(yarf_mod){
 	
 	yarf_mod$stopped = TRUE
 	.jcall(yarf_mod$java_YARF, "V", "StopBuilding")
-	yarf_mod
+	cat("stopped\n")
+	invisible(yarf_mod)
 }

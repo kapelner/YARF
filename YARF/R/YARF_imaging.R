@@ -70,7 +70,7 @@ illustrate_trees = function(yarf_mod,
 		title = "yarf_mod_tree",
 		open_file = FALSE
 	){
-	
+	#assert TODO
 	if (is.null(trees)){
 		trees = 1 : yarf_mod$num_trees
 	}

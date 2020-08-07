@@ -21,8 +21,17 @@
 #' @author Adam Kapelner
 #' @export
 YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = NULL, indices = NULL){
+	assertClass(yarf_mod, "YARF")
+	assertCharacter(oob_cost_calculation_script, null.ok = TRUE)
+	assertStringContains(oob_cost_calculation_script, "function oobCost(y_hat, y){")
+
+	
 	y = yarf_mod$y
 	n = yarf_mod$n
+	
+	if (!is.null(indices)){
+		assertSubset(indices, 1 : n)
+	}
 	
 #	if (is.null(oob_cost_calculation_script)){
 #		.jcall(yarf_mod$java_YARF, "V", "setOob_cost_calculation_str", .jnull(class = "java/lang/String"))
@@ -111,6 +120,8 @@ YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = 
 #' @author Adam Kapelner
 #' @export
 YARF_update_with_oob_validation_results = function(yarf_mod, validation_proportion = 0.8){
+	assertClass(yarf_mod, "YARF")
+	assertNumeric(validation_proportion, lower = .Machine$double.xmin, upper = 1)
 	n = yarf_mod$n
 	n_validation = round(n * validation_proportion)
 	validation_indices = yarf_mod$validation_test_indices[1 : n_validation]
@@ -133,6 +144,8 @@ YARF_update_with_oob_validation_results = function(yarf_mod, validation_proporti
 #' @author Adam Kapelner
 #' @export
 YARF_update_with_oob_test_results = function(yarf_mod){
+	assertClass(yarf_mod, "YARF")
+	
 	n_validation = yarf_mod$n_validation
 	n = yarf_mod$n
 	if (is.null(n_validation)){

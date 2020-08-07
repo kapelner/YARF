@@ -13,7 +13,7 @@ y = x1 + 2 * x2 + eps
 yarf_mod = YARF(data.frame(x1, x2), y, seed = seed, mtry = 2)
 yarf_mod
 
-all_oob = YARF_all_oob_results_matrix(yarf_mod)
+y_oob_matrix = YARF_all_oob_results_matrix(yarf_mod)
 
 xstar = data.frame(x1 = 1, x2 = 1)
 xstar = rbind(xstar, c(1, NA))

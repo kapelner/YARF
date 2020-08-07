@@ -21,16 +21,17 @@ model_fit_test(
 
 \item{y}{The vector of training responses}
 
+\item{model_fit}{An already-fit model that you wish to test if there
+is any predictive power left over. This model's class must respond 
+to the "predict" S3 method. The default is \code{NULL}
+which indicates the standard linear model (missingness not allowed there).}
+
 \item{num_permutation_samples}{The resolution of the test. See \link{cov_importance_test}. The 
 default is \code{100}.}
 
 \item{plot}{Plot the result as a histogram. Default is \code{TRUE}.}
 
 \item{...}{Additional parameters to be passed to \link{YARF}.}
-
-\item{lin_mod}{An already-fit model that you wish to test if there
-is any predictive power left over. The default is \code{NULL}
-which indicates the standard linear model. Missingness not allowed.}
 }
 \value{
 The same as \link{cov_importance_test}.

@@ -239,7 +239,7 @@ YARF = function(
 	assertCount(num_trees, positive = TRUE, null.ok = TRUE)
 	assertList(bootstrap_indices, null.ok = TRUE)
 	assertCount(n_max_per_tree, positive = TRUE, null.ok = TRUE)
-	assertCount(mtry, positive = TRUE, null.ok = TRUE)
+	#mtry assert handled later
 	assertCount(nodesize, positive = TRUE, null.ok = TRUE)
 	assertCharacter(mtry_script, null.ok = TRUE)
 	assertStringContains(mtry_script, "function tryVars(node){")
@@ -539,15 +539,10 @@ YARF = function(
 	model_matrix_training_data = pre_process_data(X)$data
 
 	p = ncol(model_matrix_training_data) # we subtract one because we tacked on the response as the last column
-	cat("mtry", mtry, "p", p, "\n")
-	assertTRUE(mtry <= p)
+	
 
-	if (!is.null(mtry) && mtry == "all"){
-		mtry = p
-	}
-	if (!is.null(mtry) && mtry > p){
-		stop("\"mtry\" cannot be greater than the number of features.")	
-	}
+
+	
 	# # now take care of missing data - add each column as a missingness dummy
     # predictor_columns_with_missingness = as.numeric(which(colSums(is.na(data)) > 0))
 	#
@@ -579,8 +574,13 @@ YARF = function(
 	
 	#now load data and/or scripts
 	if (!is.null(mtry)){
+		if (mtry == "all"){
+			mtry = p
+		}
+		assertCount(mtry, positive = TRUE)
+		assertTRUE(mtry <= p)
 		.jcall(java_YARF, "V", "setMTry", as.integer(mtry))
-	} 
+	}
 	if (!is.null(mtry_script)) {
 		.jcall(java_YARF, "V", "setMtry_function_str", mtry_script)
 	}

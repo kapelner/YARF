@@ -16,7 +16,10 @@
 #' @author Kapelner
 #' @export
 prediction_nodes = function(yarf_mod, X = NULL, oob_only = TRUE){
+	assertClass(yarf_mod, "YARF")
 	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
+	assertDataFrame(X, null.ok = TRUE)
+	assertLogical(oob_only)
 
 	nodes = list()	
 	#if the user just wants nodes oob for the training data's prediction nodes
@@ -80,10 +83,10 @@ get_nodes_matrix = function(X, yarf_mod){
 #' 									then this parameter is set to the model's training data.
 #' @param X2 				        A n x p matrix where each row is an observation. If \code{NULL} (the default), 
 #' 									then this parameter is set to the model's training data.
-#' @param oob_only_1          		If \code{X1} is \code{NULL}, setting this to \code{TRUE} (the default) 
+#' @param oob_only_1          		\code{TRUE} (the default) 
 #' 									will only return proximity information for trees where each observation is out-of-bag. 
 #' 									If \code{X1} is not \code{NULL}, this parameter has no effect on output.
-#' @param oob_only_2          		If \code{X2} is \code{NULL}, setting this to \code{TRUE} (the default) 
+#' @param oob_only_2          		\code{TRUE} (the default) 
 #' 									will only return proximity information for trees where each observation is out-of-bag. 
 #' 									If \code{X2} is not \code{NULL}, this parameter has no effect on output.
 #' @param verbose					Print out periodic messages on progress of the computation of the proximity information.
@@ -100,8 +103,13 @@ get_nodes_matrix = function(X, yarf_mod){
 #' @author Adam Kapelner
 #' @export
 compute_raw_proximity_info = function(yarf_mod, X1 = NULL, X2 = NULL, oob_only_1 = TRUE, oob_only_2 = TRUE, verbose = TRUE){
-	## error checks
+	assertClass(yarf_mod, "YARF")
 	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
+	assertDataFrame(X1, null.ok = TRUE)
+	assertDataFrame(X2, null.ok = TRUE)
+	assertLogical(oob_only_1)
+	assertLogical(oob_only_2)
+	assertLogical(verbose)
 	
 	#important to release pointers
 	gc()
@@ -239,6 +247,8 @@ compute_raw_proximity_info = function(yarf_mod, X1 = NULL, X2 = NULL, oob_only_1
 #' @author Kapelner
 #' @export
 tree_average_proximity_info = function(raw){
+	assertList(raw)
+	
 	tree_average_proximity_info = list()
 	for (i in 1 : length(raw)){
 		raw_i = raw[[i]]
@@ -288,7 +298,7 @@ tree_average_proximity_info = function(raw){
 #' information is computed for all pairs of observation.
 #' 
 #' @param yarf_mod 					A YARF model object.
-#' @param X 				        A n* x p matrix where each row is an observation. If \code{NULL} (the default), 
+#' @param X 				        A n* x p data frame where each row is an observation. If \code{NULL} (the default), 
 #' 									then this parameter is set to the model's training data.
 #' @param prox_single_node_calc_script Script ...
 #' @return 							(For now, a list of raw information for rows in each dataset)
@@ -296,19 +306,20 @@ tree_average_proximity_info = function(raw){
 #' @author Matt Olson
 #' @export
 proximity_info = function(yarf_mod, X, prox_single_node_calc_script = NULL){
-
-    # check prox_single_node_calc_script
-    if (!is.null(prox_single_node_calc_script)){
-		if (class(prox_single_node_calc_script) != "character"){
-			stop("'prox_single_node_calc_script' must be a character string of Javascript code")
-		}
-	}
+	assertClass(yarf_mod, "YARF")
+	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
+	assertDataFrame(X, null.ok = TRUE)
+	assertCharacter(prox_single_node_calc_script, null.ok = TRUE)
     
     if (!is.null(prox_single_node_calc_script)){
         .jcall(yarf_mod$java_YARF, "V", "setProx_single_node_calc_function_str", prox_single_node_calc_script)
     }
 
     # preprocess inputs
+	if (is.null(X)){
+		X = yarf_mod$X
+	}
+		
     X = pre_process_new_data(X, yarf_mod)
 
     # calculate node path info for each input matrix
@@ -340,6 +351,9 @@ proximity_info = function(yarf_mod, X, prox_single_node_calc_script = NULL){
 #' shared_initial_substring("money can't buy me love", "money can buy me love") 
 #' #> "money can"
 shared_initial_substring = function(s1, s2){
+	assertCharacter(s1)
+	assertCharacter(s2)
+	
 	for (i in 1 : nchar(s1)){
 		if (identical(substr(s1, 1, i), substr(s2, 1, i))){
 			next

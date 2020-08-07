@@ -2,16 +2,13 @@
 % Please edit documentation in R/YARF_queries.R
 \name{first_order_interaction_investigator}
 \alias{first_order_interaction_investigator}
-\title{This function investigates all two-way interactions in the forest by measuring how many times splits of one
-variable is nested in splits of another variable.}
+\title{Investigate First Order Interactions}
 \usage{
 first_order_interaction_investigator(
   yarf_mod,
   plot = TRUE,
-  num_var_plot = 50,
-  cut_bottom_prop = NULL,
-  bottom_margin = 10,
-  ...
+  only_non_self_interactions = FALSE,
+  num_var_plot = 50
 )
 }
 \arguments{
@@ -20,15 +17,11 @@ first_order_interaction_investigator(
 \item{plot}{This controls whether or not the function plots the interaction strengths. If so, it plots 
 in order of strength from highest to lowest. Default is \code{TRUE}.}
 
+\item{only_non_self_interactions}{Should we only show interactions between different variables? Default is \code{FALSE}
+to show interactions of variables with themselves.}
+
 \item{num_var_plot}{How many first order interactions to plot? All would be p-choose-2 which
 can be large. The default is \code{50}. Use \code{Inf} to plot all p-choose-2.}
-
-\item{cut_bottom_prop}{Cut the bottom of the barplot off at a percent of the minimum interaction strength. Default is
-\code{NULL} for no cutting.}
-
-\item{bottom_margin}{Allow for larger bottom margins. This is useful when the variables have long names.}
-
-\item{...}{Additional parameters to be passed into the \code{barplot} function.}
 }
 \value{
 A list with two components: (1) \code{interaction_counts} is a p x p sized matrix

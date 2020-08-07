@@ -24,11 +24,11 @@ then this parameter is set to the model's training data.}
 \item{X2}{A n x p matrix where each row is an observation. If \code{NULL} (the default), 
 then this parameter is set to the model's training data.}
 
-\item{oob_only_1}{If \code{X1} is \code{NULL}, setting this to \code{TRUE} (the default) 
+\item{oob_only_1}{\code{TRUE} (the default) 
 will only return proximity information for trees where each observation is out-of-bag. 
 If \code{X1} is not \code{NULL}, this parameter has no effect on output.}
 
-\item{oob_only_2}{If \code{X2} is \code{NULL}, setting this to \code{TRUE} (the default) 
+\item{oob_only_2}{\code{TRUE} (the default) 
 will only return proximity information for trees where each observation is out-of-bag. 
 If \code{X2} is not \code{NULL}, this parameter has no effect on output.}
 
