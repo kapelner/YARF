@@ -10,9 +10,10 @@ yarf_duplicate(yarf_mod, X = NULL, y = NULL)
 \arguments{
 \item{yarf_mod}{The YARF model with settings you wish to duplicate}
 
-\item{X}{The training data. Default is \code{NULL} indicating the original training data.}
+\item{X}{The training data as a data frame. Default is \code{NULL} indicating the original training data.}
 
-\item{y}{The training responses. Default is \code{NULL} indicating the original training responses.}
+\item{y}{The training responses as numeric / integer / factor vector. Default is \code{NULL} indicating 
+the original training responses.}
 }
 \value{
 

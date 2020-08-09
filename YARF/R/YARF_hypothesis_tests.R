@@ -152,8 +152,9 @@ model_fit_test = function(X, y, model_fit = NULL, num_permutation_samples = 100,
 #' off and serializing is turned off as well.
 #' 
 #' @param yarf_mod	The YARF model with settings you wish to duplicate 
-#' @param X 		The training data. Default is \code{NULL} indicating the original training data.
-#' @param y 		The training responses. Default is \code{NULL} indicating the original training responses.
+#' @param X 		The training data as a data frame. Default is \code{NULL} indicating the original training data.
+#' @param y 		The training responses as numeric / integer / factor vector. Default is \code{NULL} indicating 
+#' 					the original training responses.
 #' @return 			
 #' 
 #' @author Adam Kapelner

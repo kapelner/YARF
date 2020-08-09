@@ -1,6 +1,7 @@
 version 1.1
 
 * Missing Incorporated in Attributed feature works now
+* MissForest algorithm implemented
 * checkmate checks on all functions' arguments
 * setting seed in the YARF constructor no longer sets the R seed
 * speedups when passing data from Java -> R

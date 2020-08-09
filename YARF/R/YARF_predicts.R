@@ -15,11 +15,9 @@
 #' @author Kapelner
 #' @export
 predict.YARF = function(object, new_data, ...){
+	assertClass(object, "YARF")
 	check_serialization(object) #ensure the Java object exists and fire an error if not
-	
-	if (!("data.frame" %in% class(new_data))){
-		stop("Data frame required for \"new_data\".")
-	}
+	assertDataFrame(new_data)
 	
 	#cast it just to make sure (doesn't work with tbl_df's e.g.) but ensure it keeps the same column names. Casting using data.frame 
 	#changes "(Intercept)" to "X.Intercept." for some terrrrrrible reason.
@@ -27,9 +25,7 @@ predict.YARF = function(object, new_data, ...){
 	new_data = data.frame(new_data)
 	colnames(new_data) = original_col_names
 	
-	#now we take the columns from the training set
-	
-	
+	#now we take the columns from the training set	
 	if (!isTRUE(all.equal(colnames(new_data), colnames(object$X)))){
 		warning("Prediction set column names did not match training set column names.\nAttempting to subset to training set columns.\n")
 		
@@ -63,7 +59,7 @@ predict.YARF = function(object, new_data, ...){
 	
 	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores, simplify = TRUE)
 	if (object$pred_type == "classification"){ #convert back to the native factor representation
-		y_hats = factor(y_hats, labels = object$y_levels)
+		y_hats = factor(y_hats, labels = object$y_levels, levels = object$y_levels)
 	}
 	y_hats
 	

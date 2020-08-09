@@ -5,8 +5,8 @@
 #' 											or factor (for classification).
 #' @param Xy 								The data frame of training data where the last column is responses
 #' @param Xother 							Other data that is used in the training but the RF doesn't split on it
-#' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
-#' 											handled in the custom functions, YARF will crash. Default is \code{FALSE}.
+#' @param allow_missingness_in_y			If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If the missings are not
+#' 											handled (somehow) in the custom functions, YARF will crash!! Default is \code{FALSE}.
 #' @param num_trees 						The number of trees in the RF. Default is \code{NULL} which sets the value to \code{500} 
 #' 											if \code{fit_until_convergence} is set to \code{FALSE} and 10,000 if \code{fit_until_convergence} 
 #' 											is set to \code{TRUE}.
