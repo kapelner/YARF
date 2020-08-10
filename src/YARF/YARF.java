@@ -801,7 +801,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //				int k = n;
 //			}
 //		}
-		TIntHashSet s = new TIntHashSet(ordered_nonmissing_indices_j);
+//		TIntHashSet s = new TIntHashSet(ordered_nonmissing_indices_j);
 //		if (s.size() != ordered_nonmissing_indices_j.size()) {
 //			System.out.println("Duplicates in ordered_nonmissing");
 //			System.out.println(Tools.StringJoin(ordered_nonmissing_indices_j));
@@ -878,10 +878,6 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		for (int t = 0; t < num_trees; t++){
 			yarf_trees[t].StopBuilding();
 		}
-	}
-	
-	public YARFTree[] getCompletedTrees(){
-		return (YARFTree[]) Arrays.stream(yarf_trees).filter(t -> t.completed).toArray();
 	}
 	
 	public int[] getNumLeaves(){

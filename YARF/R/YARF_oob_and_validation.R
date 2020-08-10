@@ -47,6 +47,7 @@ YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = 
 	#get it from java multithreaded
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
 	y_oob = .jcall(yarf_mod$java_YARF, "[D", "predictOutOfBag", num_cores, simplify = TRUE)
+	yarf_mod$num_trees_completed = .jcall(yarf_mod$java_YARF, "I", "progress")
 	
 	if (!is.null(indices)){
 		y = y[indices]

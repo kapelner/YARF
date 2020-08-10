@@ -2,12 +2,13 @@
 #' 
 #' @param yarf_mod 							The yarf model object
 #' @param console_message					Should we print a message to console? Default is \code{TRUE}.
-#' @return 									The number of trees and the proportion completed.
+#' @return 									The yarf object with new progress data
 #' 
-#' @author Kapelner
+#' @author Adam Kapelner
 #' @export
 YARF_progress = function(yarf_mod, console_message = TRUE){
 	assertClass(yarf_mod, "YARF")
+	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
 	assertLogical(console_message)
 	
 	num_trees_completed = .jcall(yarf_mod$java_YARF, "I", "progress")
@@ -61,13 +62,16 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 	))
 }
 
+#' Plot YARF convergence
+#' 
 #' Prints out a messages reflecting the progress of the YARF model construction until completion.
 #' 
-#' Note: running this function once will slow down your model construction since it will forever
-#' be calculating OOB statistics after each tree.
+#' If \code{time_delay_in_seconds} is not NULL, running this function once will slow down your model construction since it will forever
+#' be calculating OOB statistics after each tree (until completion or until the user stops the function).
 #' 
 #' @param yarf_mod 							The yarf model object
-#' @param time_delay_in_seconds				Frequency of messages in seconds. Default is \code{5} seconds. Minimum is 0.1.
+#' @param time_delay_in_seconds				Frequency of messages in seconds. Default is \code{5} seconds. Minimum is 0.1. 
+#' 											\code{NULL} indicates it is shown once and then it completes.
 #' @param trail_pts							If non-null, it will plot a secondary window with only the trees in the last \code{trail_trees}
 #' 											number of progress updates defined by \code{time_delay_in_seconds} 
 #' 											versus error which allows assessing the convergence more closely.
@@ -77,7 +81,7 @@ YARF_progress = function(yarf_mod, console_message = TRUE){
 #' @export
 YARF_convergence = function(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50){
 	assertClass(yarf_mod, "YARF")
-	assertNumeric(time_delay_in_seconds, lower = 0.01)
+	assertNumeric(time_delay_in_seconds, lower = 0.1, null.ok = TRUE)
 	assertCount(trail_pts, positive = TRUE, null.ok = TRUE)
 	
 	if (!is.null(yarf_mod$oob_cost_calculation)){
@@ -119,9 +123,13 @@ YARF_convergence = function(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50)
 		if (progress$done){
 			break
 		}
-		#otherwise take a break and then repeat
+		if (is.null(time_delay_in_seconds)){
+			break
+		}
+		#otherwise take a break and then do it again
 		Sys.sleep(time_delay_in_seconds)
 	}
+	.jcall(yarf_mod$java_YARF, "V", "stopIterativelyCalcOob")
 	invisible(list(oob_cost_by_iteration = oob_costs_by_iteration))
 }
 

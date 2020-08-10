@@ -16,10 +16,10 @@
   } 
   
   packageStartupMessage(
-	paste("Welcome to YARF v", VERSION, 
+	paste("Welcome to YARF v", packageVersion("YARF"), 
 			"! You have ", round(num_gigs_ram_available, 2), 
 			"GB memory available.\n\n", 
-			"If you run out of memory, restart R, and use e.g.\n'options(java.parameters = \"-Xmx5g\")' for 5GB of RAM before you call\n'library(YARF)'.\n",
+			"If you run out of memory, restart R, and use e.g.\n'options(java.parameters = \"-Xmx5g\")' for 5GB of RAM before you call 'library(YARF)'.\n",
 			num_cores_message,
 			sep = "")
   )

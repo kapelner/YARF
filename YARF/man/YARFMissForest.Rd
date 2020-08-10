@@ -31,7 +31,9 @@ the algorithm continues all \code{maxiter} runs and then returns the final imput
 \item{...}{Settings to pass to YARF during the iterations.}
 }
 \value{
-A list with objects: Xtrain_imp (and Xtest_imp if Xtest was specified).
+A list with objects: Xtrain_imp (and Xtest_imp if Xtest was specified) as well as nrmses which
+									is a record of the sum of the normalized rmse's over all numeric features by iteration and npfcs
+									which is a record of the sum of the misclassification rates over all categorical features by iteration.
 }
 \description{
 This function imputes missing data using the missForest algorithm which essentially iteratively runs the RF
