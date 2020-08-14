@@ -1,7 +1,7 @@
 options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
-set_YARF_num_cores(1)
+set_YARF_num_cores(4)
 
 seed = 1105
 
@@ -90,7 +90,7 @@ for (nsim in 1 : Nsim){
 		
 		#jet if we have exceedingly few rows in Xycc
 		if (nrow(Xy_train_cc) > 5){
-		  # yarf_cc = YARF(Xy = Xy_train_cc, verbose = FALSE, seed = seed)
+		  #yarf_cc = YARF(Xy = Xy_train_cc, verbose = FALSE, seed = seed)
 		  yarf_cc = YARF(Xy = Xy_train_cc, verbose = FALSE)
 		}
 		
@@ -206,4 +206,4 @@ ggplot(df, aes(x=approx_prop_missing, y = rel_mar_avgs, color = train_group, lin
   xlab("Approx. Proportion Missing") +
   ylab("Multiple of Baseline Error")
 
-illustrate_trees(yarf_all[[1]], max_depth = 6, open_file = TRUE)
+#illustrate_trees(yarf_all[[1]], max_depth = 6, open_file = TRUE)

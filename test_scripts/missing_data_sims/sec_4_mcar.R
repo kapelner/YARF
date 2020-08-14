@@ -2,7 +2,7 @@ options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
 library(ggplot2)
-set_YARF_num_cores(8)
+set_YARF_num_cores(4)
 
 seed = 1105
 
@@ -95,14 +95,14 @@ for (nsim in 1 : Nsim){
 		# Xy_test_all_list[[nsim]][[g]] = Xy_test_all
 		
 		#train models
-		#yarf_all = YARF(X = Xy_train_all[,1:3], y = Xy_train_all[,4], verbose = FALSE, seed = seed, mtry = p)
-		yarf_all = YARF(X = Xy_train_all[,1:3], y = Xy_train_all[,4], verbose = FALSE, mtry = p)
+		#yarf_all = YARF(X = Xy_train_all[,1:3], y = Xy_train_all[,4], verbose = FALSE, seed = seed)
+		yarf_all = YARF(X = Xy_train_all[,1:3], y = Xy_train_all[,4], verbose = FALSE)
 		
 		
 		#jet if we have exceedingly few rows in Xycc
 		if (nrow(Xy_train_cc) > 5){
-		  #yarf_cc = YARF(X = Xy_train_cc[,1:3], y = Xy_train_cc[,4], verbose = FALSE, seed = seed, mtry = p)
-		  yarf_cc = YARF(X = Xy_train_cc[,1:3], y = Xy_train_cc[,4], verbose = FALSE, mtry = p)
+		  #yarf_cc = YARF(X = Xy_train_cc[,1:3], y = Xy_train_cc[,4], verbose = FALSE, seed = seed)
+		  yarf_cc = YARF(X = Xy_train_cc[,1:3], y = Xy_train_cc[,4], verbose = FALSE)
 		}
 		
 		# yarf_all_list[[nsim]][[g]] = yarf_all
