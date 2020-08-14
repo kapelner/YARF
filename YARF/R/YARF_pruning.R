@@ -19,12 +19,9 @@
 #' @author Adam Kapelner
 #' @export
 prune_YARF_model = function(yarf_mod, prune_if_script, trees_to_prune = NULL){
-	
-	if (!is.null(prune_if_script)){
-		if (class(prune_if_script) != "character"){
-			stop("'prune_if_script' must be a character string of Javascript code")
-		}
-	}
+	assertClass(yarf_mod, "YARF")
+	assertCharacter(prune_if_script, null.ok = TRUE)
+	assertStringContains(prune_if_script, "function pruneIf(node){")
 	
 	.jcall(java_YARF, "V", "setPrune_if_function_str", prune_if_script)
 	

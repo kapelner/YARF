@@ -15,11 +15,9 @@
 #' @author Kapelner
 #' @export
 predict.YARF = function(object, new_data, ...){
+	assertClass(object, "YARF")
 	check_serialization(object) #ensure the Java object exists and fire an error if not
-	
-	if (!("data.frame" %in% class(new_data))){
-		stop("Data frame required for \"new_data\".")
-	}
+	assertDataFrame(new_data)
 	
 	#cast it just to make sure (doesn't work with tbl_df's e.g.) but ensure it keeps the same column names. Casting using data.frame 
 	#changes "(Intercept)" to "X.Intercept." for some terrrrrrible reason.
@@ -27,9 +25,7 @@ predict.YARF = function(object, new_data, ...){
 	new_data = data.frame(new_data)
 	colnames(new_data) = original_col_names
 	
-	#now we take the columns from the training set
-	
-	
+	#now we take the columns from the training set	
 	if (!isTRUE(all.equal(colnames(new_data), colnames(object$X)))){
 		warning("Prediction set column names did not match training set column names.\nAttempting to subset to training set columns.\n")
 		
@@ -61,9 +57,9 @@ predict.YARF = function(object, new_data, ...){
 	
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
 	
-	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores)
+	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores, simplify = TRUE)
 	if (object$pred_type == "classification"){ #convert back to the native factor representation
-		y_hats = factor(y_hats, labels = object$y_levels)
+		y_hats = factor(y_hats, labels = object$y_levels, levels = object$y_levels)
 	}
 	y_hats
 	
@@ -85,10 +81,11 @@ predict.YARF = function(object, new_data, ...){
 #' @author Adam Kapelner
 #' @export
 YARF_predict_all_trees = function(yarf_mod, new_data){
+	assertClass(yarf_mod, "YARF")
 	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
+	assertDataFrame(new_data)
 	
-	if (class(new_data) != "data.frame"){
-		new_data = data.frame(new_data)
+	if (!all(names(new_data) == names(yarf_mod$X))){
 		setNames(new_data, names(yarf_mod$X))
 	}
 	if (!yarf_mod$use_missing_data){
@@ -108,7 +105,7 @@ YARF_predict_all_trees = function(yarf_mod, new_data){
 	
 	y_hats = matrix(NA, nrow = nrow(new_data), ncol = yarf_mod$num_trees)
 	for (i in 1 : nrow(new_data)){
-		y_hats[i, ] = .jcall(yarf_mod$java_YARF, "[D", "allNodeAssignments", as.numeric(new_data[i, ]))
+		y_hats[i, ] = .jcall(yarf_mod$java_YARF, "[D", "allNodeAssignments", as.numeric(new_data[i, ]), simplify = TRUE)
 
 	}
 	if (yarf_mod$pred_type == "classification"){ #convert back to the native factor representation
@@ -157,6 +154,10 @@ sample_mode = function(arr) {
 #' @author Adam Kapelner
 #' @export
 YARF_set_aggregation_method = function(yarf_mod, aggregation_script){
+	assertClass(yarf_mod, "YARF")
+	assertCharacter(aggregation_script, null.ok = TRUE)
+	assertStringContains(aggregation_script, "function aggregateYhatsIntoOneYhat(y_hats, yarf){")
+	
 	if (is.null(aggregation_script)){
 		.jcall(yarf_mod$java_YARF, "V", "setAggregation_function_str", .jnull("java/lang/String"))
 	} else {

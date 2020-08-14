@@ -1,5 +1,3 @@
-VERSION = "1.0"
-
 #' Random Forests with (1) the ability to customize almost every algorithmic decions (2)
 #' parallelization with asynchronicity (3) missingness incorporated in attributes and (4)
 #' variable importance, interaction detection, variable(s) testing, tree illustrations et al.

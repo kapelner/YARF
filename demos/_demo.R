@@ -45,7 +45,7 @@ illustrate_trees(yarf_mod_cores_1, trees = c(159), max_depth = 4,
 		print_at_split_node_script = print_at_split_node_script,
 		open_file = TRUE)
 
-
+first_order_interaction_investigator(yarf_mod_cores_1)
 
 
 

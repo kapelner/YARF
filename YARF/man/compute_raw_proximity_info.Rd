@@ -6,8 +6,14 @@
 information is computed for all pairs of observations. Information returned is the prediction nodes (for all trees) 
 for both objects and their common node in the tree structure plus much information about the nodes.}
 \usage{
-compute_raw_proximity_info(yarf_mod, X1 = NULL, X2 = NULL,
-  oob_only_1 = TRUE, oob_only_2 = TRUE, verbose = TRUE)
+compute_raw_proximity_info(
+  yarf_mod,
+  X1 = NULL,
+  X2 = NULL,
+  oob_only_1 = TRUE,
+  oob_only_2 = TRUE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{yarf_mod}{A YARF model object.}
@@ -18,11 +24,11 @@ then this parameter is set to the model's training data.}
 \item{X2}{A n x p matrix where each row is an observation. If \code{NULL} (the default), 
 then this parameter is set to the model's training data.}
 
-\item{oob_only_1}{If \code{X1} is \code{NULL}, setting this to \code{TRUE} (the default) 
+\item{oob_only_1}{\code{TRUE} (the default) 
 will only return proximity information for trees where each observation is out-of-bag. 
 If \code{X1} is not \code{NULL}, this parameter has no effect on output.}
 
-\item{oob_only_2}{If \code{X2} is \code{NULL}, setting this to \code{TRUE} (the default) 
+\item{oob_only_2}{\code{TRUE} (the default) 
 will only return proximity information for trees where each observation is out-of-bag. 
 If \code{X2} is not \code{NULL}, this parameter has no effect on output.}
 

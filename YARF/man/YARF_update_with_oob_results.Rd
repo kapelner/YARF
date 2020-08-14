@@ -5,8 +5,11 @@
 \title{Computes the out-of-bag (OOB) predictions for the training data. 
 This gives a good sense of out-of-sample performance in the future.}
 \usage{
-YARF_update_with_oob_results(yarf_mod, oob_cost_calculation_script = NULL,
-  indices = NULL)
+YARF_update_with_oob_results(
+  yarf_mod,
+  oob_cost_calculation_script = NULL,
+  indices = NULL
+)
 }
 \arguments{
 \item{yarf_mod}{The yarf model object}
