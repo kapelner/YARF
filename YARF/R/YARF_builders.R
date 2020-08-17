@@ -593,6 +593,12 @@ YARF = function(
 		assertCount(mtry, positive = TRUE)
 		assertTRUE(mtry <= p)
 		.jcall(java_YARF, "V", "setMTry", as.integer(mtry))
+	} else { #use Breiman's default
+		.jcall(java_YARF, "V", "setMTry", as.integer(
+			max(1, floor(
+				ifelse(pred_type == "regression", p / 3, sqrt(p))
+			))
+		))
 	}
 	if (!is.null(mtry_script)) {
 		.jcall(java_YARF, "V", "setMtry_function_str", mtry_script)

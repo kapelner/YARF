@@ -338,14 +338,13 @@ public class YARFTreeBuilder {
 			return yarf.runMtry(node);
 		}
 		if (YARF.DEBUG) {
-			System.out.println("p: " + yarf.p);
-			System.out.println("default m_try: " + yarf.defaultMtry());
+			System.out.println("p: " + yarf.p + " m_try: " + yarf.mtry);
 		}
 		int[] indices_zero_to_p_minus_1 = new int[yarf.p];
 		for (int j = 0; j < yarf.p; j++){
 			indices_zero_to_p_minus_1[j] = j;
 		}		
-		return tree.r.pickNRandomElements(indices_zero_to_p_minus_1, (yarf.mtry == 0 ? yarf.defaultMtry() : yarf.mtry));
+		return tree.r.pickNRandomElements(indices_zero_to_p_minus_1, yarf.mtry);
 	}
 
 }

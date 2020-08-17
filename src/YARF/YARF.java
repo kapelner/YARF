@@ -871,14 +871,6 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //		return indices;
 //	}
 
-	//this is the default mtry as specified by Breiman
-	public int defaultMtry(){
-		if (default_mtry == null){
-			default_mtry = Math.max(1, (int)Math.floor(is_a_regression ? (p / (double)3) : Math.sqrt(p))); //at least it's 1!!!
-		}
-//		System.out.println("default_mtry: " + default_mtry);
-		return default_mtry;
-	}
 	
 	public void setWait(boolean wait){
 		this.wait = wait;
