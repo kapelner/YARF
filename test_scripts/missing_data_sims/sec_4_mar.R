@@ -1,7 +1,7 @@
 options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
-set_YARF_num_cores(4)
+set_YARF_num_cores(8)
 
 seed = 1105
 
@@ -106,27 +106,27 @@ for (nsim in 1 : Nsim){
 			results_yarf_cc_cc_mar[g, nsim] = calc_rmse(yhat, Xy_test_cc[, 4])
 		}
 	}
-	
-	avgs_mar_all_all = apply(results_yarf_all_all_mar, 1, mean, na.rm = TRUE)	
-	rel_mar_avgs_all_all = avgs_mar_all_all / avgs_mar_all_all[1]
-	sd_mar_all_all = apply(results_yarf_all_all_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_mar_all_cc = apply(results_yarf_all_cc_mar, 1, mean, na.rm = TRUE)	
-	rel_mar_avgs_all_cc = avgs_mar_all_cc / avgs_mar_all_all[1]
-	sd_mar_all_cc = apply(results_yarf_all_cc_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_mar_cc_all = apply(results_yarf_cc_all_mar, 1, mean, na.rm = TRUE)	
-	rel_mar_avgs_cc_all = avgs_mar_cc_all / avgs_mar_all_all[1]
-	sd_mar_cc_all = apply(results_yarf_cc_all_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_mar_cc_cc = apply(results_yarf_cc_cc_mar, 1, mean, na.rm = TRUE)	
-	rel_mar_avgs_cc_cc = avgs_mar_cc_cc / avgs_mar_all_all[1]
-	sd_mar_cc_cc = apply(results_yarf_cc_cc_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	save.image("sec_4.2_mar.RData")
 }
-	
+
+avgs_mar_all_all = apply(results_yarf_all_all_mar, 1, mean, na.rm = TRUE)	
+rel_mar_avgs_all_all = avgs_mar_all_all / avgs_mar_all_all[1]
+sd_mar_all_all = apply(results_yarf_all_all_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_mar_all_cc = apply(results_yarf_all_cc_mar, 1, mean, na.rm = TRUE)	
+rel_mar_avgs_all_cc = avgs_mar_all_cc / avgs_mar_all_all[1]
+sd_mar_all_cc = apply(results_yarf_all_cc_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_mar_cc_all = apply(results_yarf_cc_all_mar, 1, mean, na.rm = TRUE)	
+rel_mar_avgs_cc_all = avgs_mar_cc_all / avgs_mar_all_all[1]
+sd_mar_cc_all = apply(results_yarf_cc_all_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_mar_cc_cc = apply(results_yarf_cc_cc_mar, 1, mean, na.rm = TRUE)	
+rel_mar_avgs_cc_cc = avgs_mar_cc_cc / avgs_mar_all_all[1]
+sd_mar_cc_cc = apply(results_yarf_cc_cc_mar / avgs_mar_all_all[1], 1, sd, na.rm = TRUE)
+
 approx_prop_missing = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7) #this was figured out during simulation to be approximately accurate (the plots don't change that much anyway)
+
+save.image("sec_4.2_mar.RData")
 
 # Figure 2b
 par(mar = c(4.2,2,0.3,0.2))
@@ -167,15 +167,6 @@ for (i in 2 : length(approx_prop_missing)){
 
 len_prop_missing = length(approx_prop_missing)
 
-# group = factor(
-#   c(
-#     rep('all_all', len_prop_missing),
-#     rep('all_cc', len_prop_missing),
-#     rep('cc_all', len_prop_missing),
-#     rep('cc_cc', len_prop_missing)
-#   )
-# )
-
 df = data.frame(approx_prop_missing=rep(approx_prop_missing, 4),
                 rel_mar_avgs =
                   c(rel_mar_avgs_all_all, rel_mar_avgs_all_cc, rel_mar_avgs_cc_all, rel_mar_avgs_cc_cc),
@@ -206,4 +197,4 @@ ggplot(df, aes(x=approx_prop_missing, y = rel_mar_avgs, color = train_group, lin
   xlab("Approx. Proportion Missing") +
   ylab("Multiple of Baseline Error")
 
-#illustrate_trees(yarf_all[[1]], max_depth = 6, open_file = TRUE)
+# illustrate_trees(yarf_all, max_depth = 6, trees=1, open_file = TRUE)

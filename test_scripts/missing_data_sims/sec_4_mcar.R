@@ -2,7 +2,7 @@ options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
 library(ggplot2)
-set_YARF_num_cores(4)
+set_YARF_num_cores(8)
 
 seed = 1105
 
@@ -51,8 +51,6 @@ generate_mcar_model = function(Xy, gamma){
 
 approx_prop_missing = seq(from = 0, to = 0.7, by = 0.1)
 gammas = 1 - (1 - approx_prop_missing)^(1/3)
-
-
 
 calc_rmse = function(y, yhat){
 	sqrt(sum((y - yhat)^2) / length(y))
@@ -119,27 +117,26 @@ for (nsim in 1 : Nsim){
 		# print(results_yarf_all_all_mcar[g, nsim])
 		# print(results_yarf_all_cc_mcar[g, nsim])
 	}
-  
-  #hist(results_yarf_all_all_mcar[,1], br=100)
-  
-	avgs_mcar_all_all = apply(results_yarf_all_all_mcar, 1, mean, na.rm = TRUE)	
-	rel_mcar_avgs_all_all = avgs_mcar_all_all / avgs_mcar_all_all[1]	
-	sd_mcar_all_all = apply(results_yarf_all_all_mcar / avgs_mcar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_mcar_all_cc = apply(results_yarf_all_cc_mcar, 1, mean, na.rm = TRUE)	
-	rel_mcar_avgs_all_cc = avgs_mcar_all_cc / avgs_mcar_all_all[1]
-	sd_mcar_all_cc = apply(results_yarf_all_cc_mcar / avgs_mcar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_mcar_cc_all = apply(results_yarf_cc_all_mcar, 1, mean, na.rm = TRUE)
-	rel_mcar_avgs_cc_all = avgs_mcar_cc_all / avgs_mcar_all_all[1]
-	sd_mcar_cc_all = apply(results_yarf_cc_all_mcar / avgs_mcar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_mcar_cc_cc = apply(results_yarf_cc_cc_mcar, 1, mean, na.rm = TRUE)
-	rel_mcar_avgs_cc_cc = avgs_mcar_cc_cc / avgs_mcar_all_all[1]
-	sd_mcar_cc_cc = apply(results_yarf_cc_cc_mcar / avgs_mcar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	save.image("sec_4.2_mcar.RData")
 }
+
+avgs_mcar_all_all = apply(results_yarf_all_all_mcar, 1, mean, na.rm = TRUE)	
+rel_mcar_avgs_all_all = avgs_mcar_all_all / avgs_mcar_all_all[1]	
+sd_mcar_all_all = apply(results_yarf_all_all_mcar / avgs_mcar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_mcar_all_cc = apply(results_yarf_all_cc_mcar, 1, mean, na.rm = TRUE)	
+rel_mcar_avgs_all_cc = avgs_mcar_all_cc / avgs_mcar_all_all[1]
+sd_mcar_all_cc = apply(results_yarf_all_cc_mcar / avgs_mcar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_mcar_cc_all = apply(results_yarf_cc_all_mcar, 1, mean, na.rm = TRUE)
+rel_mcar_avgs_cc_all = avgs_mcar_cc_all / avgs_mcar_all_all[1]
+sd_mcar_cc_all = apply(results_yarf_cc_all_mcar / avgs_mcar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_mcar_cc_cc = apply(results_yarf_cc_cc_mcar, 1, mean, na.rm = TRUE)
+rel_mcar_avgs_cc_cc = avgs_mcar_cc_cc / avgs_mcar_all_all[1]
+sd_mcar_cc_cc = apply(results_yarf_cc_cc_mcar / avgs_mcar_all_all[1], 1, sd, na.rm = TRUE)
+
+
+save.image("sec_4.2_mcar.RData")
 
 #Figure 2a
 par(mar = c(4.2,4,0.2,0.2))
@@ -178,6 +175,38 @@ for (i in 2 : length(approx_prop_missing)){
 	segments(x, y - moe, x, y + moe, col = "red")
 }
 
+len_prop_missing = length(approx_prop_missing)
+df = data.frame(approx_prop_missing=rep(approx_prop_missing, 4),
+                rel_mcar_avgs =
+                  c(rel_mcar_avgs_all_all, rel_mcar_avgs_all_cc, rel_mcar_avgs_cc_all, rel_mcar_avgs_cc_cc),
+                train_group = c(rep('all', len_prop_missing*2), rep('cc', len_prop_missing*2)),
+                test_group = rep(c(rep('all', len_prop_missing), rep('cc', len_prop_missing)), 2)
+                )
+
+df$moe = NA
+df[df$train_group=='all' & df$test_group=='all','moe'] = 1.96 * sd_mcar_all_all / sqrt(Nsim)
+df[df$train_group=='all' & df$test_group=='cc','moe'] = 1.96 * sd_mcar_all_cc / sqrt(Nsim)
+df[df$train_group=='cc' & df$test_group=='all','moe'] = 1.96 * sd_mcar_cc_all / sqrt(Nsim)
+df[df$train_group=='cc' & df$test_group=='cc','moe'] = 1.96 * sd_mcar_cc_cc / sqrt(Nsim)
+
+ggplot(df, aes(x=approx_prop_missing, y = rel_mcar_avgs, color = train_group, linetype = test_group)) +
+  geom_point() +
+  geom_line() +
+  geom_linerange(aes(ymin=rel_mcar_avgs - moe, ymax=rel_mcar_avgs + moe)) +
+  scale_color_manual(name = "Trained with...",
+                     labels = c("missings", "no missings"),
+                     values = c("#8ce5ff", "#ff6c6c")) +
+  scale_linetype_manual(name = "Tested with...",
+                        labels = c("missings", "no missings"),
+                        values = c("solid", "dashed")) +
+  guides(col = guide_legend(order = 1), shape = guide_legend(order = 2)) +
+  ggtitle("MCAR") +
+  xlab("Approx. Proportion Missing") +
+  ylab("Multiple of Baseline Error")
+
+illustrate_trees(yarf_all, max_depth = 6, trees=1, open_file = TRUE)
+
+
 #moe = 1.96 * sd_mcar_cc_cc[i] / sqrt(nsim)
 
 # df = data.frame(approx_prop_missing=approx_prop_missing,
@@ -207,36 +236,6 @@ for (i in 2 : length(approx_prop_missing)){
 #   geom_errorbar(aes(ymin=rel_mcar_avgs_all_cc - moe_all_cc, ymax=rel_mcar_avgs_all_cc + moe_all_cc)) +
 #   geom_errorbar(aes(ymin=rel_mcar_avgs_cc_all - moe_cc_all, ymax=rel_mcar_avgs_cc_all + moe_cc_all)) +
 #   geom_errorbar(aes(ymin=rel_mcar_avgs_cc_cc - moe_all_cc, ymax=rel_mcar_avgs_cc_cc + moe_all_cc))
-
-
-len_prop_missing = length(approx_prop_missing)
-df = data.frame(approx_prop_missing=rep(approx_prop_missing, 4),
-                rel_mcar_avgs =
-                  c(rel_mcar_avgs_all_all, rel_mcar_avgs_all_cc, rel_mcar_avgs_cc_all, rel_mcar_avgs_cc_cc),
-                train_group = c(rep('all', len_prop_missing*2), rep('cc', len_prop_missing*2)),
-                test_group = rep(c(rep('all', len_prop_missing), rep('cc', len_prop_missing)), 2)
-                )
-
-df$moe = NA
-df[df$train_group=='all' & df$test_group=='all','moe'] = 1.96 * sd_mcar_all_all / sqrt(Nsim)
-df[df$train_group=='all' & df$test_group=='cc','moe'] = 1.96 * sd_mcar_all_cc / sqrt(Nsim)
-df[df$train_group=='cc' & df$test_group=='all','moe'] = 1.96 * sd_mcar_cc_all / sqrt(Nsim)
-df[df$train_group=='cc' & df$test_group=='cc','moe'] = 1.96 * sd_mcar_cc_cc / sqrt(Nsim)
-
-ggplot(df, aes(x=approx_prop_missing, y = rel_mcar_avgs, color = train_group, linetype = test_group)) +
-  geom_point() +
-  geom_line() +
-  geom_linerange(aes(ymin=rel_mcar_avgs - moe, ymax=rel_mcar_avgs + moe)) +
-  scale_color_manual(name = "Trained with...",
-                     labels = c("missings", "no missings"),
-                     values = c("#8ce5ff", "#ff6c6c")) +
-  scale_linetype_manual(name = "Tested with...",
-                        labels = c("missings", "no missings"),
-                        values = c("solid", "dashed")) +
-  guides(col = guide_legend(order = 1), shape = guide_legend(order = 2)) +
-  ggtitle("MCAR") +
-  xlab("Approx. Proportion Missing") +
-  ylab("Multiple of Baseline Error")
 
 # groups = interaction(df$train_group, df$test_group, lex.order=TRUE)
 # ggplot(df, aes(x=approx_prop_missing, y = rel_mcar_avgs, color = groups, linetype = groups)) +
