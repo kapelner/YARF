@@ -3,7 +3,6 @@ package YARF;
 import java.util.*;
 
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.set.hash.TIntHashSet;
 
 public class YARFTreeBuilder {
 
@@ -27,8 +26,8 @@ public class YARFTreeBuilder {
 	//this will house the optimal split
 	private class SplitDataWrap {
 		
-		public YARFNode lowest_left_node = null;
-		public YARFNode lowest_right_node = null;
+		public YARFNode bestLeftNode = null;
+		public YARFNode bestRightNode = null;
 		//greedy search... set up the horses
 		public double lowest_total_split_cost;
 		public int lowest_cost_split_attribute = YARFNode.BAD_FLAG_int; //bad flag!
@@ -102,8 +101,8 @@ public class YARFTreeBuilder {
 				+ "\n previous cost: " + node.cost 
 				+ "\n new cost: " + split_data.lowest_total_split_cost
 				+ "\n lowest_cost_split: X_" + split_data.lowest_cost_split_attribute + " <= " + split_data.lowest_cost_split_value
-				+ "\n lowest_left_node: " + split_data.lowest_left_node
-				+ "\n lowest_right_node: " + split_data.lowest_right_node
+				+ "\n bestLeftNode: " + split_data.bestLeftNode
+				+ "\n bestRightNode: " + split_data.bestRightNode
 				+ "\n send_missing: " + (split_data.lowest_send_missing_data_right ? "R" : "L")
 				);}
 		
@@ -120,8 +119,8 @@ public class YARFTreeBuilder {
 		node.send_missing_data_right = split_data.lowest_send_missing_data_right;
 		
 		//then officially give birth to two children from the two fetuses
-		node.left = split_data.lowest_left_node;
-		node.right = split_data.lowest_right_node;
+		node.left = split_data.bestLeftNode;
+		node.right = split_data.bestRightNode;
 		if (yarf.customFunctionAfterBirth()){
 			yarf.runAfterNodeBirth(node.left);
 			yarf.runAfterNodeBirth(node.right);
@@ -138,12 +137,8 @@ public class YARFTreeBuilder {
 	private void tryFeature(YARFNode node, int j, SplitDataWrap split_data, boolean[] trueFalseRandomOrder) {
 		//first get the indices for this note sorted on attribute j and get the missings as well
 		TIntArrayList ordered_nonmissing_indices_j = new TIntArrayList();
-		TIntArrayList missing_indices_j = new TIntArrayList(); //order is not necessary here since there is no order
-		//FUTURE: ordered_nonmissing_indices_j not used... need to optimize this
+		TIntArrayList missing_indices_j = new TIntArrayList(); // inherently unordered
 		yarf.sortedIndices(j, node.indices, ordered_nonmissing_indices_j, missing_indices_j);
-//		if (YARF.DEBUG){System.out.println("node.indices: " + Tools.StringJoin(node.indices));}
-//		if (YARF.DEBUG){System.out.println("ordered_nonmissing_indices_j: " + Tools.StringJoin(ordered_nonmissing_indices_j));}
-//		if (YARF.DEBUG){System.out.println("missing_indices_j: " + Tools.StringJoin(missing_indices_j));}
 
 		//get all possible values of x_j (not just at this node)
 		double[] xj = yarf.getXj(j);
@@ -166,81 +161,126 @@ public class YARFTreeBuilder {
 		trySplitVal(node, null, xj, j, ordered_nonmissing_indices_j, missing_indices_j, split_data, trueFalseRandomOrder);
 	}
 
+	/**
+	 * Computes the quantile of a potential split value (0 to 1) at a node amongst all non-missing elements at that node.
+	 * @param splitValue the value to split on
+	 * @param xj the entire feature column for feature j
+	 * @param jOrderedNonmissingIndices
+	 * @return
+	 */
+	private double computeSplitValQuantile(double splitValue, double[] xj, TIntArrayList jOrderedNonmissingIndices) {
 
-	private void trySplitVal(YARFNode node, Double split_value, double[] xj, int j, TIntArrayList ordered_nonmissing_indices_j, TIntArrayList missing_indices_j, SplitDataWrap split_data, boolean[] trueFalseRandomOrder) {
+		int countBelowSplitVal = 0;
+		int countAboveSplitVal = 0;
+		for (int index : jOrderedNonmissingIndices.toArray()) {
+			if (xj[index] <= splitValue) {
+				countBelowSplitVal++;
+			} else {
+				countAboveSplitVal++;
+			}
+		}
+		return countBelowSplitVal/((double) (countBelowSplitVal + countAboveSplitVal));
+	}
 
-		for (boolean send_missing_data_right : trueFalseRandomOrder){ //iterate within here over the direction of missingness
+	/**
+	 * Tries a split value and stores info for that value in the given SplitDataWrap object.
+	 * @param node
+	 * @param splitVal the value to split on
+	 * @param xj the entire feature column for feature j
+	 * @param j the column index of the feature
+	 * @param jOrderedNonmissingIndices
+	 * @param jMissingIndices
+	 * @param splitData
+	 * @param trueFalseRandomOrder
+	 */
+	private void trySplitVal(YARFNode node, Double splitVal, double[] xj, int j,
+							 TIntArrayList jOrderedNonmissingIndices, TIntArrayList jMissingIndices,
+							 SplitDataWrap splitData, boolean[] trueFalseRandomOrder) {
+
+		if (splitVal == null) {
+			trueFalseRandomOrder = new boolean[]{true}; // for the missing/non-missing split, always send missing right
+		}
+
+		for (boolean sendMissingRight : trueFalseRandomOrder){ //iterate within here over the direction of missingness
 			//set up zygotes
-			YARFNode putative_left = new YARFNode(node);
-			YARFNode putative_right = new YARFNode(node);
-			putative_left.indices = new TIntArrayList();
-			putative_right.indices = new TIntArrayList();
+			YARFNode putativeLeft = new YARFNode(node);
+			YARFNode putativeRight = new YARFNode(node);
+			putativeLeft.indices = new TIntArrayList();
+			putativeRight.indices = new TIntArrayList();
 
-			//FUTURE: this loop is obviously unneeded for each iteration
-			//it is costing about 25% of total runtime
-			if (split_value == null) { // dealing with non-missing indices only
-				putative_left.indices.addAll(ordered_nonmissing_indices_j);
+			if (splitVal == null) { // split 'C' in Twala et. al. (2008) - missing vs. non-missing
+				putativeLeft.indices.addAll(jOrderedNonmissingIndices);
+				putativeRight.indices.addAll(jMissingIndices);
 			}
-			else { // dealing with non-missing indices only
-				for (int index : ordered_nonmissing_indices_j.toArray()) {
-					if (xj[index] <= split_value) {
-						putative_left.indices.add(index);
-					} else {
-						putative_right.indices.add(index);
-					}
+			else {
+				// could turn into binary search
+				for (int index : jOrderedNonmissingIndices.toArray()) {
+					(xj[index] <= splitVal ? putativeLeft : putativeRight).indices.add(index);
 				}
-
+                if (!jMissingIndices.isEmpty()) { // handle the indices from missingness L/R now
+					(sendMissingRight ? putativeRight : putativeLeft).indices.addAll(jMissingIndices);
+                }
 			}
-			if (!missing_indices_j.isEmpty()){ // handle the indices from missingness L/R now
-				if (send_missing_data_right){
-					putative_right.indices.addAll(missing_indices_j);
-				}
-				else {
-					putative_left.indices.addAll(missing_indices_j);
-				}
-			}
-			//putative_left.indices = (TIntArrayList)node.indices.subList(0, i + 1);
-			//putative_right.indices = (TIntArrayList)node.indices.subList(i + 1, num_split_points);
 
-
-			if (putative_left.indices.isEmpty() || putative_right.indices.isEmpty()) return;
+			if (putativeLeft.indices.isEmpty() || putativeRight.indices.isEmpty()) return;
 
 			if (YARF.DEBUG) {
 				System.out.println("parent indices: " + Tools.sortAndJoin(node.indices));
-				System.out.println("ordered_nonmissing: " + Tools.sortAndJoin(ordered_nonmissing_indices_j));
-				System.out.println("missing: " + Tools.sortAndJoin(missing_indices_j.toArray()));
-				System.out.println("left indices: " + Tools.sortAndJoin(putative_left.indices));
-				System.out.println("left ys: " + Tools.StringJoin(putative_left.node_ys()));
-				System.out.println("left size: " + putative_left.nodeSize());
-				System.out.println("right indices: " + Tools.sortAndJoin(putative_right.indices));
-				System.out.println("right ys: " + Tools.StringJoin(putative_right.node_ys()));
-				System.out.println("right size: " + putative_right.nodeSize());
+				System.out.println("ordered_nonmissing: " + Tools.sortAndJoin(jOrderedNonmissingIndices));
+				System.out.println("missing: " + Tools.sortAndJoin(jMissingIndices.toArray()));
+				System.out.println("left indices: " + Tools.sortAndJoin(putativeLeft.indices));
+				System.out.println("left ys: " + Tools.StringJoin(putativeLeft.node_ys()));
+				System.out.println("left size: " + putativeLeft.nodeSize());
+				System.out.println("right indices: " + Tools.sortAndJoin(putativeRight.indices));
+				System.out.println("right ys: " + Tools.StringJoin(putativeRight.node_ys()));
+				System.out.println("right size: " + putativeRight.nodeSize());
 				System.out.println("parent size: " + node.nodeSize());
 			}
-//			if (putative_left.nodeSize() + putative_right.nodeSize() != node.nodeSize()) {
-//				System.out.println("node size");
-//				Integer q = null;
-//				int i = q;
-//			}
+
 			//these are now viable splits, so we compute cost on each node and the overall cost of the split
-			computeNodeCost(putative_left);
-			computeNodeCost(putative_right);			
-			double total_split_cost = totalChildrenCost(putative_left, putative_right);			
-			if (YARF.DEBUG){System.out.println("   viable split cost = " + total_split_cost + " at split X_" + (j + 1) + " <= " + split_value + " (L_cost = " + putative_left.cost + ", R_cost = " + putative_right.cost + ")\n");}
-			
-			//System.out.println("total_split_cost: " + total_split_cost);
-			if (total_split_cost < split_data.lowest_total_split_cost){
-				if (YARF.DEBUG){System.out.println("beat with cost: " + total_split_cost + " < " + split_data.lowest_total_split_cost + " using split X_" + (j + 1) + " <= " + split_value +"\n\n");}
-				split_data.lowest_total_split_cost = total_split_cost;
-				split_data.lowest_cost_split_attribute = j;
-				split_data.lowest_cost_split_value = split_value;
-				split_data.lowest_left_node = putative_left;
-				split_data.lowest_right_node = putative_right;
-				split_data.lowest_send_missing_data_right = send_missing_data_right;
+			computeNodeCost(putativeLeft);
+			computeNodeCost(putativeRight);
+			double total_split_cost = totalChildrenCost(putativeLeft, putativeRight);
+			if (YARF.DEBUG){
+				System.out.println("   viable split cost = " + total_split_cost +
+						" at split X_" + (j + 1)
+						+ " <= " + splitVal
+						+ " (L_cost = "
+						+ putativeLeft.cost
+						+ ", R_cost = "
+						+ putativeRight.cost + ")\n");
+			}
+
+			if (total_split_cost < splitData.lowest_total_split_cost){
+				if (YARF.DEBUG) {
+					System.out.println("beat with cost: " + total_split_cost
+							+ " < " + splitData.lowest_total_split_cost
+							+ " using split X_" + (j + 1) + " <= "
+							+ splitVal +"\n\n");
+				}
+				splitData.lowest_total_split_cost = total_split_cost;
+				splitData.lowest_cost_split_attribute = j;
+				splitData.lowest_cost_split_value = splitVal;
+				splitData.bestLeftNode = putativeLeft;
+				splitData.bestRightNode = putativeRight;
+
+				// if no missings here and the user has specified as such, decide which way missings go as weighted coin toss
+//				if (yarf.noMissingSplitRule == YARF.NO_MISSING_SPLIT_RULE.CONDITIONAL_ON_QUANTILE && jMissingIndices.isEmpty()) {
+//					double splitQuantile = computeSplitValQuantile(splitVal, xj, jOrderedNonmissingIndices);
+//					sendMissingRight = tree.r.rand() > splitQuantile;
+//					if (YARF.DEBUG) {
+//						System.out.println(
+//								String.format("No missing data at this node. Quantile: %d. Sending %s",
+//								splitQuantile, sendMissingRight ? "RIGHT" : "LEFT"));
+//					}
+//				}
+				splitData.lowest_send_missing_data_right = sendMissingRight;
 			}
 
 			//(this enforces randomness of L/R missingness sending)
-			if (missing_indices_j.isEmpty()){break;} //no need to check the other because it will be the same 
+			if (jMissingIndices.isEmpty()) {
+				break; //no need to check the other because it will be the same
+			}
 		}
 	}
 

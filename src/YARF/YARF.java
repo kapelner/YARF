@@ -8,7 +8,6 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.math3.stat.StatUtils;
 
 import OpenSourceExtensions.UnorderedPair;
-
 
 /**
  * Builds a YARF model in parallel
@@ -43,7 +41,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	protected long tf;
 	/** is the model stopped by the user? */
 	private boolean stopped;
-	
+
 	/** locks on the sorters */
 	private transient Object[] sorter_locks;
 	
@@ -73,6 +71,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	//if we use RF algorithm defaults, here they are
 	protected int mtry;
 	protected int nodesize;
+
+	public enum NO_MISSING_SPLIT_RULE {
+		RANDOM,
+		CONDITIONAL_ON_QUANTILE
+	}
+
+	protected NO_MISSING_SPLIT_RULE noMissingSplitRule;
 
 	/** should we hang the system until the model is fully constructed? */
 	private boolean wait;
@@ -227,7 +232,6 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		this.nodesize = nodesize;
 	}
 	
-	
 	public int progress(){
 		int progress = 0;
 		for (YARFTree tree : yarf_trees){
@@ -235,7 +239,17 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		}
 		return progress;
 	}
-	
+
+	public void setNoMissingSplitRule(String str_noMissingSplitRule) {
+		if (str_noMissingSplitRule.equals("RANDOM")) {
+			this.noMissingSplitRule = NO_MISSING_SPLIT_RULE.RANDOM;
+		}
+		else if (str_noMissingSplitRule.equals("CONDITIONAL_ON_QUANTILE")) {
+			this.noMissingSplitRule = NO_MISSING_SPLIT_RULE.CONDITIONAL_ON_QUANTILE;
+		}
+	}
+
+
 	public void setBootstrapAndOutOfBagIndices(int t){
 		//System.out.println("setBootstrapAndOutOfBagIndices t = " + t);
 		//make a copy
