@@ -98,7 +98,7 @@ YARFMissForest = function(Xtrain, ytrain, Xtest = NULL, maxiter = 10, converge_a
 			#record oob's as well
 			Xy_hat[nonmissings, j] = yarf_mod$y_oob[nonmissings]
 			#gotta cleanup otherwise we'll run out of RAM
-			# rm(yarf_mod); gc()
+			rm(yarf_mod); gc()
 		}
 		if (iter > 1){ #sum(apply(Xy_imp, 2, function(xj){sum(is.na(xj))})) == 0 #once there is no more missing data in the imputed data frame, we can begin to gauge if we've converged
 			nrmse = 0
