@@ -8,7 +8,6 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.math3.stat.StatUtils;
 
 import OpenSourceExtensions.UnorderedPair;
-
 
 /**
  * Builds a YARF model in parallel
@@ -43,7 +41,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	protected long tf;
 	/** is the model stopped by the user? */
 	private boolean stopped;
-	
+
 	/** locks on the sorters */
 	private transient Object[] sorter_locks;
 	
@@ -73,6 +71,13 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	//if we use RF algorithm defaults, here they are
 	protected int mtry;
 	protected int nodesize;
+
+	public enum NO_MISSING_SPLIT_RULE {
+		RANDOM,
+		CONDITIONAL_ON_QUANTILE
+	}
+
+	protected NO_MISSING_SPLIT_RULE noMissingSplitRule;
 
 	/** should we hang the system until the model is fully constructed? */
 	private boolean wait;
@@ -227,7 +232,6 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		this.nodesize = nodesize;
 	}
 	
-	
 	public int progress(){
 		int progress = 0;
 		for (YARFTree tree : yarf_trees){
@@ -235,7 +239,17 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 		}
 		return progress;
 	}
-	
+
+	public void setNoMissingSplitRule(String str_noMissingSplitRule) {
+		if (str_noMissingSplitRule.equals("RANDOM")) {
+			this.noMissingSplitRule = NO_MISSING_SPLIT_RULE.RANDOM;
+		}
+		else if (str_noMissingSplitRule.equals("CONDITIONAL_ON_QUANTILE")) {
+			this.noMissingSplitRule = NO_MISSING_SPLIT_RULE.CONDITIONAL_ON_QUANTILE;
+		}
+	}
+
+
 	public void setBootstrapAndOutOfBagIndices(int t){
 		//System.out.println("setBootstrapAndOutOfBagIndices t = " + t);
 		//make a copy
@@ -357,7 +371,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 						yarf_trees[tf].setSeed(seed);
 					}
 					if (DEBUG){
-						System.out.println("now building tree " + (tf + 1) + "/" + num_trees + " in the YARF model... bootstrap indicies: " + 
+						System.out.println("now building tree " + (tf + 1) + "/" + num_trees + " in the YARF model... bootstrap indices: " +
 							Tools.StringJoin(yarf_trees[tf].bootstrap_indices));
 					}
 					yarf_trees[tf].Build();
@@ -699,14 +713,20 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 //		System.out.println("getXJ " + j + "n" + n + "p" + p);
 		double[] x_dot_j = X_by_col.get(j);
 		if (x_dot_j == null){ //gotta build it
-//			synchronized(X_by_col){ //don't wanna build it twice so sync it
+			synchronized(X_by_col){ //don't wanna build it twice so sync it
 				x_dot_j = new double[n];
 				for (int i = 0; i < n; i++){
 //					System.out.println("getXJ " + j + " i " + i);
 					x_dot_j[i] = X.get(i)[j];
 				}
-				X_by_col.put(j, x_dot_j);
-//			}	
+				try {
+					X_by_col.put(j, x_dot_j);
+				} catch (ArrayIndexOutOfBoundsException e) {
+					System.out.println("j less than zero with value " + j);
+					e.printStackTrace(System.out);
+					System.exit(1);
+				}
+			}
 		}
 		return x_dot_j;
 	 }

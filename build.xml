@@ -11,7 +11,7 @@
 	
     <target name="compile" description="compile the source code">
       <mkdir dir="class_files"/>
-      <javac srcdir="src" destdir="class_files" includeantruntime="false" target="1.8" source="1.8" debug="true">
+      <javac srcdir="src" destdir="class_files" includeantruntime="false" target="1.8" source="1.8" debug="false">
       	<exclude name="**/package-info.java"/>
       	<classpath refid="master-classpath" />	
       </javac>

@@ -1,8 +1,11 @@
 options(java.parameters = "-Xmx5000m")
 library(YARF)
 library(MASS)
-set_YARF_num_cores(2)
+set_YARF_num_cores(8)
 
+seed = 1105
+
+set.seed(seed)
 
 generate_response_model = function(n, sigma_e = 1, Sigma = NULL, mu_vec = NULL){
 	p = 3
@@ -81,10 +84,15 @@ for (nsim in 1 : Nsim){
 		Xy_test_all = generate_nmar_model(Xy_test_cc, beta_0, beta)
 		
 		#train models
+		#yarf_all = YARF(Xy = Xy_train_all, verbose = FALSE, seed = seed)
 		yarf_all = YARF(Xy = Xy_train_all, verbose = FALSE)
-		if (nrow(Xy_train_cc) > 5){ #jet if we have exceedingly few rows in Xycc
+		
+		#jet if we have exceedingly few rows in Xycc
+		if (nrow(Xy_train_cc) > 5){
+			#yarf_cc = YARF(Xy = Xy_train_cc, verbose = FALSE, seed = seed)
 			yarf_cc = YARF(Xy = Xy_train_cc, verbose = FALSE)
 		}
+		
 		#test models		
 		results_yarf_all_all_nmar[g, nsim] = calc_rmse(predict(yarf_all, Xy_test_all[, 1 : 3]), Xy_test_all[, 4])
 		results_yarf_all_cc_nmar[g, nsim] = calc_rmse(predict(yarf_all, Xy_test_cc[, 1 : 3]), Xy_test_cc[, 4])
@@ -92,66 +100,91 @@ for (nsim in 1 : Nsim){
 			results_yarf_cc_all_nmar[g, nsim] = calc_rmse(predict(yarf_cc, Xy_test_all[, 1 : 3]), Xy_test_all[, 4])
 			results_yarf_cc_cc_nmar[g, nsim] = calc_rmse(predict(yarf_cc, Xy_test_cc[, 1 : 3]), Xy_test_cc[, 4])
 		}
-	}	
-	
-	avgs_nmar_all_all = apply(results_yarf_all_all_nmar, 1, mean, na.rm = TRUE)	
-	rel_nmar_avgs_all_all = avgs_nmar_all_all / avgs_nmar_all_all[1]
-	sd_nmar_all_all = apply(results_yarf_all_all_nmar / avgs_nmar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_nmar_all_cc = apply(results_yarf_all_cc_nmar, 1, mean, na.rm = TRUE)	
-	rel_nmar_avgs_all_cc = avgs_nmar_all_cc / avgs_nmar_all_all[1]
-	sd_nmar_all_cc = apply(results_yarf_all_cc_nmar / avgs_nmar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_nmar_cc_all = apply(results_yarf_cc_all_nmar, 1, mean, na.rm = TRUE)	
-	rel_nmar_avgs_cc_all = avgs_nmar_cc_all / avgs_nmar_all_all[1]
-	sd_nmar_cc_all = apply(results_yarf_cc_all_nmar / avgs_nmar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	avgs_nmar_cc_cc = apply(results_yarf_cc_cc_nmar, 1, mean, na.rm = TRUE)	
-	rel_nmar_avgs_cc_cc = avgs_nmar_cc_cc / avgs_nmar_all_all[1]
-	sd_nmar_cc_cc = apply(results_yarf_cc_cc_nmar / avgs_nmar_all_all[1], 1, sd, na.rm = TRUE)
-	
-	approx_prop_missing = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7) #this was figured out during simulation to be approximately accurate (the plots don't change that much anyway)
-	
-	#Figure 2c
-	par(mar = c(4.2,2,0.3,0.2))
-	plot(approx_prop_missing, 
-			rel_nmar_avgs_all_all, 
-			col = "blue", 
-			type = "o", 
-			ylim = c(1, max(rel_nmar_avgs_all_all, rel_nmar_avgs_all_cc, rel_nmar_avgs_cc_all, rel_nmar_avgs_cc_cc, na.rm = TRUE)),
-			xlab = "Proportion Missing",
-			ylab = "")
-	for (i in 2 : length(approx_prop_missing)){
-		x = approx_prop_missing[i]
-		y = rel_nmar_avgs_all_all[i]
-		moe = 1.96 * sd_nmar_all_all[i] / sqrt(nsim)
-		segments(x, y - moe, x, y + moe, col = "blue")
 	}
-	points(approx_prop_missing, rel_nmar_avgs_all_cc, col = "blue", type = "o", lty = 3)
-	for (i in 2 : length(approx_prop_missing)){
-		x = approx_prop_missing[i]
-		y = rel_nmar_avgs_all_cc[i]
-		moe = 1.96 * sd_nmar_all_cc[i] / sqrt(nsim)
-		segments(x, y - moe, x, y + moe, col = "blue")
-	}
-	points(approx_prop_missing, rel_nmar_avgs_cc_all, col = "red", type = "o")
-	for (i in 2 : length(approx_prop_missing)){
-		x = approx_prop_missing[i]
-		y = rel_nmar_avgs_cc_all[i]
-		moe = 1.96 * sd_nmar_cc_all[i] / sqrt(nsim)
-		segments(x, y - moe, x, y + moe, col = "red")
-	}
-	points(approx_prop_missing, rel_nmar_avgs_cc_cc, col = "red", type = "o", lty = 3)
-	for (i in 2 : length(approx_prop_missing)){
-		x = approx_prop_missing[i]
-		y = rel_nmar_avgs_cc_cc[i]
-		moe = 1.96 * sd_nmar_cc_cc[i] / sqrt(nsim)
-		segments(x, y - moe, x, y + moe, col = "red")
-	}
-	
-	
-	
-	save.image("sec_4.2_nmar.RData")
-	
 }
 
+avgs_nmar_all_all = apply(results_yarf_all_all_nmar, 1, mean, na.rm = TRUE)	
+rel_nmar_avgs_all_all = avgs_nmar_all_all / avgs_nmar_all_all[1]
+sd_nmar_all_all = apply(results_yarf_all_all_nmar / avgs_nmar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_nmar_all_cc = apply(results_yarf_all_cc_nmar, 1, mean, na.rm = TRUE)	
+rel_nmar_avgs_all_cc = avgs_nmar_all_cc / avgs_nmar_all_all[1]
+sd_nmar_all_cc = apply(results_yarf_all_cc_nmar / avgs_nmar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_nmar_cc_all = apply(results_yarf_cc_all_nmar, 1, mean, na.rm = TRUE)	
+rel_nmar_avgs_cc_all = avgs_nmar_cc_all / avgs_nmar_all_all[1]
+sd_nmar_cc_all = apply(results_yarf_cc_all_nmar / avgs_nmar_all_all[1], 1, sd, na.rm = TRUE)
+
+avgs_nmar_cc_cc = apply(results_yarf_cc_cc_nmar, 1, mean, na.rm = TRUE)	
+rel_nmar_avgs_cc_cc = avgs_nmar_cc_cc / avgs_nmar_all_all[1]
+sd_nmar_cc_cc = apply(results_yarf_cc_cc_nmar / avgs_nmar_all_all[1], 1, sd, na.rm = TRUE)
+	
+approx_prop_missing = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7) #this was figured out during simulation to be approximately accurate (the plots don't change that much anyway)
+
+save.image("sec_4.2_nmar.RData")
+
+#Figure 2c
+par(mar = c(4.2,2,0.3,0.2))
+plot(approx_prop_missing, 
+		rel_nmar_avgs_all_all,
+		col = "blue", 
+		type = "o", 
+		ylim = c(1, max(rel_nmar_avgs_all_all, rel_nmar_avgs_all_cc, rel_nmar_avgs_cc_all, rel_nmar_avgs_cc_cc, na.rm = TRUE)),
+		xlab = "Proportion Missing",
+		ylab = "")
+for (i in 2 : length(approx_prop_missing)){
+	x = approx_prop_missing[i]
+	y = rel_nmar_avgs_all_all[i]
+	moe = 1.96 * sd_nmar_all_all[i] / sqrt(nsim)
+	segments(x, y - moe, x, y + moe, col = "blue")
+}
+points(approx_prop_missing, rel_nmar_avgs_all_cc, col = "blue", type = "o", lty = 3)
+for (i in 2 : length(approx_prop_missing)){
+	x = approx_prop_missing[i]
+	y = rel_nmar_avgs_all_cc[i]
+	moe = 1.96 * sd_nmar_all_cc[i] / sqrt(nsim)
+	segments(x, y - moe, x, y + moe, col = "blue")
+}
+points(approx_prop_missing, rel_nmar_avgs_cc_all, col = "red", type = "o")
+for (i in 2 : length(approx_prop_missing)){
+	x = approx_prop_missing[i]
+	y = rel_nmar_avgs_cc_all[i]
+	moe = 1.96 * sd_nmar_cc_all[i] / sqrt(nsim)
+	segments(x, y - moe, x, y + moe, col = "red")
+}
+points(approx_prop_missing, rel_nmar_avgs_cc_cc, col = "red", type = "o", lty = 3)
+for (i in 2 : length(approx_prop_missing)){
+	x = approx_prop_missing[i]
+	y = rel_nmar_avgs_cc_cc[i]
+	moe = 1.96 * sd_nmar_cc_cc[i] / sqrt(nsim)
+	segments(x, y - moe, x, y + moe, col = "red")
+}
+
+len_prop_missing = length(approx_prop_missing)
+df = data.frame(approx_prop_missing=rep(approx_prop_missing, 4),
+                rel_nmar_avgs = 
+                  c(rel_nmar_avgs_all_all, rel_nmar_avgs_all_cc, rel_nmar_avgs_cc_all, rel_nmar_avgs_cc_cc),
+                train_group = c(rep('all', len_prop_missing*2), rep('cc', len_prop_missing*2)),
+                test_group = rep(c(rep('all', len_prop_missing), rep('cc', len_prop_missing)), 2)
+)
+
+df$moe = NA
+df[df$train_group=='all' & df$test_group=='all','moe'] = 1.96 * sd_nmar_all_all / sqrt(Nsim)
+df[df$train_group=='all' & df$test_group=='cc','moe'] = 1.96 * sd_nmar_all_cc / sqrt(Nsim)
+df[df$train_group=='cc' & df$test_group=='all','moe'] = 1.96 * sd_nmar_cc_all / sqrt(Nsim)
+df[df$train_group=='cc' & df$test_group=='cc','moe'] = 1.96 * sd_nmar_cc_cc / sqrt(Nsim)
+
+ggplot(df, aes(x=approx_prop_missing, y = rel_nmar_avgs, color = train_group, linetype = test_group)) +
+  geom_point() +
+  geom_line() +
+  geom_linerange(aes(ymin=rel_nmar_avgs - moe, ymax=rel_nmar_avgs + moe)) +
+  scale_color_manual(name = "Trained with...",
+                     labels = c("missings", "no missings"),
+                     values = c("#8ce5ff", "#ff6c6c")) +
+  scale_linetype_manual(name = "Tested with...",
+                        labels = c("missings", "no missings"),
+                        values = c("solid", "dashed")) +
+  guides(col = guide_legend(order = 1), shape = guide_legend(order = 2)) +
+  ggtitle("NMAR") +
+  xlab("Approx. Proportion Missing") +
+  ylab("Multiple of Baseline Error")

@@ -131,6 +131,16 @@
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 #' 											default is \code{TRUE}.	
+#' @param no_missing_data_split_rule  What rule should be used for missing data seen in testing for nodes that did not 
+#'                                      see missing data in training? Choices: \code{"RANDOM"} and \code{"CONDITIONAL_ON_QUANTILE"}.
+#'                                      \code{"RANDOM"} will assign a split rule for missing data at such nodes purely arbitrarily
+#'                                      and with equal probability, i.e. 50% for either left or right. \code{"CONDITIONAL_ON_QUANTILE"}
+#'                                      will condition this probability on the quantile of the split value amongst the observed
+#'                                      (non-missing) data. For example, if the split value lies at the 75th percentile, then
+#'                                      with probability .75, this node's rule for missing data will be to go left, and with
+#'                                      probability .25 to go right. Note that for either of these options, the randomization
+#'                                      happens at training time and thus during prediction the rule will be deterministic. The
+#'                                      default is \code{"RANDOM"}.
 #' @param serialize 						Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing
 #' 											time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
 #' 											we will automatically serialize after other operations that add data (such as the OOB evaluation).
@@ -219,6 +229,7 @@ YARF = function(
 		#everything that has to do with possible missing values (MIA stuff)
 		use_missing_data = TRUE,
 		replace_missing_data_with_x_j_bar = FALSE,
+		no_missing_data_split_rule = "RANDOM",
 		#other arguments for Java
 		serialize = FALSE,
 		seed = NULL,
@@ -232,7 +243,7 @@ YARF = function(
 	){
 		
 	assertDataFrame(X, null.ok = TRUE)
-	assertChoice(class(y), c("numeric", "integer", "factor"), null.ok = TRUE)
+	assertChoice(class(y), c("numeric", "integer", "factor", "NULL")) # null.ok doesn't work here bc class returns string
 	assertDataFrame(Xy, null.ok = TRUE)
 	assertDataFrame(Xother, null.ok = TRUE)
 	assertLogical(allow_missingness_in_y)
@@ -257,6 +268,7 @@ YARF = function(
 	assertStringContains(after_node_birth_function_script, "function nodeAfterNodeBirth(node){")
 	assertCharacter(shared_scripts, null.ok = TRUE)
 	assertLogical(use_missing_data)
+	assertChoice(no_missing_data_split_rule, c("RANDOM", "CONDITIONAL_ON_QUANTILE"))
 	assertLogical(replace_missing_data_with_x_j_bar)
 	assertLogical(serialize)
 	assertNumeric(seed, null.ok = TRUE)
@@ -427,21 +439,21 @@ YARF = function(
 			num_to_sample = n_max_per_tree
 		}
 		
-		if (!is.null(seed)){
-			#save current RNG state
-			current_RNG_state = .Random.seed
-			#TEMPORARILY set the seed in R so that the boostrap indices will be the same
-			set.seed(seed)
-		}
+		# if (!is.null(seed)){
+		# 	#save current RNG state
+		# 	current_RNG_state = .Random.seed
+		# 	#TEMPORARILY set the seed in R so that the boostrap indices will be the same
+		# 	set.seed(seed)
+		# }
 		
 		for (t in 1 : num_trees){
 #			bootstrap_indices[[t]] = sort(sample(one_to_n, replace = TRUE)) #easier to debug
 			bootstrap_indices[[t]] = sample(one_to_n, num_to_sample, replace = TRUE)
 		}
-		if (!is.null(seed)){
-			#pretend like it never happened: return the RNG state to what is just was
-			.Random.seed = current_RNG_state
-		}
+		# if (!is.null(seed)){
+		# 	#pretend like it never happened: return the RNG state to what is just was
+		# 	.Random.seed = current_RNG_state
+		# }
 		
 		
 	} else {
@@ -571,6 +583,7 @@ YARF = function(
 	.jcall(java_YARF, "V", "setNumTrees", as.integer(num_trees))
 	.jcall(java_YARF, "V", "setVerbose", verbose)
 	.jcall(java_YARF, "V", "setPredType", pred_type)
+	.jcall(java_YARF, "V", "setNoMissingSplitRule", no_missing_data_split_rule)
 	
 	#now load data and/or scripts
 	if (!is.null(mtry)){
@@ -703,6 +716,7 @@ YARF = function(
 		shared_scripts = shared_scripts, 
 		use_missing_data = use_missing_data,
 		replace_missing_data_with_x_j_bar = replace_missing_data_with_x_j_bar,
+		no_missing_data_split_rule = no_missing_data_split_rule,
 		serialize = serialize,
 		seed = seed,
 		wait = wait,

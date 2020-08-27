@@ -62,7 +62,6 @@ public class YARFNode implements Cloneable {
 	 * Creates a new node
 	 * 
 	 * @param parent		The parent of this node
-	 * @param bart		The BART model this node belongs to
 	 */
 	public YARFNode(YARFNode parent){
 		this.parent = parent;
@@ -87,6 +86,7 @@ public class YARFNode implements Cloneable {
 				System.out.println("Evaluate TREE record: " + Tools.StringJoin(record));
 				System.out.println("Node: " + evalNode.stringLocation() + " ID: " + evalNode.toString());
 				System.out.println("split_attribute " + evalNode.split_attribute);
+				System.out.println("send_missing_data_right " + evalNode.send_missing_data_right);
 			}
 			if (evalNode.is_leaf) {
 				return evalNode.y_pred;

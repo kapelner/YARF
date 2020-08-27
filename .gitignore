@@ -18,6 +18,9 @@
 # RStudio files
 .Rproj.user/
 
+# JAR
+*.jar
+
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
