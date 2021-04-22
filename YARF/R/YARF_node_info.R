@@ -1,3 +1,110 @@
+
+#' Gets information about each tree: the number of nodes, number of leaves and maximum depth.
+#' 
+#' @param yarf_mod		The YARF model in which to query 
+#' @return 				A list with three integer vector components all of which have length equal to the 
+#' 						number of trees completes: (1) \code{num_nodes} has entries equal to the number of nodes
+#' 						in each tree, (2) \code{num_leaves} has entries equal to the number of leaves (terminal
+#' 						nodes) in each tree and (3) \code{max_depths} has entries equal to the maximum depth of
+#' 						each tree.
+#' 
+#' @author Adam Kapelner
+#' @export
+get_tree_num_nodes_leaves_max_depths = function(yarf_mod){
+	assertClass(yarf_mod, "YARF")
+	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
+	list(
+		num_nodes = .jcall(yarf_mod$java_YARF, "[I", "getNumNodes", simplify = TRUE),
+		num_leaves = .jcall(yarf_mod$java_YARF, "[I", "getNumLeaves", simplify = TRUE),
+		max_depth = .jcall(yarf_mod$java_YARF, "[I", "getMaxDepths", simplify = TRUE)
+	)
+}
+
+#' Extract Raw Node Data
+#' 
+#' Extracts the structure of a tree as a list where the first element is the root node and the left/right daughters are
+#' then embedded as lists and is recursed.
+#' 
+#' @param yarf_mod 		A YARF model object.
+#' @param t 			The tree to extract in {1, ..., num_trees} where the default is tree number 1.
+#' @param location 		The location of the node to extract from indicated by a string consisting of "L"'s and "R"'s with no
+#' 						spaces to indicate the traversal of the tree.
+#' @return 				\code{NULL} if the location does not exist otherwise a list object with the desired node's information
+#' 						where the nodes children are embedded in list objects within.
+#' 
+#' @author Adam Kapelner
+#' @export
+raw_node_data = function(yarf_mod, t = 1, location = ""){
+	assertClass(yarf_mod, "YARF")
+	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
+	assertCount(t, positive = TRUE)
+	assertNumber(t, upper = yarf_mod$num_trees)
+	assertCharacter(location)
+
+	node_java = .jcall(yarf_mod$java_YARF, "LYARF/YARFNode;", "getNode", as.integer(t - 1), location, simplify = TRUE)
+	if (is.jnull(node_java)){
+		NULL
+	} else {
+		extract_node_data(node_java)
+	}	
+}
+
+BAD_FLAG_INT = -2147483647
+BAD_FLAG_DOUBLE = -1.7976931348623157e+308
+extract_node_data = function(node_java){
+	node_data = list()
+	node_data$java_obj = node_java
+	node_data$is_stump = node_java$isStump()
+	if (!is.jnull(node_java$parent)){
+		node_data$parent_java_obj = node_java$parent
+	} else {
+		node_data$parent_java_obj = NA	
+	}
+	node_data$left_java_obj = node_java$left
+	node_data$right_java_obj = node_java$right
+	node_data$depth = node_java$depth
+	node_data$is_leaf = node_java$is_leaf
+	
+	node_data$send_missing_data_right = node_java$send_missing_data_right
+	
+	node_data$node_size = node_java$nodeSize()
+	node_data$string_location = node_java$stringLocation()
+	
+	if (node_java$split_attribute == BAD_FLAG_INT){
+		node_data$split_attribute = NA
+	} else {
+		node_data$split_attribute = node_java$split_attribute
+	}
+	
+	if (node_java$split_value == BAD_FLAG_DOUBLE){
+		node_data$split_value = NA
+	} else {
+		node_data$split_value = node_java$split_value
+	}
+	
+	if (node_java$y_pred == BAD_FLAG_DOUBLE){
+		node_data$y_pred = NA
+	} else {
+		node_data$y_pred = node_java$y_pred
+	}	
+	
+
+	
+	if (!is.jnull(node_java$left)){
+		node_data$left = extract_node_data(node_java$left)
+	} else {
+		node_data$left = NA
+	}
+	if (!is.jnull(node_java$right)){
+		node_data$right = extract_node_data(node_java$right)
+	} else {
+		node_data$right = NA
+	}
+	node_data
+}
+
+
+
 #' Returns the leaf nodes that are responsible for predictions for a given dataset. 
 #' 
 #' @param yarf_mod 					A YARF model object.
@@ -25,6 +132,7 @@ prediction_nodes = function(yarf_mod, X = NULL, oob_only = TRUE){
 	#if the user just wants nodes oob for the training data's prediction nodes
 	if (is.null(X) && oob_only){
 		nodes_matrix = get_nodes_matrix(yarf_mod$X, yarf_mod)
+		print(nodes_matrix)
 		
 		for (i in 1 : nrow(nodes_matrix)){
 			oob_nodes = list()

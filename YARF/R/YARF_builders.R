@@ -411,7 +411,7 @@ YARF = function(
 		assertSubset(other_indices, 1 : n)
 	}
 	if (!is.null(nodesize)){
-		assertTRUE(nodesize < n)
+		assertTRUE(nodesize <= n + 1)
 	}
 	
 	

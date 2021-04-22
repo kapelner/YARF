@@ -12,11 +12,11 @@ YARF_progress(yarf_mod, console_message = TRUE)
 \item{console_message}{Should we print a message to console? Default is \code{TRUE}.}
 }
 \value{
-The number of trees and the proportion completed.
+The yarf object with new progress data
 }
 \description{
 Prints out a message reflecting the progress of the YARF model construction
 }
 \author{
-Kapelner
+Adam Kapelner
 }

@@ -114,24 +114,4 @@ first_order_interaction_investigator = function(yarf_mod, plot = TRUE, only_non_
 }
 
 
-#' Gets information about each tree: the number of nodes, number of leaves and maximum depth.
-#' 
-#' @param yarf_mod		The YARF model in which to query 
-#' @return 				A list with three integer vector components all of which have length equal to the 
-#' 						number of trees completes: (1) \code{num_nodes} has entries equal to the number of nodes
-#' 						in each tree, (2) \code{num_leaves} has entries equal to the number of leaves (terminal
-#' 						nodes) in each tree and (3) \code{max_depths} has entries equal to the maximum depth of
-#' 						each tree.
-#' 
-#' @author Adam Kapelner
-#' @export
-get_tree_num_nodes_leaves_max_depths = function(yarf_mod){
-	assertClass(yarf_mod, "YARF")
-	check_serialization(yarf_mod) #ensure the Java object exists and fire an error if not
-	list(
-		num_nodes = .jcall(yarf_mod$java_YARF, "[I", "getNumNodes", simplify = TRUE),
-		num_leaves = .jcall(yarf_mod$java_YARF, "[I", "getNumLeaves", simplify = TRUE),
-		max_depths = .jcall(yarf_mod$java_YARF, "[I", "getMaxDepths", simplify = TRUE)
-	)
-}
 

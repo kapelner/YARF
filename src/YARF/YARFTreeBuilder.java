@@ -161,26 +161,26 @@ public class YARFTreeBuilder {
 		trySplitVal(node, null, xj, j, ordered_nonmissing_indices_j, missing_indices_j, split_data, trueFalseRandomOrder);
 	}
 
-	/**
-	 * Computes the quantile of a potential split value (0 to 1) at a node amongst all non-missing elements at that node.
-	 * @param splitValue the value to split on
-	 * @param xj the entire feature column for feature j
-	 * @param jOrderedNonmissingIndices
-	 * @return
-	 */
-	private double computeSplitValQuantile(double splitValue, double[] xj, TIntArrayList jOrderedNonmissingIndices) {
-
-		int countBelowSplitVal = 0;
-		int countAboveSplitVal = 0;
-		for (int index : jOrderedNonmissingIndices.toArray()) {
-			if (xj[index] <= splitValue) {
-				countBelowSplitVal++;
-			} else {
-				countAboveSplitVal++;
-			}
-		}
-		return countBelowSplitVal/((double) (countBelowSplitVal + countAboveSplitVal));
-	}
+//	/**
+//	 * Computes the quantile of a potential split value (0 to 1) at a node amongst all non-missing elements at that node.
+//	 * @param splitValue the value to split on
+//	 * @param xj the entire feature column for feature j
+//	 * @param jOrderedNonmissingIndices
+//	 * @return
+//	 */
+//	private double computeSplitValQuantile(double splitValue, double[] xj, TIntArrayList jOrderedNonmissingIndices) {
+//
+//		int countBelowSplitVal = 0;
+//		int countAboveSplitVal = 0;
+//		for (int index : jOrderedNonmissingIndices.toArray()) {
+//			if (xj[index] <= splitValue) {
+//				countBelowSplitVal++;
+//			} else {
+//				countAboveSplitVal++;
+//			}
+//		}
+//		return countBelowSplitVal/((double) (countBelowSplitVal + countAboveSplitVal));
+//	}
 
 	/**
 	 * Tries a split value and stores info for that value in the given SplitDataWrap object.

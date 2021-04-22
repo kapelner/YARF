@@ -2,7 +2,7 @@
 % Please edit documentation in R/YARFCART.R
 \name{YARFCART}
 \alias{YARFCART}
-\title{A convenience method to build a CART model via YARF. There are many customizations available.}
+\title{Fit a CART model}
 \usage{
 YARFCART(
   X = NULL,
@@ -35,21 +35,23 @@ YARFCART(
 \arguments{
 \item{X}{The data frame of training data}
 
-\item{y}{The vector of training responses}
+\item{y}{The vector of training responses which is either numeric (for regression 
+or factor (for classification).}
 
 \item{Xy}{The data frame of training data where the last column is responses}
 
 \item{Xother}{Other data that is used in the training but the RF doesn't split on it}
 
-\item{allow_missingness_in_y}{If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If this is not
-handled in the custom functions, YARF will crash. Default is \code{FALSE}.}
+\item{allow_missingness_in_y}{If \code{TRUE}, missingness in the response variable, \code{y}, is allowed. If the missings are not
+handled (somehow) in the custom functions, YARF will crash!! Default is \code{FALSE}.}
 
 \item{bootstrap_indices}{A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
 of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
 to say indices specified here will not be part of the out-of-bag collection of indices.    You may
 specify more than enough (i.e. more than \code{num_trees}) elements in this list. Only the first
-\code{num_trees} will be used. No warning message will be displayed if you include too many.}
+\code{num_trees} will be used. No warning message will be displayed if you include too many. If 
+this parameter is specified, there is no need to specify \code{n_max_per_tree}.}
 
 \item{other_indices}{An optional list with keys 1,2,..., num_trees where each value is indices of the training data
 you wish to use in some custom way for each tree using a custom function. If not custom function
@@ -60,7 +62,8 @@ The default is \code{NULL} indicating you do not wish to specify any "other" dat
 
 \item{mtry}{The number of variables tried at every split. The default is \code{NULL} which indicates
 the out-of-box RF default which is floor(p / 3) for regression and floor(sqrt(p)) for
-classification. If you want a custom function, leave this NULL and see next parameter.}
+classification. If you want to use all possible features, set this parameter to "all".
+If you want a custom function, leave this NULL and see next parameter.}
 
 \item{nodesize}{The minimum number of observations in a node. YARF will stop splitting at this point.
 If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 

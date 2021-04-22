@@ -96,8 +96,6 @@ public class YARFRandomness {
 			random_subset[i] = arr[i];
 			if (arr[i] < 0) {
 				System.out.println("Negative index " + Tools.StringJoin(arr) + " subset size: " + s);
-				Integer j = null;
-				int k = j;
 			}
 		}
         return random_subset;

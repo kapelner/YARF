@@ -57,7 +57,7 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 	private transient int[][] bootstrap_indices;
 	private transient int[][] other_indices;
 
-	private Integer default_mtry;	
+//	private Integer default_mtry;	
 
 	private Double null_model_cost;
 
@@ -908,7 +908,11 @@ public class YARF extends YARFCustomFunctions implements Serializable {
 				node = node.left;
 			} else if (location.charAt(i) == 'r'){
 				node = node.right;
-			} // The "r" for root does nothing
+			} // The "P" for root node does nothing
+			//if we've made an illegal turn...
+			if (node == null) {
+				return null;
+			}
 		}
 		return node;
 	}

@@ -47,6 +47,39 @@ public class YARFTreeIllustrate {
 
 	private boolean use_real_names;
 
+	public static BufferedImage crop(BufferedImage image, int margin_in_px, int background_color_rgb) {
+		int x1 = image.getWidth();
+		int x2 = 0;
+		int y1 = image.getHeight();
+		int y2 = 0;
+		
+		for (int i = 0; i < image.getWidth(); i++) {
+			for (int j = 0; j < image.getHeight(); j++) {
+				if (image.getRGB(i, j) != background_color_rgb) {
+					if (i < x1) {
+						x1 = i;
+					}
+					if (i > x2) {
+						x2 = i;
+					}
+					if (j < y1) {
+						y1 = j;
+					}
+					if (j > y2) {
+						y2 = j;
+					}					
+				}
+			}
+		}
+		//handle the margins
+		x1 = Math.max(0, x1 - margin_in_px);
+		x2 = Math.min(image.getWidth(), x2 + margin_in_px);
+		y1 = Math.max(0, y1 - margin_in_px);
+		y2 = Math.min(image.getHeight(), y2 + margin_in_px);
+		//finally crop it
+		return image.getSubimage(x1, y1, x2 - x1, y2 - y1);
+	}
+
 	public YARFTreeIllustrate(YARF yarf,
 			YARFNode root, 
 			Integer max_depth,
@@ -79,16 +112,24 @@ public class YARFTreeIllustrate {
 //		System.out.println("YARFTreeIllustrate with depth: " + depth_in_num_splits);
 		
 		initializeCanvas();
-		//recursively draw all splits, start drawing on top and horizontally in the middle
-		drawSplit(root, canvas.getWidth() / 2, margin_in_px);
+		if (root.is_leaf) {
+			System.out.println("YARFTreeIllustrate root.is_leaf");
+			drawLeaf(root, canvas.getWidth() / 2, margin_in_px);
+		} else {
+			//recursively draw all splits, start drawing on top and horizontally in the middle
+			drawSplit(root, canvas.getWidth() / 2, margin_in_px);			
+		}
+
+
 		//write to file
-		saveImageFile(title, file_format);
+		saveCanvasAsImageFile(title, file_format);
 	}
 
-	private void saveImageFile(String title, String file_format) {
+	private void saveCanvasAsImageFile(String title, String file_format) {		
 		try {
 			File f = new File(title + "." + file_format);
-			ImageIO.write(canvas, file_format, f);
+			//render the cropped image
+			ImageIO.write(crop(canvas, margin_in_px, background_color.getRGB()), file_format, f);
 //			System.out.println("after write: " + f.getAbsolutePath());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -98,27 +139,27 @@ public class YARFTreeIllustrate {
 	private void initializeCanvas() {
 		int w = 2 * margin_in_px + length_in_px_per_half_split * 2 * (int)Math.pow(2, depth_in_num_splits) * 2;
 		int h = 2 * margin_in_px + depth_in_num_splits * depth_in_px_per_split;
-		initializeCanvas(w, h);
-	}
-	
-	private void initializeCanvas(int w, int h) {
-//		if ((line_color.equals(Color.WHITE) && background_color.equals(Color.BLACK)) || (line_color.equals(Color.BLACK) && background_color.equals(Color.WHITE))){
-//			image_type = BufferedImage.TYPE_BYTE_BINARY;
-//		}
-//		else {
-			image_type = BufferedImage.TYPE_INT_RGB;
-//		}
+		image_type = BufferedImage.TYPE_INT_RGB;
 		canvas = new BufferedImage(w, h, image_type);
-		//first do the background
+		//set the background
 		for (int i = 0; i < w; i++){
 			for (int j = 0; j < h; j++){
 				canvas.setRGB(i, j, background_color.getRGB());
 			}		
 		}
-
-	}	
+	}
+	
+	private Graphics getAndSetupCanvasGraphics() {
+//		System.out.println("drawSplit at " + node.stringLocation(true));
+		Graphics g = canvas.getGraphics();
+		//now set up canvas for drawing the foreground
+		g.setFont(new Font(font_family, Font.PLAIN, font_size));
+		g.setColor(text_color);
+		return g;
+	}
 
 	private void drawSplit(YARFNode node, int x, int y) {
+		Graphics g = getAndSetupCanvasGraphics();
 		if (YARF.DEBUG) {
 			System.out.println("Drawing split for node " + node.stringLocation());
 		}
@@ -128,25 +169,12 @@ public class YARFTreeIllustrate {
 			}
 			return;
 		}
-//		System.out.println("drawSplit at " + node.stringLocation(true));
-		Graphics g = canvas.getGraphics();
-		//now set up canvas for drawing the foreground
-		g.setFont(new Font(font_family, Font.PLAIN, font_size));
-		g.setColor(text_color);
+
 
 		String rule_and_n = "";
 		//paint a leaf node
 		if (node.is_leaf){
-			if (YARF.DEBUG) {
-				System.out.println("Drawing leaf");
-			}
-			String pred = two_digit_format.format(node.y_pred);//;
-			int draw_x = (int)Math.round(x - pred.length() / 2.0 * character_width_in_px);
-			rule_and_n = "Leaf: " + pred + " (" + node.nodeSize() + ") ";
-			//g.drawString(rule_and_n, draw_x, y + font_size);
-			if (yarf.customFunctionPrintAtLeafNode()){
-				drawStringWithBreaklines(g, "\n" + yarf.runPrintAtLeafNode(node), draw_x, y);
-			}
+			drawLeaf(node, x, y);
 		}
 		//paint a split node
 		else if (node.split_value == null) {
@@ -199,6 +227,19 @@ public class YARFTreeIllustrate {
 			g.drawLine(x, y, x + x_offset, y);
 			g.drawLine(x + x_offset, y, x + x_offset, y + depth_in_px_per_split);
 			drawSplit(node.right, x + x_offset, y + depth_in_px_per_split);
+		}
+	}
+	
+	private void drawLeaf(YARFNode node, int x, int y) {
+		if (YARF.DEBUG) {
+			System.out.println("Drawing leaf");
+		}
+		String pred = two_digit_format.format(node.y_pred);//;		
+		int draw_x = (int)Math.round(x - pred.length() / 2.0 * character_width_in_px);
+		if (yarf.customFunctionPrintAtLeafNode()){
+			drawStringWithBreaklines(getAndSetupCanvasGraphics(), "\n" + yarf.runPrintAtLeafNode(node), draw_x, y);
+		} else {
+			getAndSetupCanvasGraphics().drawString("Leaf: " + pred + " (" + node.nodeSize() + ") ", draw_x, y + font_size);
 		}
 	}
 	
