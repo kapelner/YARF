@@ -1,8 +1,8 @@
 Package: YARF
 Type: Package
 Title: Yet Another Random Forests Package, but not
-Version: 1.1
-Date: 2020-08-09
+Version: 1.11
+Date: 2024-04-15
 Author: Adam Kapelner, Matt Olson, Abhinav Patil (R package)
 Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
 Description: A fully customizable, asynchronous and parallelized Random Forests implementation with missing-incorporated-in-attributes and more.

@@ -507,17 +507,19 @@ YARF = function(
 		if (class(y) == "integer"){
 			cat("Warning: The response y is integer, YARF will default to regression.\n")
 		}
+		if (length(unique(y)) <= 10){
+			cat("Warning: You are doing regression with 10 or less unique numeric values. Cast y to factor if you wish to perform classification.\n")
+		}
 	} else if (class(y) == "factor"){ #if y is a factor and binary
 		if (num_y_levels > 5){
-			cat("Warning: You are doing classification with more than 5 classes. Cast y to numeric if you wish to do regression.\n")
-		}		
+			cat("Warning: You are doing classification with more than 5 classes. Cast y to numeric if you wish to perform regression.\n")
+		}
 		pred_type = "classification"
 	} else { #otherwise throw an error
 		stop("Your response must be either numeric or a factor.\n")
-	}
-	
-	#java expects doubles
-	y = as.numeric(y)
+	}	
+
+
 	
 	#if no column names, make up names
 	if (is.null(colnames(X))){
@@ -648,7 +650,7 @@ YARF = function(
 		row_as_char = replace(row_as_char, is.na(row_as_char), "NA") #this seems to be necessary for some R-rJava-linux distro-Java combinations
 		.jcall(java_YARF, "V", "addTrainingDataRow", row_as_char)
 	}
-	.jcall(java_YARF, "V", "addTrainingDataResponse", y)
+	.jcall(java_YARF, "V", "addTrainingDataResponse", as.numeric(y)) #java expects doubles
 
 	# for (col in predictor_columns_with_missingness) {
 	# 	.jcall(java_YARF, "V", "addMissingnessDummy", as.integer(col), M[[as.character(col)]])

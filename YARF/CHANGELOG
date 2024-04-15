@@ -1,3 +1,7 @@
+version 1.11
+
+* fixed error in factor function for latest version of R
+
 version 1.1
 
 * Missing Incorporated in Attributed feature works now

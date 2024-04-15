@@ -75,9 +75,8 @@ YARF_update_with_oob_results = function(yarf_mod, oob_cost_calculation_script = 
 		yarf_mod$mae_oob = yarf_mod$L1_err_oob / n
 	} else {		
 		#convert results to factor
-		numeric_labels = names(table(yarf_mod$y))
-		yarf_mod$y_oob = factor(y_oob, levels = numeric_labels, labels = yarf_mod$y_levels)
-		y = factor(yarf_mod$y, levels = numeric_labels, labels = yarf_mod$y_levels)
+		yarf_mod$y_oob = factor(y_oob, labels = yarf_mod$y_levels)
+		y = factor(yarf_mod$y, labels = yarf_mod$y_levels)
 		
 		#calculate confusion matrix
 		n_levels = yarf_mod$num_y_levels
