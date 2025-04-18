@@ -59,7 +59,7 @@ predict.YARF = function(object, new_data, ...){
 	
 	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores, simplify = TRUE)
 	if (object$pred_type == "classification"){ #convert back to the native factor representation
-		y_hats = factor(y_hats, labels = object$y_levels, levels = object$y_levels)
+		y_hats = factor(y_hats, labels = object$y_levels)
 	}
 	y_hats
 	
