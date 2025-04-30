@@ -221,7 +221,25 @@ public class YARFNode implements Cloneable {
 	public String stringLocation(){
 		return stringLocation(true);
 	}	
-
+	
+	/**
+	 * Find the string ID of this node
+	 * 
+	 * @return	The unique ID of this node
+	 */
+	public String stringID() {
+		return toString().split("@")[1];
+	}
+	
+	/**
+	 * Is this node a stump? That is, does it have no parents and no children?
+	 * 
+	 * @return	True if it's a stump
+	 */
+	public boolean isStump() {
+		return parent == null && left == null && right == null;
+	}
+	
 	/**
 	 * Prints debug information about this node, its parent and its immediate children
 	 * 

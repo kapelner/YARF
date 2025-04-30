@@ -2,14 +2,15 @@
 % Please edit documentation in R/YARF_asynchronicity.R
 \name{YARF_convergence}
 \alias{YARF_convergence}
-\title{Prints out a messages reflecting the progress of the YARF model construction until completion.}
+\title{Plot YARF convergence}
 \usage{
 YARF_convergence(yarf_mod, time_delay_in_seconds = 5, trail_pts = 50)
 }
 \arguments{
 \item{yarf_mod}{The yarf model object}
 
-\item{time_delay_in_seconds}{Frequency of messages in seconds. Default is \code{5} seconds. Minimum is 0.1.}
+\item{time_delay_in_seconds}{Frequency of messages in seconds. Default is \code{5} seconds. Minimum is 0.1. 
+\code{NULL} indicates it is shown once and then it completes.}
 
 \item{trail_pts}{If non-null, it will plot a secondary window with only the trees in the last \code{trail_trees}
 number of progress updates defined by \code{time_delay_in_seconds} 
@@ -17,8 +18,11 @@ versus error which allows assessing the convergence more closely.
 Default is \code{50}.}
 }
 \description{
-Note: running this function once will slow down your model construction since it will forever
-be calculating OOB statistics after each tree.
+Prints out a messages reflecting the progress of the YARF model construction until completion.
+}
+\details{
+If \code{time_delay_in_seconds} is not NULL, running this function once will slow down your model construction since it will forever
+be calculating OOB statistics after each tree (until completion or until the user stops the function).
 }
 \author{
 Adam Kapelner

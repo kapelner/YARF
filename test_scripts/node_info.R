@@ -11,8 +11,14 @@ y = Boston[, 14]
 # raw = compute_raw_proximity_info(yarf_mod, X[1:5, ], X[6 : 10, ])
 # tree_average_proximity_info(raw)
 
-# return info that can be used to build proximity values later
+
 yarf_mod = YARF(X, y)
+
+#check node info
+node_java = .jcall(yarf_mod$java_YARF, "LYARF/YARFNode;", "getNode", as.integer(0), "LRRR", simplify = TRUE)
+all_node_info_first_tree = raw_node_data(yarf_mod)
+
+# return info that can be used to build proximity values later
 out = proximity_info(yarf_mod, rbind(X,X,X), rbind(X,X,X))
 shared_initial_substring(out$X1$path[1,1], out$X2$path[1,1])
 

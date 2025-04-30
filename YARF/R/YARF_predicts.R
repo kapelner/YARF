@@ -58,8 +58,13 @@ predict.YARF = function(object, new_data, ...){
 	num_cores = as.integer(get("YARF_NUM_CORES", YARF_globals))
 	
 	y_hats = .jcall(object$java_YARF, "[D", "Evaluate", .jarray(new_data, dispatch = TRUE), num_cores, simplify = TRUE)
+	#print(y_hats)
 	if (object$pred_type == "classification"){ #convert back to the native factor representation
+<<<<<<< HEAD
 		y_hats = factor(y_hats, labels = object$y_levels, levels = 1 : length(object$y_levels))
+=======
+		y_hats = factor(y_hats, labels = object$y_levels)
+>>>>>>> 5bcbbecc4b6cb2a1dd5181007e4107ed76bfd02f
 	}
 	y_hats
 	
