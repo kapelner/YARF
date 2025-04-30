@@ -516,7 +516,7 @@ YARF = function(
 		stop("Your response must be either numeric or a factor.\n")
 	}
 	
-	#java expects doubles
+	#java expects doubles - this casts factors to numbers
 	y = as.numeric(y)
 	
 	#if no column names, make up names

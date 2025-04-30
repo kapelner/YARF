@@ -1,4 +1,7 @@
 version 1.1
+* Some bug fixes for R 4.4.x
+
+version 1.1
 
 * Missing Incorporated in Attributed feature works now
 * MissForest algorithm implemented
