@@ -8,7 +8,8 @@
 #' @author 		Adam Kapelner \email{kapelner@@qc.cuny.edu}
 #' @references 	TK
 #' @keywords 	Machine Learning, Tree-based Non-parametric regression
-#' @import      stats graphics rJava readr stringr pander ggplot2 gridExtra R6 Bolstad2
+#' @import      stats graphics rJava readr stringr pander checkmate ggplot2 gridExtra R6 Bolstad2 YARFJARs
+#' @importFrom  utils packageVersion
 ##### Run "library(roxygen2); roxygenise("YARF", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file
 ##### but make sure you are in the root directory of the project
 NULL

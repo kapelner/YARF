@@ -1,22 +1,18 @@
-bibentry(bibtype = "Article",
-  title        = "{bartMachine}: Machine Learning with {B}ayesian Additive Regression Trees",
-  author       = c(person(given = "Adam",
-                          family = "Kapelner",
-                          email = "kapelner@qc.cuny.edu"),
-                   person(given = "Justin",
-                          family = "Bleich")),
-  journal      = "Journal of Statistical Software",
-  year         = "2016",
-  volume       = "70",
-  number       = "4",
-  pages        = "1--40",
-  doi          = "10.18637/jss.v070.i04",
-
-  header       = "To cite bartMachine/bartMachineJARs in publications use:",
-  textVersion  =
-  paste("Adam Kapelner, Justin Bleich (2016).",
-        "bartMachine: Machine Learning with Bayesian Additive Regression Trees.",
-        "Journal of Statistical Software, 70(4), 1-40.",
-        "doi:10.18637/jss.v070.i04")
+bibentry(
+  bibtype = "Manual",
+  title = "YARF: Yet Another Random Forests Package",
+  author = c(
+    person("Adam", "Kapelner"),
+    person("Matt", "Olson"),
+    person("Abhinav", "Patil")
+  ),
+  year = "2026",
+  note = paste("R package version", meta$Version),
+  url = "https://github.com/kapelner/YARF",
+  textVersion = paste(
+    "Kapelner A, Olson M, Patil A.",
+    "YARF: Yet Another Random Forests Package.",
+    paste0("R package version ", meta$Version, "."),
+    "https://github.com/kapelner/YARF"
+  )
 )
-

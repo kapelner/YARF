@@ -1,0 +1,17 @@
+url: https://kapelner.github.io/YARF/
+
+template:
+  bootstrap: 5
+
+home:
+  title: YARF — Yet Another Random Forests Package
+
+navbar:
+  structure:
+    left: [intro, reference, news]
+    right: [search, github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/kapelner/YARF
+      aria-label: GitHub

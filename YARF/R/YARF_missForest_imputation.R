@@ -44,7 +44,7 @@ YARFMissForest = function(Xtrain, ytrain, Xtest = NULL, maxiter = 10, converge_a
 		n_test = nrow(Xtest)
 		
 		#rbind(df1,setnames(df2,names(df1))))
-		Xy = rbind(Xy, setnames(cbind(Xtest, NA), names(Xy))) #Xtest doesn't have y's
+		Xy = rbind(Xy, setNames(cbind(Xtest, NA), names(Xy))) #Xtest doesn't have y's
 	}
 	
 	n_imp = nrow(Xy)
@@ -146,4 +146,3 @@ YARFMissForest = function(Xtrain, ytrain, Xtest = NULL, maxiter = 10, converge_a
 	ret$npfcs = npfcs
 	ret	
 }
-
