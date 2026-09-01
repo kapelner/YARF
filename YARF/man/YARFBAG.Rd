@@ -62,7 +62,7 @@ of 10,000.}
 
 \item{bootstrap_indices}{A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
-of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
+of sampling \code{1, ..., n} with replacement (i.e. the non-parametric bootstrap default). Needless
 to say indices specified here will not be part of the out-of-bag collection of indices.    You may
 specify more than enough (i.e. more than \code{num_trees}) elements in this list. Only the first
 \code{num_trees} will be used. No warning message will be displayed if you include too many.}
@@ -81,10 +81,12 @@ The default is \code{NULL} indicating you do not wish to specify any "other" dat
 If \code{NULL} the out-of-the-box default of 5 for regression and 1 for classification 
 will be used.}
 
+\item{mtry_script}{A custom JavaScript function that selects candidate variables at each split.}
+
 \item{split_vals_script}{A custom javascript function which selects the split values to be greedily searched in feature j.
                                             The default is \code{NULL} which employs the midpoints of all sorted values.
 
-                                              function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number in {0,...,p-1}
+                                              function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number in 0,...,p-1
 
                                                 ...
 
@@ -160,6 +162,8 @@ The default is \code{NULL} for no shared scripts.}
 \item{use_missing_data}{Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 default is \code{TRUE}.}
 
+\item{replace_missing_data_with_x_j_bar}{Replace missing predictor values with their training-column means before fitting.}
+
 \item{serialize}{Should the YARF model be saved? The default is \code{FALSE} as this is costly in processing
 time and memory. This can only be set to \code{TRUE} if \code{wait = TRUE}. If \code{TRUE},
 we will automatically serialize after other operations that add data (such as the OOB evaluation).}
@@ -170,6 +174,8 @@ we will automatically serialize after other operations that add data (such as th
 
 \item{calculate_oob_error}{Should we also calculate the OOB error? Default is \code{TRUE}. Automatically is turned off if
 \code{wait} becomes \code{FALSE}.}
+
+\item{fit_until_convergence}{Fit trees until the out-of-bag convergence criterion is met.}
 
 \item{oob_cost_calculation_script}{This parameter will determine the out-of-bag cost of the RF forest model. Default is \code{NULL}. If
                                             it is \code{NULL}, then the cost will be 1-R^2 for regression models and misclassification error for classification 

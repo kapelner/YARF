@@ -40,6 +40,20 @@ YARFROC(
 The default is "TPR" but it can be any of those
 listed in the documentation for the \code{x_axis} parameter. Must be different from \code{x-axis}.}
 
+\item{use_prop_data}{Relative multiplier controlling the resampled class proportions.}
+
+\item{minimum_class_proportion}{Smallest positive-class proportion considered while tracing the curve.}
+
+\item{desired_interval}{Target spacing between adjacent metric values.}
+
+\item{tolerance}{Recursion stops when candidate class proportions differ by less than this value.}
+
+\item{y_axis_fine_resolution}{Whether to make an additional pass emphasizing resolution on the y-axis.}
+
+\item{plot}{Whether to draw intermediate and final ROC-like plots.}
+
+\item{verbose}{Whether to print progress information.}
+
 \item{...}{Additional arguments passed to YARF construction. This cannot include \code{bootstrap_indicies}.}
 }
 \value{

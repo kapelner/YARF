@@ -16,7 +16,7 @@ yarf_duplicate(yarf_mod, X = NULL, y = NULL)
 the original training responses.}
 }
 \value{
-
+A newly fitted YARF model with the original settings and the supplied training data.
 }
 \description{
 Duplicates the settings of YARF model. Wait is \code{TRUE}, all verbose logging is turned

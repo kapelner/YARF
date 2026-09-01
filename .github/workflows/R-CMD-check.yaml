@@ -40,7 +40,7 @@ jobs:
         with:
           working-directory: YARFJARs
           args: 'c("--no-manual")'
-          error-on: 'error'
+          error-on: '"warning"'
           artifact-name: YARFJARs-check
 
       - name: Check YARF
@@ -48,5 +48,5 @@ jobs:
         with:
           working-directory: YARF
           args: 'c("--no-manual")'
-          error-on: 'error'
+          error-on: '"warning"'
           artifact-name: YARF-check

@@ -22,6 +22,7 @@ prune_YARF_model = function(yarf_mod, prune_if_script, trees_to_prune = NULL){
 	assertClass(yarf_mod, "YARF")
 	assertCharacter(prune_if_script, null.ok = TRUE)
 	assertStringContains(prune_if_script, "function pruneIf(node){")
+	java_YARF = yarf_mod$java_YARF
 	
 	.jcall(java_YARF, "V", "setPrune_if_function_str", prune_if_script)
 	

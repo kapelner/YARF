@@ -2,9 +2,15 @@ url: https://kapelner.github.io/YARF/
 
 template:
   bootstrap: 5
+  math-rendering: mathjax
 
 home:
   title: YARF — Yet Another Random Forests Package
+  description: >
+    A customizable, asynchronous, and parallelized random forest implementation
+    for R with user-defined JavaScript splitting and aggregation rules,
+    missingness incorporated in attributes, imputation, variable importance,
+    interaction analysis, and tree inspection.
 
 navbar:
   structure:
@@ -15,3 +21,66 @@ navbar:
       icon: fab fa-github
       href: https://github.com/kapelner/YARF
       aria-label: GitHub
+
+articles:
+- title: Get started
+  contents:
+  - getting-started
+
+reference:
+- title: Fit forest models
+  contents:
+  - YARF
+  - YARFBAG
+  - YARFCART
+  - YARFMissForest
+  - YARFROC
+
+- title: Predict and evaluate
+  contents:
+  - predict.YARF
+  - YARF_predict_all_trees
+  - YARF_set_aggregation_method
+  - YARF_update_with_oob_results
+  - YARF_update_with_oob_validation_results
+  - YARF_update_with_oob_test_results
+  - YARF_all_oob_results_matrix
+  - calcAUC
+
+- title: Run and persist models
+  contents:
+  - YARF_progress
+  - YARF_convergence
+  - YARF_stop
+  - set_YARF_num_cores
+  - YARF_serialize
+
+- title: Inspect trees and observations
+  contents:
+  - illustrate_trees
+  - prune_YARF_model
+  - prediction_nodes
+  - compute_raw_proximity_info
+  - tree_average_proximity_info
+  - proximity_info
+  - get_tree_num_nodes_leaves_max_depths
+
+- title: Importance, interactions, and model checks
+  contents:
+  - query_variable_counts
+  - query_variable_proportions_across_trees
+  - first_order_interaction_investigator
+  - cov_importance_test
+  - model_fit_test
+
+- title: Utilities
+  contents:
+  - summary.YARF
+  - print.YARF
+  - yarf_duplicate
+  - shared_initial_substring
+
+- title: Data
+  contents:
+  - automobile
+  - benchmark_datasets

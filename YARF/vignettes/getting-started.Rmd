@@ -1,0 +1,62 @@
+---
+title: "Getting started with YARF"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with YARF}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+YARF fits regression and classification forests while exposing the splitting,
+node-assignment, aggregation, and out-of-bag calculations for customization.
+Java 8 or newer is required.
+
+## Fit a classification forest
+
+```{r classification}
+library(YARF)
+set_YARF_num_cores(1)
+
+fit = YARF(
+  X = iris[, 1:4],
+  y = iris$Species,
+  num_trees = 50,
+  seed = 2026
+)
+
+pred = predict(fit, iris[, 1:4])
+table(observed = iris$Species, predicted = pred)
+```
+
+## Inspect out-of-bag performance
+
+```{r oob}
+fit = YARF_update_with_oob_results(fit)
+summary(fit)
+query_variable_proportions_across_trees(fit)
+```
+
+## Missing values
+
+The default `use_missing_data = TRUE` enables missingness incorporated in
+attributes. For iterative random-forest imputation, use `YARFMissForest()`.
+
+```{r missing}
+X_missing = iris[, 1:4]
+X_missing[1:5, 1] = NA
+
+fit_missing = YARF(
+  X = X_missing,
+  y = iris$Species,
+  num_trees = 50,
+  seed = 2026,
+  use_missing_data = TRUE
+)
+```
+
+See the function reference for custom JavaScript hooks and tree-inspection
+utilities.

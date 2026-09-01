@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use YARF, please cite it as below."
+type: software
+title: "YARF: Yet Another Random Forests Package"
+version: 1.2.0
+date-released: "2026-09-01"
+authors:
+  - family-names: Kapelner
+    given-names: Adam
+    email: kapelner@qc.cuny.edu
+    orcid: "https://orcid.org/0000-0001-5985-6792"
+  - family-names: Olson
+    given-names: Matt
+  - family-names: Patil
+    given-names: Abhinav
+repository-code: "https://github.com/kapelner/YARF"
+url: "https://kapelner.github.io/YARF/"
+license: GPL-3.0
+keywords:
+  - random forest
+  - machine learning
+  - missing data
+  - imputation
+  - variable importance
+  - parallel computing
+  - R package
+  - Java
+abstract: >
+  YARF is a customizable, asynchronous, and parallelized random forest
+  implementation for R. It supports user-defined JavaScript splitting and
+  aggregation behavior, missingness incorporated in attributes,
+  random-forest-based imputation, variable importance, interaction analysis,
+  and tree inspection. Its forest engine is implemented in Java.

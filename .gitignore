@@ -90,3 +90,6 @@ vignettes/*.pdf
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# pkgdown output is deployed as a GitHub Pages artifact, not committed.
+/YARF/docs/

@@ -20,6 +20,13 @@
 #' @param y_axis		The rate to plot on the y-axis of the ROC like plot as a 3-character string. 
 #' 						The default is "TPR" but it can be any of those
 #' 						listed in the documentation for the \code{x_axis} parameter. Must be different from \code{x-axis}.
+#' @param use_prop_data Relative multiplier controlling the resampled class proportions.
+#' @param minimum_class_proportion Smallest positive-class proportion considered while tracing the curve.
+#' @param desired_interval Target spacing between adjacent metric values.
+#' @param tolerance Recursion stops when candidate class proportions differ by less than this value.
+#' @param y_axis_fine_resolution Whether to make an additional pass emphasizing resolution on the y-axis.
+#' @param plot Whether to draw intermediate and final ROC-like plots.
+#' @param verbose Whether to print progress information.
 #' @param ...			Additional arguments passed to YARF construction. This cannot include \code{bootstrap_indicies}.
 #' @return 				A data frame containing all
 #' 						models with the percent of first class in \code{levels(y)} for the bootstrap indices to replicate

@@ -1,15 +1,13 @@
-#' Random Forests with (1) the ability to customize almost every algorithmic decions (2)
-#' parallelization with asynchronicity (3) missingness incorporated in attributes and (4)
-#' variable importance, interaction detection, variable(s) testing, tree illustrations et al.
+#' YARF: Yet Another Random Forests Package
 #'
-#' @name 		YARF
-#' @docType 	package
-#' @title 		A fully customizable Random Forests implementation
-#' @author 		Adam Kapelner \email{kapelner@@qc.cuny.edu}
-#' @references 	TK
-#' @keywords 	Machine Learning, Tree-based Non-parametric regression
+#' A customizable, asynchronous, and parallelized random forest implementation
+#' with user-defined splitting and aggregation behavior, missingness incorporated
+#' in attributes, imputation, variable importance, interaction detection, and
+#' tree inspection.
+#'
+#' @keywords internal
 #' @import      stats graphics rJava readr stringr pander checkmate ggplot2 gridExtra R6 Bolstad2 YARFJARs
 #' @importFrom  utils packageVersion
 ##### Run "library(roxygen2); roxygenise("YARF", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file
 ##### but make sure you are in the root directory of the project
-NULL
+"_PACKAGE"

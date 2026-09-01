@@ -33,22 +33,22 @@ illustrate_trees(
 \item{max_depth}{Illustrate the tree only up to this depth. Default is \code{-1}
 indicating no restriction.}
 
-\item{background_rgb_color}{A vector with 3 elements in {0, 1, ..., 255} specifying the RGB color 
+\item{background_rgb_color}{A vector with 3 elements in \code{0, 1, ..., 255} specifying the RGB color
 of the background. Default is \code{c(255, 255, 255)} for white.}
 
-\item{line_rgb_color}{A vector with 3 elements in {0, 1, ..., 255} specifying the RGB color 
+\item{line_rgb_color}{A vector with 3 elements in \code{0, 1, ..., 255} specifying the RGB color
 of the lines. Default is \code{c(100, 100, 100)} for grey.}
 
-\item{text_rgb_color}{A vector with 3 elements in {0, 1, ..., 255} specifying the RGB color 
+\item{text_rgb_color}{A vector with 3 elements in \code{0, 1, ..., 255} specifying the RGB color
 of the text. Default is \code{c(0, 0, 0)} for black.}
 
-\item{font_family}{The font family of the text in the illustration. This string is passed in 
-as the first argument in a new \code{java.awt.Font} object. You can find 
+\item{font_family}{The font family of the text in the illustration. This string is passed in
+as the first argument in a new \code{java.awt.Font} object. You can find
 a list of legal arguments in the Java 8 documentation. Default is \code{arial}.}
 
 \item{font_size}{The font size in the illustrations in pixels. Default is \code{12}.}
 
-\item{margin_in_px}{The margin in pixels of the entire illustration (equal on all sides). Default 
+\item{margin_in_px}{The margin in pixels of the entire illustration (equal on all sides). Default
 is \code{70}.}
 
 \item{character_width_in_px}{Estimate as to the size of the character width in pixels. Differs based on fonts.}
@@ -57,7 +57,7 @@ is \code{70}.}
 
 \item{depth_in_px_per_split}{The length of the depth of a split in pixels. Default is \code{100}.}
 
-\item{print_at_split_node_script}{A custom javascript function which creates a special custom message to be printed 
+\item{print_at_split_node_script}{A custom javascript function which creates a special custom message to be printed
                                         at split nodes (see below). The default is \code{NULL} which prints no special message.
 
                                         function printAtSplitNode(node)\{ //node is of type YARF.YARFNode
@@ -68,7 +68,7 @@ is \code{70}.}
 
                                         \}}
 
-\item{print_at_leaf_script}{A custom javascript function which creates a special custom message to be printed 
+\item{print_at_leaf_script}{A custom javascript function which creates a special custom message to be printed
                                         at leaf nodes (see below). The default is \code{NULL} which prints no special message.
 
                                         function printAtLeaf(node)\{ //node is of type YARF.YARFNode

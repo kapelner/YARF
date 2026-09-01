@@ -49,13 +49,12 @@ cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samp
 	
 	#the error in the true, unpermuted model - the yardstick we'll be comparing to
 	if (!is.null(yarf_mod$oob_cost_calculation)){
-		permutation_samples_of_error[nsim] = yarf_mod$y_oob_average_cost
-	} else if (object$pred_type == "regression"){
-		permutation_samples_of_error[nsim] = yarf_mod$pseudo_rsq_oob
+		observed_error_estimate = yarf_mod$y_oob_average_cost
+	} else if (yarf_mod$pred_type == "regression"){
+		observed_error_estimate = yarf_mod$pseudo_rsq_oob
 	} else {
-		permutation_samples_of_error[nsim] = yarf_mod$misclassification_error
+		observed_error_estimate = yarf_mod$misclassification_error
 	}
-	observed_error_estimate = ifelse(yarf_mod$pred_type == "regression", yarf_mod$PseudoRsq, yarf_mod$misclassification_error)
 	
 	permutation_samples_of_error = array(NA, num_permutation_samples)
 	for (nsim in 1 : num_permutation_samples){
@@ -87,7 +86,7 @@ cov_importance_test = function(yarf_mod, covariates = NULL, num_permutation_samp
 		#record permutation result
 		if (!is.null(yarf_mod$oob_cost_calculation)){
 			permutation_samples_of_error[nsim] = yarf_samp$y_oob_average_cost
-		} else if (object$pred_type == "regression"){
+		} else if (yarf_mod$pred_type == "regression"){
 			permutation_samples_of_error[nsim] = yarf_samp$pseudo_rsq_oob
 		} else {
 			permutation_samples_of_error[nsim] = yarf_samp$misclassification_error
@@ -155,7 +154,7 @@ model_fit_test = function(X, y, model_fit = NULL, num_permutation_samples = 100,
 #' @param X 		The training data as a data frame. Default is \code{NULL} indicating the original training data.
 #' @param y 		The training responses as numeric / integer / factor vector. Default is \code{NULL} indicating 
 #' 					the original training responses.
-#' @return 			
+#' @return A newly fitted YARF model with the original settings and the supplied training data.
 #' 
 #' @author Adam Kapelner
 #' @export

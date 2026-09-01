@@ -21,7 +21,7 @@
 #'  
 #' @param bootstrap_indices 				A list with keys 1, 2, ..., num_trees where each value is the indices of the training data
 #' 											you wish to use for each tree. The default is \code{NULL} indicating the default algorithm 
-#' 											of sampling {1,...,n} with replacement (i.e. the non-parametric bootsrap default). Needless
+#' 											of sampling \code{1, ..., n} with replacement (i.e. the non-parametric bootstrap default). Needless
 #' 											to say indices specified here will not be part of the out-of-bag collection of indices.	You may
 #' 											specify more than enough (i.e. more than \code{num_trees}) elements in this list. Only the first
 #' 											\code{num_trees} will be used. No warning message will be displayed if you include too many. If 
@@ -46,14 +46,14 @@
 #' 
 #' 											    ...
 #' 
-#' 											    return int_array //a subset of {0,...,p-1}, indices indicating the variables to perform the exhaustive search on
+#' 											    return int_array //a subset of 0,...,p-1, indices indicating the variables to perform the exhaustive search on
 #' 
 #' 											  \}
 #' 
 #' @param split_vals_script					A custom javascript function which selects the split values to be greedily searched in feature j.
 #' 											The default is \code{NULL} which employs the midpoints of all sorted values.
 #' 
-#' 											  function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number in {0,...,p-1}
+#' 											  function tryVals(node, j)\{ //node is of type YARF.YARFNode and j is the feature number in 0,...,p-1
 #' 
 #' 											    ...
 #' 
@@ -131,6 +131,7 @@
 #' 											The default is \code{NULL} for no shared scripts. 
 #' @param use_missing_data					Use the "missing-incorporated-in-attributes" strategy to fit data with missingness. The 
 #' 											default is \code{TRUE}.	
+#' @param replace_missing_data_with_x_j_bar Replace missing predictor values with their training-column means before fitting.
 #' @param no_missing_data_split_rule  What rule should be used for missing data seen in testing for nodes that did not 
 #'                                      see missing data in training? Choices: \code{"RANDOM"} and \code{"CONDITIONAL_ON_QUANTILE"}.
 #'                                      \code{"RANDOM"} will assign a split rule for missing data at such nodes purely arbitrarily
@@ -792,5 +793,4 @@ YARF_serialize = function(yarf_mod){
 	.jcache(yarf_mod$java_YARF)
 	cat("done\n")	
 }
-
 

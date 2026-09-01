@@ -235,7 +235,7 @@ compute_raw_proximity_info = function(yarf_mod, X1 = NULL, X2 = NULL, oob_only_1
 #' Computes information about the "proximity" of observations within the YARF model. Given two datasets,
 #' information is computed for all pairs of observations. Information is averaged over the trees in the model.   
 #' 
-#' @param raw_proximity_info 		The information returned from the \code{compute_raw_proximity_info} function.
+#' @param raw The information returned from \code{compute_raw_proximity_info()}.
 #' @return 							A list indexed by the row number of \code{X1} whose elements are a list indexed by
 #' 									the row number of \code{X2} whose elements are an array consisting of the following 
 #' 									information: (a) proportion of trees these two observations were in the same node,

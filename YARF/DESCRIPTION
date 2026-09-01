@@ -1,9 +1,11 @@
 Package: YARF
 Type: Package
 Title: Yet Another Random Forests Package
-Version: 1.1
+Version: 1.2.0
 Authors@R: c(
-    person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu", role = c("aut", "cre")),
+    person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu",
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-5985-6792")),
     person("Matt", "Olson", role = "aut"),
     person("Abhinav", "Patil", role = "aut")
     )
@@ -14,21 +16,29 @@ License: GPL-3
 URL: https://github.com/kapelner/YARF, https://kapelner.github.io/YARF/
 BugReports: https://github.com/kapelner/YARF/issues
 Depends:
-	YARFJARs,
-    rJava (>= 0.9-8),
-	readr,
-	stringr,
-	pander,
-	checkmate,
-	ggplot2,
-	gridExtra,
-	R6,
-	Bolstad2,
     R (>= 3.2.0)
 Imports:
+    Bolstad2,
+    checkmate,
+    ggplot2,
     graphics,
+    gridExtra,
+    pander,
+    R6,
+    readr,
+    rlang,
+    rJava (>= 0.9-8),
     stats,
+    stringr,
+    YARFJARs,
     utils
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
 SystemRequirements: Java (>= 1.8.0)
-RoxygenNote: 7.1.0
 Encoding: UTF-8
+Config/roxygen2/version: 8.0.0.9000
+Config/testthat/edition: 3
+Config/Needs/website: pkgdown

@@ -8,7 +8,7 @@ information is computed for all pairs of observations. Information is averaged o
 tree_average_proximity_info(raw)
 }
 \arguments{
-\item{raw_proximity_info}{The information returned from the \code{compute_raw_proximity_info} function.}
+\item{raw}{The information returned from \code{compute_raw_proximity_info()}.}
 }
 \value{
 A list indexed by the row number of \code{X1} whose elements are a list indexed by

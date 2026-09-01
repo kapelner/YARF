@@ -7,6 +7,7 @@
 #' 					value for \code{type = "trees"} or a count value for \code{type = "splits"}.
 #' 
 #' @author Adam Kapelner
+#' @importFrom rlang .data
 #' @export
 query_variable_counts = function(yarf_mod, type = "splits"){
 	assertClass(yarf_mod, "YARF")
@@ -92,7 +93,7 @@ first_order_interaction_investigator = function(yarf_mod, plot = TRUE, only_non_
 
 	
 	sorted_counts = sort(counts, decreasing = TRUE)
-	if (num_var_plot == Inf || num_var_plot > num_total_interactions){
+	if (num_var_plot == Inf || num_var_plot > length(sorted_counts)){
 		num_var_plot = length(sorted_counts)
 	}
 	sorted_counts = sorted_counts[1 : num_var_plot]
@@ -106,7 +107,7 @@ first_order_interaction_investigator = function(yarf_mod, plot = TRUE, only_non_
 		ggplot_df = ggplot_df[ggplot_df$relative_importance > 0, ]
 		
 		plot(ggplot(ggplot_df) + 
-			geom_bar(aes(x = interaction, y = relative_importance), stat = "identity") +
+			geom_bar(aes(x = .data[["interaction"]], y = .data[["relative_importance"]]), stat = "identity") +
 			theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)))
 	}
 	
@@ -134,4 +135,3 @@ get_tree_num_nodes_leaves_max_depths = function(yarf_mod){
 		max_depths = .jcall(yarf_mod$java_YARF, "[I", "getMaxDepths", simplify = TRUE)
 	)
 }
-
