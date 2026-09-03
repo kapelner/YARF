@@ -1,21 +1,24 @@
 {
-  "name": "",
-  "short_name": "",
+  "name": "YARF: Yet Another Random Forests Package",
+  "short_name": "YARF",
   "icons": [
     {
-      "src": "/web-app-manifest-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
     },
     {
-      "src": "/web-app-manifest-512x512.png",
+      "src": "web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "web-app-manifest-512x512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#1b4332",
+  "background_color": "#1b4332",
   "display": "standalone"
 }

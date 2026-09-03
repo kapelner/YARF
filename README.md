@@ -1,8 +1,4 @@
-# YARF
-
-<p align="center">
-  <img src="YARF/man/figures/logo.png" alt="YARF logo" width="220">
-</p>
+# YARF: Yet Another Random Forests Package <img src="YARF/man/figures/logo.png" align="right" height="139" alt="YARF hex logo" />
 
 [![R-CMD-check](https://github.com/kapelner/YARF/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/kapelner/YARF/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/kapelner/YARF/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/kapelner/YARF/actions/workflows/pkgdown.yaml)
